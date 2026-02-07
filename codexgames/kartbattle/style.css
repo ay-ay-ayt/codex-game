@@ -1,0 +1,86 @@
+:root {
+  --ui-bg: rgba(8, 16, 26, 0.62);
+  --ui-border: rgba(255, 255, 255, 0.26);
+  --btn-bg: rgba(0, 0, 0, 0.38);
+  --btn-active: rgba(255, 255, 255, 0.24);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #5ca3e8; color: #fff; }
+
+#game { width: 100vw; height: 100vh; display: block; }
+
+#hud {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: 10px;
+  right: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 8px;
+  align-items: center;
+  z-index: 5;
+}
+
+#hud > * {
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+#botWrap { display: inline-flex; gap: 8px; align-items: center; }
+#botCount {
+  border: 0;
+  border-radius: 8px;
+  font-weight: 700;
+  padding: 5px 8px;
+}
+
+#soundBtn, #restartBtn { color: #fff; }
+
+#goal {
+  position: fixed;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  z-index: 7;
+  font-weight: 900;
+  font-size: clamp(30px, 9vw, 64px);
+  background: rgba(255, 210, 46, 0.92);
+  color: #1b1b1b;
+  border-radius: 16px;
+  border: 3px solid rgba(255, 255, 255, 0.84);
+  padding: 12px 20px;
+}
+
+#controls {
+  position: fixed;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.ctrl {
+  min-height: 72px;
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  background: var(--btn-bg);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 900;
+}
+.ctrl.drift { font-size: 19px; }
+.ctrl.active { background: var(--btn-active); transform: translateY(1px); }
+
+@media (min-width: 900px) {
+  #controls { left: 50%; transform: translateX(-50%); max-width: 560px; }
+}
