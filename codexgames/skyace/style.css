@@ -1,0 +1,124 @@
+:root {
+  --glass: rgba(3, 10, 20, 0.56);
+  --line: rgba(167, 225, 255, 0.34);
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #020816;
+  color: #dbf5ff;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+#hud {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: 10px;
+  right: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: 8px;
+  z-index: 5;
+}
+
+#hud > * {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(4px);
+}
+
+#title {
+  color: #90dbff;
+}
+
+#botWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#botCount {
+  border: 0;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #d8f2ff;
+  font-weight: 700;
+}
+
+#restartBtn {
+  color: #e7f7ff;
+  background: rgba(12, 46, 80, 0.7);
+  cursor: pointer;
+}
+
+#guide {
+  position: fixed;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 12px;
+  z-index: 4;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+}
+
+#message {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 8;
+  font-size: clamp(28px, 7vw, 62px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 16px rgba(160, 233, 255, 0.7);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+#radar {
+  position: fixed;
+  right: 14px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 2px solid rgba(135, 222, 255, 0.8);
+  background:
+    radial-gradient(circle at center, rgba(76, 198, 255, 0.16) 0 16%, transparent 18% 100%),
+    radial-gradient(circle at center, transparent 0 36%, rgba(126, 220, 255, 0.35) 37% 38%, transparent 39% 100%),
+    rgba(2, 16, 26, 0.6);
+  box-shadow: inset 0 0 14px rgba(113, 228, 255, 0.3), 0 0 12px rgba(60, 179, 255, 0.28);
+}
+
+.dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+}
+.dot.player { background: #7dffd8; box-shadow: 0 0 6px #7dffd8; }
+.dot.enemy { background: #ff6b6b; box-shadow: 0 0 6px #ff7272; }
+
+@media (max-width: 720px) {
+  #hud { grid-template-columns: repeat(2, max-content); }
+}
