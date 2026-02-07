@@ -19,7 +19,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x7fc7ff);
-scene.fog = new THREE.Fog(0x7fc7ff, 30, 300);
+scene.fog = new THREE.Fog(0x7fc7ff, 40, 520);
 
 const camera = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.1, 800);
 
@@ -31,6 +31,7 @@ scene.add(sun);
 const world = new THREE.Group();
 scene.add(world);
 
+const trackScale = 1.65;
 const centerPoints = [
   new THREE.Vector3(0, 0, -60),
   new THREE.Vector3(45, 0, -50),
@@ -40,7 +41,7 @@ const centerPoints = [
   new THREE.Vector3(-52, 0, 48),
   new THREE.Vector3(-70, 0, 0),
   new THREE.Vector3(-42, 0, -50),
-];
+].map((v) => v.multiplyScalar(trackScale));
 const centerCurve = new THREE.CatmullRomCurve3(centerPoints, true, "catmullrom", 0.1);
 const trackWidth = 14;
 const halfTrack = trackWidth * 0.5;
@@ -61,7 +62,7 @@ function norm01(v) {
 }
 
 const grass = new THREE.Mesh(
-  new THREE.CircleGeometry(330, 72),
+  new THREE.CircleGeometry(560, 96),
   new THREE.MeshLambertMaterial({ color: 0x3ea23f })
 );
 grass.rotation.x = -Math.PI / 2;
@@ -69,7 +70,7 @@ grass.position.y = -0.06;
 world.add(grass);
 
 const skyRing = new THREE.Mesh(
-  new THREE.CylinderGeometry(320, 320, 120, 64, 1, true),
+  new THREE.CylinderGeometry(540, 540, 160, 72, 1, true),
   new THREE.MeshBasicMaterial({ color: 0xa9deff, side: THREE.BackSide })
 );
 skyRing.position.y = 40;
@@ -359,10 +360,10 @@ function resetRace() {
       mesh,
       t,
       lane,
-      speed: 25 + i * 1.2,
+      speed: 18 + i * 0.3,
       lap: 1,
       progress: 0,
-      targetSpeed: 26 + Math.random() * 6,
+      targetSpeed: 45,
     });
   }
 }
@@ -414,17 +415,17 @@ let wasDrifting = false;
 function updatePlayer(dt) {
   if (race.finished) return;
 
-  const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  const steer = (input.left ? 1 : 0) - (input.right ? 1 : 0);
   const drifting = input.drift && steer !== 0;
   const maxSpeed = drifting ? 40 : 46;
 
   player.speed += (maxSpeed - player.speed) * dt * 1.2;
   player.speed = Math.max(8, Math.min(player.speed, 55));
 
-  const steerPower = drifting ? 2.25 : 1.5;
+  const steerPower = drifting ? 1.2 : 0.72;
   const speedFactor = THREE.MathUtils.clamp(player.speed / 40, 0.5, 1.2);
   player.yawVel += steer * steerPower * speedFactor * dt;
-  player.yawVel *= drifting ? 0.88 : 0.82;
+  player.yawVel *= drifting ? 0.9 : 0.86;
 
   player.heading += player.yawVel;
 
@@ -448,7 +449,7 @@ function updatePlayer(dt) {
 
   const desiredHeading = Math.atan2(track.tan.x, track.tan.z);
   const turnAlign = THREE.MathUtils.clamp(Math.sin(desiredHeading - player.heading), -1, 1);
-  player.heading += turnAlign * dt * 0.65;
+  player.heading += turnAlign * dt * 0.22;
 
   if (drifting) {
     player.driftCharge = Math.min(1.4, player.driftCharge + dt * 1.4);
@@ -478,20 +479,24 @@ function updatePlayer(dt) {
 
 function updateBots(dt) {
   for (const b of bots) {
-    b.speed += (b.targetSpeed - b.speed) * dt * 0.8;
+    b.speed += (b.targetSpeed - b.speed) * dt * 1.2;
+    b.speed = Math.max(8, Math.min(b.speed, 55));
     const tNext = norm01(b.t + (b.speed * dt) / trackLength);
     if (b.t > 0.85 && tNext < 0.15) b.lap += 1;
     b.t = tNext;
 
-    if (Math.random() < 0.015) b.targetSpeed = 25 + Math.random() * 8;
-
-    const center = centerCurve.getPointAt(b.t);
+        const center = centerCurve.getPointAt(b.t);
     const tan = tangentAt(b.t);
     const n = rightFromTangent(tan);
     const target = center.clone().addScaledVector(n, b.lane).setY(0.02);
     b.mesh.position.lerp(target, 0.42);
     b.mesh.rotation.y = Math.atan2(tan.x, tan.z);
     b.progress = (b.lap - 1) + b.t;
+
+    const curveAssist = Math.abs(Math.sin((b.t * Math.PI * 2) + b.lane * 0.1));
+    if (curveAssist > 0.86) {
+      b.speed *= 0.985;
+    }
 
     const diff = b.mesh.position.distanceTo(player.pos);
     if (diff < 1.8 && !race.finished) {
@@ -508,8 +513,8 @@ function updateKartMeshes() {
 
 function updateCamera() {
   const forward = new THREE.Vector3(Math.sin(player.heading), 0, Math.cos(player.heading));
-  const camTarget = player.pos.clone().add(new THREE.Vector3(0, 1.0, 0)).addScaledVector(forward, 4.5);
-  const camPos = player.pos.clone().addScaledVector(forward, -8.5).add(new THREE.Vector3(0, 4.4, 0));
+  const camTarget = player.pos.clone().add(new THREE.Vector3(0, 1.1, 0)).addScaledVector(forward, 6.2);
+  const camPos = player.pos.clone().addScaledVector(forward, -11.5).add(new THREE.Vector3(0, 5.2, 0));
   camera.position.lerp(camPos, 0.14);
   camera.lookAt(camTarget);
 }
