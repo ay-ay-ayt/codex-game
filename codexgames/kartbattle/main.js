@@ -105,12 +105,71 @@ function buildStrip(innerOffset, outerOffset, y, matA, matB) {
   world.add(strip);
 }
 
-buildStrip(-halfTrack, halfTrack, 0.02, new THREE.MeshStandardMaterial({ color: 0x565861, roughness: 0.92, metalness: 0.06 }));
-buildStrip(-halfTrack - 2.8, -halfTrack, 0.026, new THREE.MeshStandardMaterial({ color: 0xd0bf87, roughness: 1 }));
-buildStrip(halfTrack, halfTrack + 2.8, 0.026, new THREE.MeshStandardMaterial({ color: 0xd0bf87, roughness: 1 }));
+buildStrip(-halfTrack, halfTrack, 0.02, new THREE.MeshStandardMaterial({ color: 0x383b45, roughness: 0.92, metalness: 0.05 }));
+buildStrip(-halfTrack - 2.8, -halfTrack, 0.026, new THREE.MeshStandardMaterial({ color: 0xc8b47b, roughness: 0.98 }));
+buildStrip(halfTrack, halfTrack + 2.8, 0.026, new THREE.MeshStandardMaterial({ color: 0xc8b47b, roughness: 0.98 }));
 buildStrip(-halfTrack - 1.3, -halfTrack, 0.03, new THREE.MeshBasicMaterial({ color: 0xffffff }), new THREE.MeshBasicMaterial({ color: 0xdb2d2d }));
 buildStrip(halfTrack, halfTrack + 1.3, 0.03, new THREE.MeshBasicMaterial({ color: 0xdb2d2d }), new THREE.MeshBasicMaterial({ color: 0xffffff }));
 buildStrip(-0.16, 0.16, 0.031, new THREE.MeshBasicMaterial({ color: 0xf3d96f }));
+
+function addRoadDashes() {
+  const dashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const dashGeo = new THREE.BoxGeometry(0.28, 0.05, 2.4);
+  for (let i = 0; i < sampleCount; i += 10) {
+    const t = i / sampleCount;
+    const p = centerCurve.getPointAt(t);
+    const tan = tangentAt(t);
+    const dash = new THREE.Mesh(dashGeo, dashMat);
+    dash.position.set(p.x, 0.065, p.z);
+    dash.rotation.y = Math.atan2(tan.x, tan.z);
+    world.add(dash);
+  }
+}
+addRoadDashes();
+
+function addDirectionArrows() {
+  const arrowMat = new THREE.MeshBasicMaterial({ color: 0xfff06b });
+  const arrowGeo = new THREE.ConeGeometry(0.9, 1.8, 3);
+  for (let i = 0; i < sampleCount; i += 36) {
+    const t = i / sampleCount;
+    const p = centerCurve.getPointAt(t);
+    const tan = tangentAt(t);
+    const n = rightFromTangent(tan);
+    for (const lane of [-2.1, 2.1]) {
+      const arrow = new THREE.Mesh(arrowGeo, arrowMat);
+      arrow.position.copy(p).addScaledVector(n, lane).setY(0.09);
+      arrow.rotation.x = -Math.PI / 2;
+      arrow.rotation.z = -Math.atan2(tan.x, tan.z);
+      world.add(arrow);
+    }
+  }
+}
+addDirectionArrows();
+
+function addStartFinishMark() {
+  const t = 0;
+  const p = centerCurve.getPointAt(t);
+  const tan = tangentAt(t);
+  const n = rightFromTangent(tan);
+  const width = trackWidth - 1.2;
+  const tile = 0.8;
+  const rows = 3;
+  const cols = Math.floor(width / tile);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const color = (r + c) % 2 === 0 ? 0xffffff : 0x111111;
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(tile * 0.92, 0.02, tile * 0.92),
+        new THREE.MeshBasicMaterial({ color })
+      );
+      const across = -width * 0.5 + c * tile + tile * 0.5;
+      const along = -0.8 + r * tile;
+      mesh.position.copy(p).addScaledVector(n, across).addScaledVector(tan, along).setY(0.07);
+      world.add(mesh);
+    }
+  }
+}
+addStartFinishMark();
 
 function addGuardrails() {
   const mat = new THREE.MeshStandardMaterial({ color: 0xd9dde2, roughness: 0.6, metalness: 0.6 });
