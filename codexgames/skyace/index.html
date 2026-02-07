@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <title>Sky Ace Duel 3D</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div id="title">SKY ACE DUEL 3D</div>
+    <div id="health">HP 100</div>
+    <div id="enemies">ENEMY 0</div>
+    <div id="score">SCORE 0</div>
+    <label id="botWrap">AI
+      <select id="botCount" aria-label="対戦AI数">
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
+        <option value="3">3</option>
+      </select>
+    </label>
+    <button id="restartBtn" type="button">RESTART</button>
+  </div>
+
+  <div id="crosshair"></div>
+  <div id="message" hidden></div>
+
+  <div id="controls">
+    <div class="pad left">
+      <button data-key="KeyA">◀</button>
+      <button data-key="KeyD">▶</button>
+      <button data-key="KeyW">▲</button>
+      <button data-key="KeyS">▼</button>
+    </div>
+    <div class="pad right">
+      <button data-key="ArrowUp">THR+</button>
+      <button data-key="ArrowDown">THR-</button>
+      <button data-key="ShiftLeft">BOOST</button>
+      <button data-key="Space">FIRE</button>
+    </div>
+  </div>
+
+  <div id="guide">
+    A/D: YAW ・ W/S: PITCH ・ ↑/↓: THROTTLE ・ SHIFT: BOOST ・ SPACE: FIRE
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
