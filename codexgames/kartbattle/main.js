@@ -379,6 +379,10 @@ setButtonHold(leftBtn, "left");
 setButtonHold(rightBtn, "right");
 setButtonHold(driftBtn, "drift");
 
+window.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+});
+
 window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft") input.left = true;
   if (e.key === "ArrowRight") input.right = true;
