@@ -1,465 +1,374 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+import * as THREE from "../../vendor/three.module.min.js";
 
+const canvas = document.getElementById("game");
 const healthEl = document.getElementById("health");
 const enemiesEl = document.getElementById("enemies");
 const scoreEl = document.getElementById("score");
 const botCountEl = document.getElementById("botCount");
 const restartBtn = document.getElementById("restartBtn");
 const messageEl = document.getElementById("message");
-const radarEl = document.getElementById("radar");
 
-const WORLD_RADIUS = 2200;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x78b6ff, 600, 3600);
+
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 8000);
+
+scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
+const sun = new THREE.DirectionalLight(0xffffff, 1.12);
+sun.position.set(600, 900, 300);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+scene.add(sun);
+
+const world = new THREE.Group();
+scene.add(world);
+
 const keys = new Set();
-const pointers = { x: 0, y: 0 };
-
-let w = innerWidth;
-let h = innerHeight;
-let dpr = Math.min(devicePixelRatio || 1, 2);
+const input = { yaw: 0, pitch: 0, throttle: 0, boost: false, fire: false };
 
 const game = {
   player: null,
   bots: [],
   bullets: [],
-  particles: [],
-  clouds: [],
   score: 0,
   over: false,
 };
 
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
+const ARENA = 1800;
+const FLOOR_Y = 40;
+
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function rand(a, b) { return a + Math.random() * (b - a); }
+
+function buildSky() {
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(6000, 32, 24),
+    new THREE.MeshBasicMaterial({ color: 0x80c4ff, side: THREE.BackSide })
+  );
+  world.add(sky);
+
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.56 });
+  for (let i = 0; i < 90; i++) {
+    const cloud = new THREE.Mesh(new THREE.SphereGeometry(rand(30, 90), 16, 12), cloudMat);
+    cloud.scale.set(rand(1.2, 2.7), rand(0.45, 0.9), rand(1.2, 2.7));
+    cloud.position.set(rand(-ARENA, ARENA), rand(120, 620), rand(-ARENA, ARENA));
+    world.add(cloud);
+  }
+
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(ARENA * 3, ARENA * 3, 120, 120),
+    new THREE.MeshStandardMaterial({ color: 0x3d6f45, roughness: 0.98, metalness: 0 })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = FLOOR_Y;
+  floor.receiveShadow = true;
+  world.add(floor);
+
+  const mountainMat = new THREE.MeshStandardMaterial({ color: 0x65756d, roughness: 1 });
+  for (let i = 0; i < 36; i++) {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(rand(40, 120), rand(100, 300), 6), mountainMat);
+    m.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(30, 80), rand(-ARENA * 1.2, ARENA * 1.2));
+    m.castShadow = true;
+    m.receiveShadow = true;
+    world.add(m);
+  }
 }
 
-function rand(min, max) {
-  return min + Math.random() * (max - min);
-}
+function createJet(color, isPlayer = false) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(4, 7, 40, 14), new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.5 }));
+  body.rotation.z = Math.PI * 0.5;
+  body.castShadow = true;
 
-function dist2(a, b) {
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  return dx * dx + dy * dy;
-}
+  const wing = new THREE.Mesh(new THREE.BoxGeometry(30, 1.6, 9), new THREE.MeshStandardMaterial({ color: 0xe7f6ff, roughness: 0.4, metalness: 0.5 }));
+  wing.position.set(0, 0, 0);
+  wing.castShadow = true;
 
-function angleTo(from, to) {
-  return Math.atan2(to.y - from.y, to.x - from.x);
-}
+  const tail = new THREE.Mesh(new THREE.BoxGeometry(10, 7, 1.8), new THREE.MeshStandardMaterial({ color: 0xd2edff, roughness: 0.4, metalness: 0.3 }));
+  tail.position.set(-16, 4, 0);
+  tail.castShadow = true;
 
-function wrapWorld(e) {
-  if (e.x > WORLD_RADIUS) e.x = -WORLD_RADIUS;
-  if (e.x < -WORLD_RADIUS) e.x = WORLD_RADIUS;
-  if (e.y > WORLD_RADIUS) e.y = -WORLD_RADIUS;
-  if (e.y < -WORLD_RADIUS) e.y = WORLD_RADIUS;
-}
+  const canopy = new THREE.Mesh(new THREE.SphereGeometry(4.3, 14, 12), new THREE.MeshStandardMaterial({ color: 0x9ee6ff, transparent: true, opacity: 0.8, roughness: 0.2, metalness: 0.5 }));
+  canopy.scale.set(1.1, 0.65, 0.8);
+  canopy.position.set(6, 2.6, 0);
 
-function resize() {
-  w = innerWidth;
-  h = innerHeight;
-  dpr = Math.min(devicePixelRatio || 1, 2);
-  canvas.width = Math.floor(w * dpr);
-  canvas.height = Math.floor(h * dpr);
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
+  const engineGlow = new THREE.Mesh(new THREE.SphereGeometry(2.4, 10, 8), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x66eaff : 0xff994d }));
+  engineGlow.position.set(-21, 0, 0);
 
-function createPlane(type, x, y, color) {
+  g.add(body, wing, tail, canopy, engineGlow);
+  g.position.set(0, 280, 0);
+  world.add(g);
+
   return {
-    type,
-    x,
-    y,
-    vx: 0,
-    vy: 0,
-    angle: rand(-Math.PI, Math.PI),
-    speed: type === "player" ? 260 : rand(220, 260),
-    throttle: type === "player" ? 0.7 : rand(0.55, 0.9),
+    mesh: g,
+    velocity: new THREE.Vector3(220, 0, 0),
     hp: 100,
-    fireCd: rand(0, 0.35),
-    size: type === "player" ? 18 : 15,
-    color,
     alive: true,
-    evadeTimer: rand(0.2, 1.2),
+    cooldown: 0,
+    speed: 220,
+    boost: 0,
+    turnRate: isPlayer ? 1.65 : 1.25,
+    pitchRate: isPlayer ? 1.28 : 1.0,
     target: null,
   };
 }
 
-function spawnExplosion(x, y, color = "#ff944d", amount = 28) {
-  for (let i = 0; i < amount; i++) {
-    game.particles.push({
-      x,
-      y,
-      vx: Math.cos((Math.PI * 2 * i) / amount + rand(-0.2, 0.2)) * rand(80, 240),
-      vy: Math.sin((Math.PI * 2 * i) / amount + rand(-0.2, 0.2)) * rand(80, 240),
-      life: rand(0.4, 0.85),
-      maxLife: 0,
-      color,
-      size: rand(1.5, 3.6),
-    });
-    game.particles[game.particles.length - 1].maxLife = game.particles[game.particles.length - 1].life;
-  }
+function spawnBullet(owner, color) {
+  const b = new THREE.Mesh(new THREE.SphereGeometry(1.8, 10, 8), new THREE.MeshBasicMaterial({ color }));
+  const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+  b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
+  b.userData = {
+    vel: dir.multiplyScalar(760).add(owner.velocity.clone().multiplyScalar(0.35)),
+    life: 2,
+    team: owner === game.player ? "player" : "bot",
+  };
+  world.add(b);
+  game.bullets.push(b);
 }
 
-function spawnClouds() {
-  game.clouds.length = 0;
-  for (let i = 0; i < 42; i++) {
-    game.clouds.push({
-      x: rand(-WORLD_RADIUS, WORLD_RADIUS),
-      y: rand(-WORLD_RADIUS, WORLD_RADIUS),
-      r: rand(40, 160),
-      alpha: rand(0.04, 0.13),
-    });
-  }
-}
-
-function spawnMatch() {
-  game.score = 0;
-  game.over = false;
-  messageEl.hidden = true;
-  game.bullets.length = 0;
-  game.particles.length = 0;
-  game.player = createPlane("player", 0, 0, "#7ef1ff");
-  game.player.speed = 280;
-
-  const count = Number(botCountEl.value);
-  game.bots = Array.from({ length: count }, (_, i) => {
-    const p = createPlane("bot", rand(-1100, 1100), rand(-1100, 1100), ["#ff5f66", "#ffc15b", "#c87fff"][i]);
-    p.angle = angleTo(p, game.player);
-    return p;
-  });
-
-  spawnClouds();
-  updateHud();
-}
-
-function fireBullet(shooter, power = 1) {
-  if (!shooter.alive) return;
-  const muzzle = shooter.size + 8;
-  game.bullets.push({
-    x: shooter.x + Math.cos(shooter.angle) * muzzle,
-    y: shooter.y + Math.sin(shooter.angle) * muzzle,
-    vx: Math.cos(shooter.angle) * (680 + shooter.speed * 0.3),
-    vy: Math.sin(shooter.angle) * (680 + shooter.speed * 0.3),
-    life: 1.2,
-    damage: 17 * power,
-    team: shooter.type,
-  });
-}
-
-function damagePlane(plane, amount) {
-  plane.hp -= amount;
-  spawnExplosion(plane.x, plane.y, amount > 20 ? "#ffe47e" : "#8ce4ff", 10);
-  if (plane.hp <= 0 && plane.alive) {
-    plane.alive = false;
-    spawnExplosion(plane.x, plane.y, "#ff945b", 34);
-    if (plane.type === "bot") {
-      game.score += 100;
-    }
-  }
-}
-
-function steerTo(currentAngle, targetAngle, maxTurn) {
-  let delta = targetAngle - currentAngle;
-  while (delta > Math.PI) delta -= Math.PI * 2;
-  while (delta < -Math.PI) delta += Math.PI * 2;
-  return currentAngle + clamp(delta, -maxTurn, maxTurn);
+function wrapOrBounce(plane) {
+  const p = plane.mesh.position;
+  if (Math.abs(p.x) > ARENA) p.x = -Math.sign(p.x) * ARENA;
+  if (Math.abs(p.z) > ARENA) p.z = -Math.sign(p.z) * ARENA;
+  p.y = clamp(p.y, FLOOR_Y + 90, 900);
 }
 
 function updatePlayer(dt) {
   const p = game.player;
   if (!p.alive || game.over) return;
 
-  const turnInput = (keys.has("ArrowLeft") || keys.has("KeyA") ? -1 : 0) + (keys.has("ArrowRight") || keys.has("KeyD") ? 1 : 0);
-  p.angle += turnInput * dt * 2.4;
+  p.cooldown -= dt;
+  p.boost = input.boost ? 1 : 0;
 
-  const throttleInput = (keys.has("ArrowUp") || keys.has("KeyW") ? 1 : 0) + (keys.has("ArrowDown") || keys.has("KeyS") ? -1 : 0);
-  p.throttle = clamp(p.throttle + throttleInput * dt * 0.85, 0.35, 1.1);
+  p.speed = clamp(p.speed + input.throttle * dt * 190, 140, 520);
+  const yaw = input.yaw * p.turnRate * dt;
+  const pitch = input.pitch * p.pitchRate * dt;
 
-  p.speed = 170 + p.throttle * 240;
-  p.vx = Math.cos(p.angle) * p.speed;
-  p.vy = Math.sin(p.angle) * p.speed;
-  p.x += p.vx * dt;
-  p.y += p.vy * dt;
-  wrapWorld(p);
+  p.mesh.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -yaw);
+  p.mesh.rotateX(-pitch);
 
-  p.fireCd -= dt;
-  if ((keys.has("Space") || pointers.down) && p.fireCd <= 0) {
-    fireBullet(p, 1);
-    p.fireCd = 0.12;
+  const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
+  const targetSpeed = p.speed + p.boost * 220;
+  const desiredVel = forward.multiplyScalar(targetSpeed);
+  p.velocity.lerp(desiredVel, 0.08);
+  p.mesh.position.addScaledVector(p.velocity, dt);
+
+  if (p.mesh.position.y < FLOOR_Y + 95) {
+    p.mesh.position.y = FLOOR_Y + 95;
+    p.velocity.y = Math.abs(p.velocity.y) * 0.35;
+  }
+
+  wrapOrBounce(p);
+
+  if (input.fire && p.cooldown <= 0) {
+    spawnBullet(p, 0x90ecff);
+    p.cooldown = 0.09;
   }
 }
 
 function updateBots(dt) {
   const player = game.player;
-  for (const bot of game.bots) {
-    if (!bot.alive) continue;
-
-    bot.target = player.alive ? player : game.bots.find((b) => b !== bot && b.alive);
-    if (!bot.target) continue;
-
-    const targetAng = angleTo(bot, bot.target);
-    const d = Math.sqrt(dist2(bot, bot.target));
-
-    bot.evadeTimer -= dt;
-    let desired = targetAng;
-    if (d < 240 || bot.evadeTimer < 0) {
-      bot.evadeTimer = rand(0.4, 1.2);
-      desired += rand(-0.8, 0.8);
+  for (const b of game.bots) {
+    if (!b.alive) continue;
+    if (!player.alive) {
+      b.target = game.bots.find((x) => x !== b && x.alive) || null;
+    } else {
+      b.target = player;
     }
-    bot.angle = steerTo(bot.angle, desired, dt * (1.9 + (1 / clamp(d / 480, 1, 4))));
-    bot.throttle = clamp(0.6 + (d > 520 ? 0.35 : 0.08), 0.55, 1.05);
-    bot.speed = 150 + bot.throttle * 220;
+    if (!b.target) continue;
 
-    bot.vx = Math.cos(bot.angle) * bot.speed;
-    bot.vy = Math.sin(bot.angle) * bot.speed;
-    bot.x += bot.vx * dt;
-    bot.y += bot.vy * dt;
-    wrapWorld(bot);
+    b.cooldown -= dt;
+    const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
+    const distance = toTarget.length();
+    const desired = toTarget.normalize();
+    const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
 
-    bot.fireCd -= dt;
-    const frontDot = Math.cos(targetAng - bot.angle);
-    if (bot.fireCd <= 0 && d < 620 && frontDot > 0.9) {
-      fireBullet(bot, 0.8 + Math.random() * 0.45);
-      bot.fireCd = rand(0.24, 0.45);
+    const yawErr = forward.clone().cross(desired).y;
+    const pitchErr = clamp(desired.y - forward.y, -1, 1);
+
+    b.mesh.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -yawErr * b.turnRate * dt);
+    b.mesh.rotateX(-pitchErr * b.pitchRate * dt);
+
+    const speedTarget = clamp(180 + (distance > 500 ? 130 : 40), 170, 380);
+    b.speed = THREE.MathUtils.lerp(b.speed, speedTarget, 0.04);
+    const newForward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
+    const desiredVel = newForward.multiplyScalar(b.speed);
+    b.velocity.lerp(desiredVel, 0.07);
+    b.mesh.position.addScaledVector(b.velocity, dt);
+
+    if (b.mesh.position.y < FLOOR_Y + 100) b.mesh.position.y += 120 * dt;
+    wrapOrBounce(b);
+
+    const aimDot = newForward.dot(toTarget.normalize());
+    if (distance < 720 && aimDot > 0.94 && b.cooldown <= 0) {
+      spawnBullet(b, 0xffae72);
+      b.cooldown = rand(0.15, 0.3);
     }
+  }
+}
+
+function hitPlane(plane, dmg) {
+  if (!plane.alive) return;
+  plane.hp -= dmg;
+  if (plane.hp <= 0) {
+    plane.alive = false;
+    plane.mesh.visible = false;
+    if (plane !== game.player) game.score += 100;
   }
 }
 
 function updateBullets(dt) {
   for (let i = game.bullets.length - 1; i >= 0; i--) {
     const b = game.bullets[i];
-    b.x += b.vx * dt;
-    b.y += b.vy * dt;
-    b.life -= dt;
-    if (Math.abs(b.x) > WORLD_RADIUS + 200 || Math.abs(b.y) > WORLD_RADIUS + 200 || b.life <= 0) {
-      game.bullets.splice(i, 1);
-      continue;
-    }
+    b.position.addScaledVector(b.userData.vel, dt);
+    b.userData.life -= dt;
 
-    const targets = b.team === "player" ? game.bots : [game.player];
+    const targets = b.userData.team === "player" ? game.bots : [game.player];
     for (const t of targets) {
-      if (!t.alive) continue;
-      if (dist2(b, t) < (t.size + 5) ** 2) {
-        damagePlane(t, b.damage);
-        game.bullets.splice(i, 1);
+      if (!t || !t.alive) continue;
+      if (b.position.distanceToSquared(t.mesh.position) < 19 * 19) {
+        hitPlane(t, rand(18, 30));
+        b.userData.life = -1;
         break;
       }
     }
+
+    if (b.userData.life <= 0 || Math.abs(b.position.x) > ARENA * 1.3 || Math.abs(b.position.z) > ARENA * 1.3 || b.position.y < FLOOR_Y - 20 || b.position.y > 1300) {
+      world.remove(b);
+      game.bullets.splice(i, 1);
+    }
   }
 }
 
-function updateParticles(dt) {
-  for (let i = game.particles.length - 1; i >= 0; i--) {
-    const p = game.particles[i];
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.vx *= 0.97;
-    p.vy *= 0.97;
-    p.life -= dt;
-    if (p.life <= 0) game.particles.splice(i, 1);
-  }
+function updateCamera(dt) {
+  const p = game.player;
+  if (!p) return;
+  const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(p.mesh.quaternion).normalize();
+
+  const camPos = p.mesh.position.clone().addScaledVector(forward, -80).addScaledVector(up, 30);
+  camera.position.lerp(camPos, 1 - Math.exp(-dt * 8));
+  const lookAt = p.mesh.position.clone().addScaledVector(forward, 200);
+  camera.lookAt(lookAt);
 }
 
 function updateState() {
-  const enemies = game.bots.filter((b) => b.alive).length;
+  const aliveEnemies = game.bots.filter((b) => b.alive).length;
+  healthEl.textContent = `HP ${Math.max(0, Math.round(game.player.hp))}`;
+  enemiesEl.textContent = `ENEMY ${aliveEnemies}`;
+  scoreEl.textContent = `SCORE ${game.score}`;
+
   if (!game.player.alive && !game.over) {
     game.over = true;
     messageEl.hidden = false;
     messageEl.textContent = "MISSION FAILED";
-  } else if (enemies === 0 && !game.over) {
+  }
+  if (aliveEnemies === 0 && !game.over) {
     game.over = true;
+    game.score += 500;
+    scoreEl.textContent = `SCORE ${game.score}`;
     messageEl.hidden = false;
     messageEl.textContent = "MISSION COMPLETE";
-    game.score += 600;
   }
 }
 
-function worldToScreen(obj) {
-  const cameraX = game.player.x;
-  const cameraY = game.player.y;
-  return {
-    x: (obj.x - cameraX) + w * 0.5,
-    y: (obj.y - cameraY) + h * 0.5,
-  };
+function resetMatch() {
+  for (const b of game.bullets) world.remove(b);
+  game.bullets = [];
+  if (game.player) world.remove(game.player.mesh);
+  for (const b of game.bots) world.remove(b.mesh);
+
+  game.score = 0;
+  game.over = false;
+  messageEl.hidden = true;
+
+  game.player = createJet(0x42d4ff, true);
+  game.player.mesh.position.set(0, 320, 0);
+  game.player.mesh.rotation.set(0, -Math.PI * 0.2, 0);
+
+  const colors = [0xff625f, 0xffc261, 0xc992ff];
+  const count = Number(botCountEl.value);
+  game.bots = Array.from({ length: count }, (_, i) => {
+    const bot = createJet(colors[i]);
+    bot.mesh.position.set(rand(-1100, 1100), rand(220, 540), rand(-1100, 1100));
+    bot.mesh.lookAt(game.player.mesh.position);
+    return bot;
+  });
 }
 
-function drawSky() {
-  const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, "#73caff");
-  grad.addColorStop(0.52, "#2c73c9");
-  grad.addColorStop(1, "#03142b");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-
-  for (const cloud of game.clouds) {
-    const s = worldToScreen(cloud);
-    const r = cloud.r;
-    if (s.x < -r || s.x > w + r || s.y < -r || s.y > h + r) continue;
-    const c = ctx.createRadialGradient(s.x, s.y, r * 0.1, s.x, s.y, r);
-    c.addColorStop(0, `rgba(255,255,255,${cloud.alpha})`);
-    c.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = c;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
+function syncInput() {
+  input.yaw = (keys.has("KeyA") ? -1 : 0) + (keys.has("KeyD") ? 1 : 0);
+  input.pitch = (keys.has("KeyW") ? 1 : 0) + (keys.has("KeyS") ? -1 : 0);
+  input.throttle = (keys.has("ArrowDown") ? -1 : 0) + (keys.has("ArrowUp") ? 1 : 0);
+  input.boost = keys.has("ShiftLeft") || keys.has("ShiftRight");
+  input.fire = keys.has("Space");
 }
 
-function drawJet(plane) {
-  const s = worldToScreen(plane);
-  if (s.x < -80 || s.x > w + 80 || s.y < -80 || s.y > h + 80) return;
-
-  ctx.save();
-  ctx.translate(s.x, s.y);
-  ctx.rotate(plane.angle);
-
-  ctx.shadowColor = plane.type === "player" ? "rgba(80,255,255,0.7)" : "rgba(255,140,120,0.65)";
-  ctx.shadowBlur = 13;
-  ctx.fillStyle = plane.color;
-  ctx.beginPath();
-  ctx.moveTo(plane.size + 7, 0);
-  ctx.lineTo(-plane.size * 0.75, -plane.size * 0.55);
-  ctx.lineTo(-plane.size * 0.35, 0);
-  ctx.lineTo(-plane.size * 0.75, plane.size * 0.55);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
-  ctx.fillRect(-plane.size * 0.34, -2, plane.size * 0.9, 4);
-  ctx.fillStyle = "rgba(255,255,255,0.6)";
-  ctx.fillRect(-plane.size * 0.8, -1, plane.size * 0.35, 2);
-
-  const flame = clamp((plane.speed - 140) / 340, 0, 1);
-  const flameLen = 8 + flame * 16;
-  const fx = -plane.size * 0.8;
-  const g = ctx.createLinearGradient(fx, 0, fx - flameLen, 0);
-  g.addColorStop(0, "rgba(255, 220, 130, 0.75)");
-  g.addColorStop(1, "rgba(85, 210, 255, 0)");
-  ctx.fillStyle = g;
-  ctx.fillRect(fx - flameLen, -2.8, flameLen, 5.6);
-
-  ctx.restore();
-
-  if (plane.type !== "player") {
-    const barW = 28;
-    const hpRatio = clamp(plane.hp / 100, 0, 1);
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.fillRect(s.x - barW * 0.5, s.y - 26, barW, 4);
-    ctx.fillStyle = hpRatio > 0.45 ? "#66f7a0" : "#ff796d";
-    ctx.fillRect(s.x - barW * 0.5, s.y - 26, barW * hpRatio, 4);
-  }
+function setupTouchButtons() {
+  document.querySelectorAll("#controls button").forEach((btn) => {
+    const key = btn.dataset.key;
+    const on = (e) => {
+      e.preventDefault();
+      keys.add(key);
+      btn.classList.add("active");
+      syncInput();
+    };
+    const off = (e) => {
+      e.preventDefault();
+      keys.delete(key);
+      btn.classList.remove("active");
+      syncInput();
+    };
+    btn.addEventListener("pointerdown", on);
+    btn.addEventListener("pointerup", off);
+    btn.addEventListener("pointercancel", off);
+    btn.addEventListener("pointerleave", off);
+  });
 }
 
-function drawBullets() {
-  for (const b of game.bullets) {
-    const s = worldToScreen(b);
-    if (s.x < -20 || s.x > w + 20 || s.y < -20 || s.y > h + 20) continue;
-    ctx.fillStyle = b.team === "player" ? "#95f7ff" : "#ffb173";
-    ctx.shadowColor = ctx.fillStyle;
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, 2.6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  }
-}
+buildSky();
+setupTouchButtons();
 
-function drawParticles() {
-  for (const p of game.particles) {
-    const s = worldToScreen(p);
-    if (s.x < -40 || s.x > w + 40 || s.y < -40 || s.y > h + 40) continue;
-    const a = p.life / p.maxLife;
-    ctx.globalAlpha = a;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, p.size * (0.4 + a), 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-}
+window.addEventListener("keydown", (e) => {
+  keys.add(e.code);
+  if (["ArrowUp", "ArrowDown", "Space"].includes(e.code)) e.preventDefault();
+  syncInput();
+});
+window.addEventListener("keyup", (e) => {
+  keys.delete(e.code);
+  syncInput();
+});
 
-function drawReticle() {
-  const x = w * 0.5;
-  const y = h * 0.5;
-  ctx.strokeStyle = "rgba(180,236,255,0.76)";
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.arc(x, y, 24, 0, Math.PI * 2);
-  ctx.moveTo(x - 32, y);
-  ctx.lineTo(x - 12, y);
-  ctx.moveTo(x + 12, y);
-  ctx.lineTo(x + 32, y);
-  ctx.moveTo(x, y - 32);
-  ctx.lineTo(x, y - 12);
-  ctx.moveTo(x, y + 12);
-  ctx.lineTo(x, y + 32);
-  ctx.stroke();
-}
+restartBtn.addEventListener("click", resetMatch);
+botCountEl.addEventListener("change", resetMatch);
 
-function updateRadar() {
-  radarEl.querySelectorAll(".dot").forEach((n) => n.remove());
-  const entities = [game.player, ...game.bots.filter((b) => b.alive)];
-  for (const e of entities) {
-    const dx = clamp((e.x - game.player.x) / 700, -1, 1);
-    const dy = clamp((e.y - game.player.y) / 700, -1, 1);
-    const dot = document.createElement("div");
-    dot.className = `dot ${e === game.player ? "player" : "enemy"}`;
-    dot.style.left = `${(dx * 0.45 + 0.5) * 100}%`;
-    dot.style.top = `${(dy * 0.45 + 0.5) * 100}%`;
-    radarEl.appendChild(dot);
-  }
-}
-
-function updateHud() {
-  const enemies = game.bots.filter((b) => b.alive).length;
-  healthEl.textContent = `HP ${Math.max(0, Math.round(game.player.hp))}`;
-  enemiesEl.textContent = `ENEMY ${enemies}`;
-  scoreEl.textContent = `SCORE ${game.score}`;
-}
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 let last = performance.now();
 function tick(now) {
-  const dt = Math.min(0.033, (now - last) / 1000);
+  const dt = Math.min((now - last) / 1000, 0.033);
   last = now;
 
   updatePlayer(dt);
   updateBots(dt);
   updateBullets(dt);
-  updateParticles(dt);
+  updateCamera(dt);
   updateState();
 
-  drawSky();
-  drawBullets();
-  for (const bot of game.bots) if (bot.alive) drawJet(bot);
-  if (game.player.alive) drawJet(game.player);
-  drawParticles();
-  drawReticle();
-
-  updateHud();
-  updateRadar();
+  renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 
-addEventListener("resize", resize);
-addEventListener("keydown", (e) => {
-  keys.add(e.code);
-  if (e.code === "Space") e.preventDefault();
-});
-addEventListener("keyup", (e) => keys.delete(e.code));
-
-canvas.addEventListener("pointerdown", () => {
-  pointers.down = true;
-});
-canvas.addEventListener("pointerup", () => {
-  pointers.down = false;
-});
-canvas.addEventListener("pointermove", (e) => {
-  pointers.x = e.clientX;
-  pointers.y = e.clientY;
-});
-
-restartBtn.addEventListener("click", spawnMatch);
-botCountEl.addEventListener("change", spawnMatch);
-
-resize();
-spawnMatch();
+resetMatch();
 requestAnimationFrame(tick);
