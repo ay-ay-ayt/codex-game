@@ -1,0 +1,102 @@
+:root {
+  --ui-bg: rgba(18, 22, 30, 0.64);
+  --ui-border: rgba(255, 255, 255, 0.2);
+  --ui-text: #f7f7ff;
+  --accent: #7dd9ff;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  touch-action: none;
+  background: #7cc9ff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--ui-text);
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#hud {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 10px);
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+
+#hud > * {
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+#soundToggle {
+  pointer-events: auto;
+  color: var(--ui-text);
+}
+
+#goalBanner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(40px, 12vw, 72px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+#controls {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.control {
+  height: min(18vh, 88px);
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.control:active,
+.control.active {
+  transform: scale(0.98);
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(31, 38, 50, 0.8);
+}
+
+.drift {
+  font-size: 20px;
+  color: var(--accent);
+}
