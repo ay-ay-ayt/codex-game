@@ -418,17 +418,21 @@ let wasDrifting = false;
 function updatePlayer(dt) {
   if (race.finished) return;
 
-  const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  const steer = (input.left ? 1 : 0) - (input.right ? 1 : 0);
   const drifting = input.drift && steer !== 0;
   const maxSpeed = drifting ? 40 : 46;
 
   player.speed += (maxSpeed - player.speed) * dt * 1.2;
   player.speed = Math.max(8, Math.min(player.speed, 55));
 
-  const steerPower = drifting ? 1.7 : 1.1;
+  const steerPower = drifting ? 1.25 : 0.75;
   const speedFactor = THREE.MathUtils.clamp(player.speed / 40, 0.5, 1.2);
   player.yawVel += steer * steerPower * speedFactor * dt;
-  player.yawVel *= drifting ? 0.88 : 0.82;
+  player.yawVel *= drifting ? 0.84 : 0.74;
+
+  if (steer === 0) {
+    player.yawVel *= 0.7;
+  }
 
   player.heading += player.yawVel;
 
