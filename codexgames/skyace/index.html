@@ -3,7 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <title>Sky Ace Duel 3D</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -24,26 +28,29 @@
     <button id="restartBtn" type="button">RESTART</button>
   </div>
 
-  <div id="crosshair"></div>
+  <div id="crosshair" aria-hidden="true"></div>
   <div id="message" hidden></div>
 
-  <div id="controls">
-    <div class="pad left">
-      <button data-key="KeyA">◀</button>
-      <button data-key="KeyD">▶</button>
-      <button data-key="KeyW">▲</button>
-      <button data-key="KeyS">▼</button>
+  <div id="mobileControls" aria-label="mobile controls">
+    <div class="stick-wrap" id="leftStickWrap">
+      <div class="stick-label">ROLL / PITCH</div>
+      <div class="stick" id="leftStick"><div class="knob"></div></div>
     </div>
-    <div class="pad right">
-      <button data-key="ArrowUp">THR+</button>
-      <button data-key="ArrowDown">THR-</button>
-      <button data-key="ShiftLeft">BOOST</button>
-      <button data-key="Space">FIRE</button>
+
+    <div class="action-wrap">
+      <button id="fireBtn" class="action">FIRE</button>
+      <button id="boostBtn" class="action">BOOST</button>
+    </div>
+
+    <div class="stick-wrap" id="rightStickWrap">
+      <div class="stick-label">YAW / THROTTLE</div>
+      <div class="stick" id="rightStick"><div class="knob"></div></div>
     </div>
   </div>
 
-  <div id="guide">
-    A/D: YAW ・ W/S: PITCH ・ ↑/↓: THROTTLE ・ SHIFT: BOOST ・ SPACE: FIRE
+  <div id="rotateHint" hidden>
+    端末を横向きにしてプレイしてください
+    <small>ブラウザUIが狭い場合は「ホーム画面に追加」で全画面化できます。</small>
   </div>
 
   <script type="module" src="./main.js"></script>
