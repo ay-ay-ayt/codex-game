@@ -18,7 +18,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x78b6ff, 600, 3600);
+scene.fog = new THREE.Fog(0x6ea2df, 900, 7200);
 
 const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
@@ -31,7 +31,7 @@ scene.add(sun);
 const world = new THREE.Group();
 scene.add(world);
 
-const ARENA = 1800;
+const ARENA = 3600;
 const FLOOR_Y = 40;
 const keys = new Set();
 
@@ -76,37 +76,82 @@ function fitViewport() {
 
 function buildWorld() {
   const sky = new THREE.Mesh(
-    new THREE.SphereGeometry(6000, 32, 24),
-    new THREE.MeshBasicMaterial({ color: 0x80c4ff, side: THREE.BackSide })
+    new THREE.SphereGeometry(9000, 36, 26),
+    new THREE.MeshBasicMaterial({ color: 0x75a8e0, side: THREE.BackSide })
   );
   world.add(sky);
 
-  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.56 });
-  for (let i = 0; i < 100; i++) {
-    const c = new THREE.Mesh(new THREE.SphereGeometry(rand(26, 88), 14, 12), cloudMat);
-    c.scale.set(rand(1.2, 3), rand(0.45, 0.9), rand(1.2, 3));
-    c.position.set(rand(-ARENA, ARENA), rand(120, 620), rand(-ARENA, ARENA));
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+  for (let i = 0; i < 140; i++) {
+    const c = new THREE.Mesh(new THREE.SphereGeometry(rand(34, 110), 14, 12), cloudMat);
+    c.scale.set(rand(1.2, 3.2), rand(0.4, 0.92), rand(1.2, 3.2));
+    c.position.set(rand(-ARENA * 1.1, ARENA * 1.1), rand(180, 900), rand(-ARENA * 1.1, ARENA * 1.1));
     world.add(c);
   }
 
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(ARENA * 3, ARENA * 3),
-    new THREE.MeshStandardMaterial({ color: 0x3f7a48, roughness: 0.98 })
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
+    new THREE.MeshStandardMaterial({ color: 0x42464d, roughness: 0.98, metalness: 0.05 })
   );
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = FLOOR_Y;
-  floor.receiveShadow = true;
-  world.add(floor);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = FLOOR_Y;
+  ground.receiveShadow = true;
+  world.add(ground);
 
-  const mountainMat = new THREE.MeshStandardMaterial({ color: 0x6d7c73, roughness: 1 });
-  for (let i = 0; i < 44; i++) {
-    const m = new THREE.Mesh(new THREE.ConeGeometry(rand(40, 120), rand(100, 330), 6), mountainMat);
-    m.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(50, 110), rand(-ARENA * 1.2, ARENA * 1.2));
-    m.castShadow = true;
-    m.receiveShadow = true;
-    world.add(m);
+  const roadMat = new THREE.MeshStandardMaterial({ color: 0x2d3137, roughness: 0.96 });
+  const laneMat = new THREE.MeshStandardMaterial({ color: 0xa8aeb6, roughness: 0.85 });
+  for (let i = -8; i <= 8; i++) {
+    const roadX = new THREE.Mesh(new THREE.BoxGeometry(ARENA * 2.7, 0.2, 42), roadMat);
+    roadX.position.set(0, FLOOR_Y + 0.1, i * 430);
+    roadX.receiveShadow = true;
+    world.add(roadX);
+
+    const roadZ = new THREE.Mesh(new THREE.BoxGeometry(42, 0.2, ARENA * 2.7), roadMat);
+    roadZ.position.set(i * 430, FLOOR_Y + 0.1, 0);
+    roadZ.receiveShadow = true;
+    world.add(roadZ);
+
+    const laneX = new THREE.Mesh(new THREE.BoxGeometry(ARENA * 2.7, 0.22, 4), laneMat);
+    laneX.position.set(0, FLOOR_Y + 0.14, i * 430);
+    world.add(laneX);
+
+    const laneZ = new THREE.Mesh(new THREE.BoxGeometry(4, 0.22, ARENA * 2.7), laneMat);
+    laneZ.position.set(i * 430, FLOOR_Y + 0.14, 0);
+    world.add(laneZ);
+  }
+
+  const buildingPalette = [0x7f8b98, 0x8e97a5, 0x646f7d, 0x5a6370, 0x9ba4b4];
+  for (let i = 0; i < 420; i++) {
+    const px = rand(-ARENA * 1.15, ARENA * 1.15);
+    const pz = rand(-ARENA * 1.15, ARENA * 1.15);
+    if (Math.abs(px) < 260 && Math.abs(pz) < 260) continue;
+
+    const w = rand(45, 135);
+    const d = rand(45, 135);
+    const h = rand(90, 520);
+    const baseColor = buildingPalette[(Math.random() * buildingPalette.length) | 0];
+
+    const tower = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.78, metalness: 0.1 })
+    );
+    tower.position.set(px, FLOOR_Y + h / 2, pz);
+    tower.castShadow = true;
+    tower.receiveShadow = true;
+    world.add(tower);
+
+    if (Math.random() > 0.55) {
+      const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(w * 0.7, rand(12, 28), d * 0.7),
+        new THREE.MeshStandardMaterial({ color: 0xcad2dd, roughness: 0.65 })
+      );
+      roof.position.set(px, FLOOR_Y + h + roof.geometry.parameters.height / 2, pz);
+      roof.castShadow = true;
+      world.add(roof);
+    }
   }
 }
+
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
@@ -516,8 +561,6 @@ restartBtn.addEventListener("click", resetMatch);
 botCountEl.addEventListener("change", resetMatch);
 
 window.addEventListener("contextmenu", (e) => e.preventDefault());
-window.addEventListener("touchstart", (e) => e.preventDefault(), { passive: false });
-window.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
 
 window.addEventListener("resize", () => {
   fitViewport();
