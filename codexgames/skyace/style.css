@@ -225,6 +225,10 @@ body {
   font-weight: 600;
 }
 
+#rotateHint[hidden] {
+  display: none;
+}
+
 @media (max-width: 900px) {
   #hud {
     grid-template-columns: repeat(2, max-content);
