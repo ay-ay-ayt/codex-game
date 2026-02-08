@@ -5,6 +5,7 @@ const healthEl = document.getElementById("health");
 const enemiesEl = document.getElementById("enemies");
 const scoreEl = document.getElementById("score");
 const botCountEl = document.getElementById("botCount");
+const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
@@ -74,19 +75,72 @@ function fitViewport() {
   renderer.setSize(width, height, false);
 }
 
-function buildWorld() {
+function buildWorld(mapType) {
+  world.clear();
+
+  const isForest = mapType === "forest";
+  scene.fog = isForest ? new THREE.Fog(0x86b78d, 650, 5200) : new THREE.Fog(0x6ea2df, 900, 7200);
+
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(9000, 36, 26),
-    new THREE.MeshBasicMaterial({ color: 0x75a8e0, side: THREE.BackSide })
+    new THREE.MeshBasicMaterial({ color: isForest ? 0x88c6a0 : 0x75a8e0, side: THREE.BackSide })
   );
   world.add(sky);
 
-  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: isForest ? 0.42 : 0.5 });
   for (let i = 0; i < 140; i++) {
     const c = new THREE.Mesh(new THREE.SphereGeometry(rand(34, 110), 14, 12), cloudMat);
     c.scale.set(rand(1.2, 3.2), rand(0.4, 0.92), rand(1.2, 3.2));
     c.position.set(rand(-ARENA * 1.1, ARENA * 1.1), rand(180, 900), rand(-ARENA * 1.1, ARENA * 1.1));
     world.add(c);
+  }
+
+  if (isForest) {
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
+      new THREE.MeshStandardMaterial({ color: 0x49643f, roughness: 0.98, metalness: 0.02 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = FLOOR_Y;
+    ground.receiveShadow = true;
+    world.add(ground);
+
+    const hillMat = new THREE.MeshStandardMaterial({ color: 0x5d7f57, roughness: 0.95 });
+    for (let i = 0; i < 75; i++) {
+      const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(80, 240), 16, 12), hillMat);
+      hill.scale.y = rand(0.22, 0.48);
+      hill.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(8, 24), rand(-ARENA * 1.2, ARENA * 1.2));
+      hill.receiveShadow = true;
+      world.add(hill);
+    }
+
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
+    const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
+    for (let i = 0; i < 1100; i++) {
+      const px = rand(-ARENA * 1.2, ARENA * 1.2);
+      const pz = rand(-ARENA * 1.2, ARENA * 1.2);
+      if (Math.abs(px) < 180 && Math.abs(pz) < 180) continue;
+
+      const h = rand(22, 44);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 3.8, h, 8), trunkMat);
+      trunk.position.set(px, FLOOR_Y + h / 2, pz);
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      world.add(trunk);
+
+      const crown = new THREE.Mesh(
+        new THREE.ConeGeometry(rand(10, 22), rand(20, 36), 8),
+        new THREE.MeshStandardMaterial({
+          color: leafPalette[(Math.random() * leafPalette.length) | 0],
+          roughness: 0.95,
+        })
+      );
+      crown.position.set(px, FLOOR_Y + h + crown.geometry.parameters.height * 0.45, pz);
+      crown.castShadow = true;
+      crown.receiveShadow = true;
+      world.add(crown);
+    }
+    return;
   }
 
   const ground = new THREE.Mesh(
@@ -151,7 +205,6 @@ function buildWorld() {
     }
   }
 }
-
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
@@ -537,7 +590,7 @@ function updateOrientationHint() {
   rotateHint.hidden = window.innerWidth >= window.innerHeight;
 }
 
-buildWorld();
+buildWorld(mapTypeEl.value);
 setupJoystick("leftStick", (x, y) => {
   stickInput.roll = x;
   stickInput.pitch = -y;
@@ -557,8 +610,20 @@ window.addEventListener("keyup", (e) => {
   keys.delete(e.code);
 });
 
-restartBtn.addEventListener("click", resetMatch);
+const restartFromHud = (e) => {
+  e?.preventDefault?.();
+  resetMatch();
+};
+
+restartBtn.addEventListener("click", restartFromHud);
+restartBtn.addEventListener("pointerup", restartFromHud);
+
 botCountEl.addEventListener("change", resetMatch);
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
 
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 
