@@ -125,6 +125,7 @@ body {
   display: grid;
   place-items: center;
   z-index: 12;
+  pointer-events: none;
   font-size: clamp(28px, 7vw, 64px);
   font-weight: 900;
   background: rgba(0, 8, 16, 0.34);
