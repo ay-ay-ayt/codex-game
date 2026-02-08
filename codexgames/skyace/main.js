@@ -34,6 +34,9 @@ scene.add(world);
 
 const staticObstacles = [];
 const tmpBox = new THREE.Box3();
+const tmpVecA = new THREE.Vector3();
+const tmpVecB = new THREE.Vector3();
+const tmpVecC = new THREE.Vector3();
 
 const ARENA = 3600;
 const FLOOR_Y = 40;
@@ -82,6 +85,29 @@ function intersectsObstacle(position, radius = 0) {
     if (tmpBox.containsPoint(position)) return true;
   }
   return false;
+}
+
+function obstacleAvoidance(position, forward, lookAhead = 140) {
+  const probe = tmpVecA.copy(forward).multiplyScalar(lookAhead).add(position);
+  const avoid = tmpVecB.set(0, 0, 0);
+  let weight = 0;
+
+  for (const box of staticObstacles) {
+    const d = box.distanceToPoint(probe);
+    if (d > 120) continue;
+
+    box.getCenter(tmpVecC);
+    const away = tmpVecC.subVectors(probe, tmpVecC);
+    const lenSq = away.lengthSq();
+    if (lenSq < 1e-4) continue;
+
+    away.multiplyScalar(1 / Math.sqrt(lenSq));
+    avoid.addScaledVector(away, (120 - d) / 120);
+    weight += 1;
+  }
+
+  if (weight > 0) avoid.multiplyScalar(1 / weight);
+  return avoid;
 }
 
 function fitViewport() {
@@ -332,7 +358,7 @@ function createFighter(color, isPlayer = false) {
     speed: 220,
     target: null,
     isPlayer,
-    crashTimer: 0,
+    isColliding: false,
   };
 }
 
@@ -356,17 +382,20 @@ function keepInArena(plane) {
   p.y = clamp(p.y, FLOOR_Y + 90, 980);
 }
 
-function collidePlaneWithObstacles(plane, previousPosition, dt) {
-  plane.crashTimer = Math.max(0, plane.crashTimer - dt);
-  if (!intersectsObstacle(plane.mesh.position, 12)) return false;
+function collidePlaneWithObstacles(plane, previousPosition) {
+  const isInside = intersectsObstacle(plane.mesh.position, 12);
+  if (!isInside) {
+    plane.isColliding = false;
+    return false;
+  }
 
   plane.mesh.position.copy(previousPosition);
   plane.velocity.multiplyScalar(0.45);
   plane.speed = Math.max(150, plane.speed * 0.82);
 
-  if (plane.crashTimer <= 0) {
+  if (!plane.isColliding) {
     hitPlane(plane, plane.isPlayer ? 8 : 18);
-    plane.crashTimer = 0.35;
+    plane.isColliding = true;
   }
   return true;
 }
@@ -400,7 +429,7 @@ function updatePlayer(dt) {
   }
 
   keepInArena(p);
-  collidePlaneWithObstacles(p, prevPos, dt);
+  collidePlaneWithObstacles(p, prevPos);
 
   if (input.fire && p.cooldown <= 0) {
     spawnBullet(p, 0x95efff);
@@ -421,10 +450,13 @@ function updateBots(dt) {
     const dist = to.length();
     const desired = to.normalize();
     const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
+    const avoid = obstacleAvoidance(b.mesh.position, forward, 160);
 
-    const yawErr = forward.clone().cross(desired).y;
-    const pitchErr = clamp(desired.y - forward.y, -1, 1);
+    const steer = desired.clone().addScaledVector(avoid, 1.75).normalize();
+    const yawErr = forward.clone().cross(steer).y;
+    const pitchErr = clamp(steer.y - forward.y, -1, 1);
     const rollErr = clamp(-yawErr * 1.4, -1, 1);
+
 
     b.mesh.rotateY(-yawErr * dt * 1.08);
     b.mesh.rotateZ(pitchErr * dt * 0.86);
@@ -440,7 +472,7 @@ function updateBots(dt) {
 
     if (b.mesh.position.y < FLOOR_Y + 102) b.mesh.position.y += 130 * dt;
     keepInArena(b);
-    collidePlaneWithObstacles(b, prevPos, dt);
+    collidePlaneWithObstacles(b, prevPos);
 
     const aimDot = newForward.dot(to.normalize());
     if (dist < 780 && aimDot > 0.94 && b.cooldown <= 0) {
@@ -506,7 +538,7 @@ function updateState() {
   if (!game.player.alive && !game.over) {
     game.over = true;
     messageEl.hidden = false;
-    messageEl.textContent = "MISSION FAILED";
+    messageEl.textContent = "YOU LOSE";
   }
 
   if (game.initialBots > 0 && alive === 0 && game.player.alive && !game.over) {
@@ -560,7 +592,7 @@ function syncInput() {
   input.yaw = clamp(input.yaw + ((stickYaw || kYaw) - input.yaw) * 0.36, -1, 1);
   input.pitch = clamp(input.pitch + ((stickPitch || kPitch) - input.pitch) * 0.36, -1, 1);
 
-  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : -input.yaw * 0.72;
+  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : input.yaw * 0.72;
   input.roll = clamp(input.roll + (rollTarget - input.roll) * 0.34, -1, 1);
 
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
@@ -663,7 +695,7 @@ function updateOrientationHint() {
 buildWorld(mapTypeEl.value);
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
-  stickInput.pitch = y;
+  stickInput.pitch = -y;
 });
 bindActionButton(fireBtn);
 bindActionButton(boostBtn);
