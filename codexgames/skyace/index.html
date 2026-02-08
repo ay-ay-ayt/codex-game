@@ -18,6 +18,8 @@
     <div id="health">HP 100</div>
     <div id="enemies">ENEMY 0</div>
     <div id="score">SCORE 0</div>
+    <div id="ammo">AMMO 60</div>
+    <div id="boostStat">BOOST 100%</div>
     <label id="botWrap">AI
       <select id="botCount" aria-label="対戦AI数">
         <option value="1">1</option>
@@ -30,6 +32,9 @@
         <option value="city" selected>CITY</option>
         <option value="forest">FOREST</option>
       </select>
+    </label>
+    <label id="boostWrap">BOOST LV
+      <input id="boostLever" type="range" min="0" max="100" value="0" step="1" aria-label="ブーストレバー" />
     </label>
     <button id="restartBtn" type="button">RESTART</button>
   </div>

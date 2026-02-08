@@ -4,6 +4,8 @@ const canvas = document.getElementById("game");
 const healthEl = document.getElementById("health");
 const enemiesEl = document.getElementById("enemies");
 const scoreEl = document.getElementById("score");
+const ammoEl = document.getElementById("ammo");
+const boostStatEl = document.getElementById("boostStat");
 const botCountEl = document.getElementById("botCount");
 const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
@@ -11,6 +13,8 @@ const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
 const boostBtn = document.getElementById("boostBtn");
+const boostLeverEl = document.getElementById("boostLever");
+const crosshairEl = document.getElementById("crosshair");
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -69,6 +73,7 @@ const input = {
   yaw: 0,
   throttle: 0,
   boost: false,
+  boostLevel: 0,
   fire: false,
 };
 
@@ -79,6 +84,11 @@ const game = {
   score: 0,
   over: false,
   initialBots: 0,
+  ammo: 60,
+  boostFuel: 100,
+  effects: [],
+  playerHitTimer: 0,
+  hitConfirmTimer: 0,
 };
 
 function clamp(v, a, b) {
@@ -387,7 +397,10 @@ function createFighter(color, isPlayer = false) {
 }
 
 function spawnBullet(owner, color) {
-  const b = new THREE.Mesh(new THREE.SphereGeometry(1.8, 10, 8), new THREE.MeshBasicMaterial({ color }));
+  const b = new THREE.Mesh(
+    new THREE.SphereGeometry(2.5, 12, 10),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9, roughness: 0.2, metalness: 0.1 })
+  );
   const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
   b.userData = {
@@ -399,6 +412,34 @@ function spawnBullet(owner, color) {
   game.bullets.push(b);
 }
 
+function spawnImpactFx(position, color) {
+  const fx = new THREE.Mesh(
+    new THREE.SphereGeometry(2.2, 10, 8),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 })
+  );
+  fx.position.copy(position);
+  world.add(fx);
+  game.effects.push({ mesh: fx, life: 0.24, scaleRate: 13 });
+}
+
+function updateEffects(dt) {
+  game.playerHitTimer = Math.max(0, game.playerHitTimer - dt);
+  game.hitConfirmTimer = Math.max(0, game.hitConfirmTimer - dt);
+  healthEl.classList.toggle("flash", game.playerHitTimer > 0);
+  crosshairEl.classList.toggle("hit", game.hitConfirmTimer > 0);
+
+  for (let i = game.effects.length - 1; i >= 0; i--) {
+    const fx = game.effects[i];
+    fx.life -= dt;
+    fx.mesh.scale.multiplyScalar(1 + fx.scaleRate * dt);
+    fx.mesh.material.opacity = Math.max(0, fx.life / 0.24);
+    if (fx.life <= 0) {
+      world.remove(fx.mesh);
+      game.effects.splice(i, 1);
+    }
+  }
+}
+
 function keepInArena(plane) {
   const p = plane.mesh.position;
   if (Math.abs(p.x) > ARENA) p.x = -Math.sign(p.x) * ARENA;
@@ -407,20 +448,36 @@ function keepInArena(plane) {
 }
 
 function collidePlaneWithObstacles(plane, previousPosition) {
-  const isInside = intersectsObstacle(plane.mesh.position, 12);
-  if (!isInside) {
+  if (!intersectsObstacle(plane.mesh.position, 12)) {
     plane.isColliding = false;
     return false;
   }
 
   plane.mesh.position.copy(previousPosition);
-  plane.velocity.multiplyScalar(0.45);
-  plane.speed = Math.max(150, plane.speed * 0.82);
 
-  if (!plane.isColliding) {
-    hitPlane(plane, plane.isPlayer ? 8 : 18);
-    plane.isColliding = true;
+  let closestBox = null;
+  let closestDist = Infinity;
+  for (const box of staticObstacles) {
+    const d = box.distanceToPoint(plane.mesh.position);
+    if (d < closestDist) {
+      closestDist = d;
+      closestBox = box;
+    }
   }
+
+  if (closestBox) {
+    closestBox.getCenter(tmpVecC);
+    const away = tmpVecA.subVectors(plane.mesh.position, tmpVecC);
+    away.y = 0;
+    if (away.lengthSq() < 1e-4) away.set(Math.sign(Math.random() - 0.5), 0, Math.sign(Math.random() - 0.5));
+    away.normalize();
+    plane.mesh.position.addScaledVector(away, 22);
+    plane.velocity.addScaledVector(away, 180);
+  }
+
+  plane.velocity.multiplyScalar(0.68);
+  plane.speed = Math.max(160, plane.speed * 0.9);
+  plane.isColliding = true;
   return true;
 }
 
@@ -456,7 +513,14 @@ function updatePlayer(dt) {
   p.mesh.quaternion.copy(qVisual);
 
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(qMove).normalize();
-  const targetSpeed = p.speed + (input.boost ? 200 : 0);
+  const boostLevel = input.boostLevel > 0 ? Math.min(input.boostLevel, game.boostFuel / 20) : 0;
+  if (boostLevel > 0) {
+    game.boostFuel = Math.max(0, game.boostFuel - 22 * boostLevel * dt);
+  } else {
+    game.boostFuel = Math.min(100, game.boostFuel + 12 * dt);
+  }
+
+  const targetSpeed = p.speed + boostLevel * 220;
   const desiredVel = forward.multiplyScalar(targetSpeed);
   p.velocity.lerp(desiredVel, 0.08);
   const prevPos = p.mesh.position.clone();
@@ -470,9 +534,12 @@ function updatePlayer(dt) {
   keepInArena(p);
   collidePlaneWithObstacles(p, prevPos);
 
-  if (input.fire && p.cooldown <= 0) {
+  if (!input.fire) game.ammo = Math.min(60, game.ammo + 9 * dt);
+
+  if (input.fire && p.cooldown <= 0 && game.ammo >= 1) {
     spawnBullet(p, 0x95efff);
-    p.cooldown = 0.085;
+    game.ammo = Math.max(0, game.ammo - 1);
+    p.cooldown = 0.11;
   }
 }
 
@@ -521,9 +588,12 @@ function updateBots(dt) {
   }
 }
 
-function hitPlane(plane, dmg) {
+function hitPlane(plane, dmg, attackerTeam = null) {
   if (!plane.alive) return;
   plane.hp -= dmg;
+  spawnImpactFx(plane.mesh.position, plane.isPlayer ? 0xff7a6e : 0x9dffb3);
+  if (plane.isPlayer && attackerTeam === "bot") game.playerHitTimer = 0.18;
+  if (!plane.isPlayer && attackerTeam === "player") game.hitConfirmTimer = 0.16;
   if (plane.hp <= 0) {
     plane.alive = false;
     plane.mesh.visible = false;
@@ -538,6 +608,7 @@ function updateBullets(dt) {
     b.userData.life -= dt;
 
     if (intersectsObstacle(b.position, 2.5)) {
+      spawnImpactFx(b.position, 0xffee9a);
       b.userData.life = -1;
     }
 
@@ -545,7 +616,7 @@ function updateBullets(dt) {
     for (const t of targets) {
       if (!t || !t.alive) continue;
       if (b.position.distanceToSquared(t.mesh.position) < 18 * 18) {
-        hitPlane(t, rand(16, 28));
+        hitPlane(t, rand(16, 28), b.userData.team);
         b.userData.life = -1;
         break;
       }
@@ -573,6 +644,8 @@ function updateState() {
   healthEl.textContent = `HP ${Math.max(0, Math.round(game.player.hp))}`;
   enemiesEl.textContent = `ENEMY ${alive}`;
   scoreEl.textContent = `SCORE ${game.score}`;
+  ammoEl.textContent = `AMMO ${Math.round(game.ammo)}`;
+  boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
 
   if (!game.player.alive && !game.over) {
     game.over = true;
@@ -592,8 +665,16 @@ function resetMatch() {
   game.bullets = [];
   if (game.player) world.remove(game.player.mesh);
   for (const b of game.bots) world.remove(b.mesh);
+  for (const fx of game.effects) world.remove(fx.mesh);
+  game.effects = [];
 
   game.score = 0;
+  game.ammo = 60;
+  game.boostFuel = 100;
+  game.playerHitTimer = 0;
+  game.hitConfirmTimer = 0;
+  healthEl.classList.remove("flash");
+  crosshairEl.classList.remove("hit");
   game.over = false;
   game.initialBots = 0;
   messageEl.hidden = true;
@@ -630,8 +711,8 @@ function syncInput() {
   const stickPitch = Math.abs(stickInput.pitch) > 0.01 ? stickInput.pitch : 0;
   const usingStick = stickInput.active;
 
-  const rollTarget = usingStick ? stickRoll : kRoll;
-  const pitchTarget = usingStick ? -stickPitch : kPitch;
+  const rollTarget = usingStick ? -stickRoll : kRoll;
+  const pitchTarget = usingStick ? stickPitch : kPitch;
 
   input.roll = clamp(input.roll + (rollTarget - input.roll) * (usingStick ? 0.62 : 0.36), -1, 1);
   input.pitch = clamp(input.pitch + (pitchTarget - input.pitch) * (usingStick ? 0.56 : 0.34), -1, 1);
@@ -640,7 +721,10 @@ function syncInput() {
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
   input.throttle = clamp(input.throttle + (throttleTarget - input.throttle) * 0.24, -1, 1);
 
-  input.boost = keys.has("ShiftLeft") || keys.has("ShiftRight") || boostBtn.classList.contains("active");
+  const boostLever = clamp((Number(boostLeverEl.value) || 0) / 100, 0, 1);
+  input.boostLevel = clamp(Math.max(boostLever, boostBtn.classList.contains("active") ? 1 : 0), 0, 1);
+  input.boost = input.boostLevel > 0.01 || keys.has("ShiftLeft") || keys.has("ShiftRight");
+  if (keys.has("ShiftLeft") || keys.has("ShiftRight")) input.boostLevel = Math.max(input.boostLevel, 1);
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
 }
 
@@ -838,6 +922,7 @@ function tick(now) {
   updatePlayer(dt);
   updateBots(dt);
   updateBullets(dt);
+  updateEffects(dt);
   updateCamera(dt);
   updateState();
 
