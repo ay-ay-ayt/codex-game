@@ -5,6 +5,7 @@ const healthEl = document.getElementById("health");
 const enemiesEl = document.getElementById("enemies");
 const scoreEl = document.getElementById("score");
 const botCountEl = document.getElementById("botCount");
+const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
@@ -31,15 +32,16 @@ scene.add(sun);
 const world = new THREE.Group();
 scene.add(world);
 
+const staticObstacles = [];
+const tmpBox = new THREE.Box3();
+
 const ARENA = 3600;
 const FLOOR_Y = 40;
 const keys = new Set();
 
 const stickInput = {
-  roll: 0,
   pitch: 0,
   yaw: 0,
-  throttle: 0,
 };
 
 const input = {
@@ -57,6 +59,7 @@ const game = {
   bullets: [],
   score: 0,
   over: false,
+  initialBots: 0,
 };
 
 function clamp(v, a, b) {
@@ -64,6 +67,21 @@ function clamp(v, a, b) {
 }
 function rand(a, b) {
   return a + Math.random() * (b - a);
+}
+
+function addObstacle(mesh, padding = 0) {
+  mesh.updateWorldMatrix(true, false);
+  const box = new THREE.Box3().setFromObject(mesh);
+  if (padding > 0) box.expandByScalar(padding);
+  staticObstacles.push(box);
+}
+
+function intersectsObstacle(position, radius = 0) {
+  for (const box of staticObstacles) {
+    tmpBox.copy(box).expandByScalar(radius);
+    if (tmpBox.containsPoint(position)) return true;
+  }
+  return false;
 }
 
 function fitViewport() {
@@ -74,19 +92,83 @@ function fitViewport() {
   renderer.setSize(width, height, false);
 }
 
-function buildWorld() {
+function buildWorld(mapType) {
+  world.clear();
+  staticObstacles.length = 0;
+
+  const isForest = mapType === "forest";
+  scene.fog = isForest ? new THREE.Fog(0x86b78d, 650, 5200) : new THREE.Fog(0x6ea2df, 900, 7200);
+
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(9000, 36, 26),
-    new THREE.MeshBasicMaterial({ color: 0x75a8e0, side: THREE.BackSide })
+    new THREE.MeshBasicMaterial({ color: isForest ? 0x88c6a0 : 0x75a8e0, side: THREE.BackSide })
   );
   world.add(sky);
 
-  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: isForest ? 0.42 : 0.5 });
   for (let i = 0; i < 140; i++) {
     const c = new THREE.Mesh(new THREE.SphereGeometry(rand(34, 110), 14, 12), cloudMat);
     c.scale.set(rand(1.2, 3.2), rand(0.4, 0.92), rand(1.2, 3.2));
     c.position.set(rand(-ARENA * 1.1, ARENA * 1.1), rand(180, 900), rand(-ARENA * 1.1, ARENA * 1.1));
     world.add(c);
+  }
+
+  if (isForest) {
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
+      new THREE.MeshStandardMaterial({ color: 0x49643f, roughness: 0.98, metalness: 0.02 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = FLOOR_Y;
+    ground.receiveShadow = true;
+    world.add(ground);
+
+    const hillMat = new THREE.MeshStandardMaterial({ color: 0x5d7f57, roughness: 0.95 });
+    for (let i = 0; i < 95; i++) {
+      const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(90, 260), 16, 12), hillMat);
+      hill.scale.y = rand(0.24, 0.55);
+      hill.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(8, 32), rand(-ARENA * 1.2, ARENA * 1.2));
+      hill.receiveShadow = true;
+      world.add(hill);
+    }
+
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
+    const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
+    const forestCenters = Array.from({ length: 10 }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
+
+    const placeTree = (px, pz, dense = false) => {
+      if (Math.abs(px) < 160 && Math.abs(pz) < 160) return;
+      const h = dense ? rand(68, 172) : rand(45, 132);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(dense ? rand(2.8, 5.4) : rand(2.2, 4.2), dense ? rand(4.1, 6.6) : rand(3.1, 5.2), h, 8), trunkMat);
+      trunk.position.set(px, FLOOR_Y + h / 2, pz);
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      world.add(trunk);
+      addObstacle(trunk, 5);
+
+      const crown = new THREE.Mesh(
+        new THREE.ConeGeometry(dense ? rand(22, 40) : rand(14, 28), dense ? rand(44, 84) : rand(30, 58), 9),
+        new THREE.MeshStandardMaterial({ color: leafPalette[(Math.random() * leafPalette.length) | 0], roughness: 0.95 })
+      );
+      crown.position.set(px, FLOOR_Y + h + crown.geometry.parameters.height * 0.42, pz);
+      crown.castShadow = true;
+      crown.receiveShadow = true;
+      world.add(crown);
+      addObstacle(crown, 2);
+    };
+
+    for (const center of forestCenters) {
+      for (let i = 0; i < 120; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = rand(0, 260) * Math.sqrt(Math.random());
+        placeTree(center.x + Math.cos(angle) * radius, center.y + Math.sin(angle) * radius, true);
+      }
+    }
+
+    for (let i = 0; i < 900; i++) {
+      placeTree(rand(-ARENA * 1.2, ARENA * 1.2), rand(-ARENA * 1.2, ARENA * 1.2), false);
+    }
+    return;
   }
 
   const ground = new THREE.Mesh(
@@ -139,6 +221,7 @@ function buildWorld() {
     tower.castShadow = true;
     tower.receiveShadow = true;
     world.add(tower);
+    addObstacle(tower, 3);
 
     if (Math.random() > 0.55) {
       const roof = new THREE.Mesh(
@@ -148,15 +231,15 @@ function buildWorld() {
       roof.position.set(px, FLOOR_Y + h + roof.geometry.parameters.height / 2, pz);
       roof.castShadow = true;
       world.add(roof);
+      addObstacle(roof, 2);
     }
   }
 }
 
-
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
   const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.62 });
-  const trimMat = new THREE.MeshStandardMaterial({ color: 0xd9e2ea, roughness: 0.32, metalness: 0.58 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0xd9e2ea, roughness: 0.32, metalness: 0.58, side: THREE.DoubleSide });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a3744, roughness: 0.58, metalness: 0.35 });
 
   const fuselage = new THREE.Mesh(new THREE.CapsuleGeometry(3.3, 24, 8, 18), bodyMat);
@@ -249,6 +332,7 @@ function createFighter(color, isPlayer = false) {
     speed: 220,
     target: null,
     isPlayer,
+    crashTimer: 0,
   };
 }
 
@@ -272,6 +356,21 @@ function keepInArena(plane) {
   p.y = clamp(p.y, FLOOR_Y + 90, 980);
 }
 
+function collidePlaneWithObstacles(plane, previousPosition, dt) {
+  plane.crashTimer = Math.max(0, plane.crashTimer - dt);
+  if (!intersectsObstacle(plane.mesh.position, 12)) return false;
+
+  plane.mesh.position.copy(previousPosition);
+  plane.velocity.multiplyScalar(0.45);
+  plane.speed = Math.max(150, plane.speed * 0.82);
+
+  if (plane.crashTimer <= 0) {
+    hitPlane(plane, plane.isPlayer ? 8 : 18);
+    plane.crashTimer = 0.35;
+  }
+  return true;
+}
+
 function updatePlayer(dt) {
   const p = game.player;
   if (!p.alive || game.over) return;
@@ -279,18 +378,20 @@ function updatePlayer(dt) {
   p.cooldown -= dt;
   p.speed = clamp(p.speed + input.throttle * dt * 170, 150, 560);
 
-  const rollAmt = input.roll * dt * 1.8;
-  const pitchAmt = input.pitch * dt * 1.2;
-  const yawAmt = input.yaw * dt * 1.35;
+  const rollAmt = input.roll * dt * 1.65;
+  const pitchAmt = input.pitch * dt * 1.12;
+  const yawAmt = input.yaw * dt * 1.28;
 
-  p.mesh.rotateX(-pitchAmt);
+  p.mesh.rotateX(-rollAmt);
   p.mesh.rotateY(-yawAmt);
-  p.mesh.rotateZ(-rollAmt);
+  p.mesh.rotateZ(pitchAmt);
+  p.mesh.quaternion.normalize();
 
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
   const targetSpeed = p.speed + (input.boost ? 200 : 0);
   const desiredVel = forward.multiplyScalar(targetSpeed);
   p.velocity.lerp(desiredVel, 0.08);
+  const prevPos = p.mesh.position.clone();
   p.mesh.position.addScaledVector(p.velocity, dt);
 
   if (p.mesh.position.y < FLOOR_Y + 92) {
@@ -299,6 +400,7 @@ function updatePlayer(dt) {
   }
 
   keepInArena(p);
+  collidePlaneWithObstacles(p, prevPos, dt);
 
   if (input.fire && p.cooldown <= 0) {
     spawnBullet(p, 0x95efff);
@@ -325,17 +427,20 @@ function updateBots(dt) {
     const rollErr = clamp(-yawErr * 1.4, -1, 1);
 
     b.mesh.rotateY(-yawErr * dt * 1.08);
-    b.mesh.rotateX(-pitchErr * dt * 0.86);
-    b.mesh.rotateZ(-rollErr * dt * 1.22);
+    b.mesh.rotateZ(pitchErr * dt * 0.86);
+    b.mesh.rotateX(-rollErr * dt * 1.22);
+    b.mesh.quaternion.normalize();
 
     const speedTarget = clamp(185 + (dist > 540 ? 130 : 25), 170, 390);
     b.speed = THREE.MathUtils.lerp(b.speed, speedTarget, 0.05);
     const newForward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
     b.velocity.lerp(newForward.multiplyScalar(b.speed), 0.08);
+    const prevPos = b.mesh.position.clone();
     b.mesh.position.addScaledVector(b.velocity, dt);
 
     if (b.mesh.position.y < FLOOR_Y + 102) b.mesh.position.y += 130 * dt;
     keepInArena(b);
+    collidePlaneWithObstacles(b, prevPos, dt);
 
     const aimDot = newForward.dot(to.normalize());
     if (dist < 780 && aimDot > 0.94 && b.cooldown <= 0) {
@@ -360,6 +465,10 @@ function updateBullets(dt) {
     const b = game.bullets[i];
     b.position.addScaledVector(b.userData.vel, dt);
     b.userData.life -= dt;
+
+    if (intersectsObstacle(b.position, 2.5)) {
+      b.userData.life = -1;
+    }
 
     const targets = b.userData.team === "player" ? game.bots : [game.player];
     for (const t of targets) {
@@ -400,12 +509,10 @@ function updateState() {
     messageEl.textContent = "MISSION FAILED";
   }
 
-  if (alive === 0 && !game.over) {
+  if (game.initialBots > 0 && alive === 0 && game.player.alive && !game.over) {
     game.over = true;
-    game.score += 500;
-    scoreEl.textContent = `SCORE ${game.score}`;
     messageEl.hidden = false;
-    messageEl.textContent = "MISSION COMPLETE";
+    messageEl.textContent = "YOU WIN";
   }
 }
 
@@ -417,19 +524,28 @@ function resetMatch() {
 
   game.score = 0;
   game.over = false;
+  game.initialBots = 0;
   messageEl.hidden = true;
+  messageEl.textContent = "";
 
   game.player = createFighter(0x48d7ff, true);
   game.player.mesh.position.set(0, 320, 0);
   game.player.mesh.rotation.set(0, -Math.PI * 0.2, 0);
 
   const colors = [0xff615d, 0xffc065, 0xc993ff];
-  game.bots = Array.from({ length: Number(botCountEl.value) }, (_, i) => {
+  const botCount = Number(botCountEl.value);
+  game.bots = Array.from({ length: botCount }, (_, i) => {
     const bot = createFighter(colors[i]);
-    bot.mesh.position.set(rand(-1100, 1100), rand(240, 560), rand(-1100, 1100));
+    for (let tries = 0; tries < 40; tries++) {
+      bot.mesh.position.set(rand(-1100, 1100), rand(240, 560), rand(-1100, 1100));
+      if (intersectsObstacle(bot.mesh.position, 26)) continue;
+      if (bot.mesh.position.distanceToSquared(game.player.mesh.position) < 420 * 420) continue;
+      break;
+    }
     bot.mesh.lookAt(game.player.mesh.position);
     return bot;
   });
+  game.initialBots = game.bots.length;
 }
 
 function syncInput() {
@@ -438,10 +554,17 @@ function syncInput() {
   const kYaw = (keys.has("KeyQ") ? -1 : 0) + (keys.has("KeyE") ? 1 : 0);
   const kThr = (keys.has("ArrowDown") ? -1 : 0) + (keys.has("ArrowUp") ? 1 : 0);
 
-  input.roll = clamp(input.roll + ((Math.abs(stickInput.roll) > 0.01 ? stickInput.roll : kRoll) - input.roll) * 0.38, -1, 1);
-  input.pitch = clamp(input.pitch + ((Math.abs(stickInput.pitch) > 0.01 ? stickInput.pitch : kPitch) - input.pitch) * 0.38, -1, 1);
-  input.yaw = clamp(input.yaw + ((Math.abs(stickInput.yaw) > 0.01 ? stickInput.yaw : kYaw) - input.yaw) * 0.38, -1, 1);
-  input.throttle = clamp(input.throttle + ((Math.abs(stickInput.throttle) > 0.01 ? stickInput.throttle : kThr) - input.throttle) * 0.34, -1, 1);
+  const stickYaw = Math.abs(stickInput.yaw) > 0.01 ? stickInput.yaw : 0;
+  const stickPitch = Math.abs(stickInput.pitch) > 0.01 ? stickInput.pitch : 0;
+
+  input.yaw = clamp(input.yaw + ((stickYaw || kYaw) - input.yaw) * 0.36, -1, 1);
+  input.pitch = clamp(input.pitch + ((stickPitch || kPitch) - input.pitch) * 0.36, -1, 1);
+
+  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : -input.yaw * 0.72;
+  input.roll = clamp(input.roll + (rollTarget - input.roll) * 0.34, -1, 1);
+
+  const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
+  input.throttle = clamp(input.throttle + (throttleTarget - input.throttle) * 0.24, -1, 1);
 
   input.boost = keys.has("ShiftLeft") || keys.has("ShiftRight") || boostBtn.classList.contains("active");
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
@@ -537,14 +660,10 @@ function updateOrientationHint() {
   rotateHint.hidden = window.innerWidth >= window.innerHeight;
 }
 
-buildWorld();
+buildWorld(mapTypeEl.value);
 setupJoystick("leftStick", (x, y) => {
-  stickInput.roll = x;
-  stickInput.pitch = -y;
-});
-setupJoystick("rightStick", (x, y) => {
   stickInput.yaw = x;
-  stickInput.throttle = -y;
+  stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
 bindActionButton(boostBtn);
@@ -557,8 +676,20 @@ window.addEventListener("keyup", (e) => {
   keys.delete(e.code);
 });
 
-restartBtn.addEventListener("click", resetMatch);
+const restartFromHud = (e) => {
+  e?.preventDefault?.();
+  resetMatch();
+};
+
+restartBtn.addEventListener("click", restartFromHud);
+restartBtn.addEventListener("pointerup", restartFromHud);
+
 botCountEl.addEventListener("change", resetMatch);
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
 
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 
