@@ -334,7 +334,7 @@ function resetRace() {
   const right = rightFromTangent(tan);
 
   player.pos.copy(start).addScaledVector(right, -2.2).setY(0.02);
-  player.heading = Math.atan2(tan.x, tan.z);
+  player.heading = Math.atan2(-tan.x, -tan.z);
   player.speed = 15;
   player.yawVel = 0;
   player.driftCharge = 0;
@@ -418,21 +418,25 @@ let wasDrifting = false;
 function updatePlayer(dt) {
   if (race.finished) return;
 
-  const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  const steer = (input.left ? 1 : 0) - (input.right ? 1 : 0);
   const drifting = input.drift && steer !== 0;
   const maxSpeed = drifting ? 40 : 46;
 
   player.speed += (maxSpeed - player.speed) * dt * 1.2;
   player.speed = Math.max(8, Math.min(player.speed, 55));
 
-  const steerPower = drifting ? 2.25 : 1.5;
+  const steerPower = drifting ? 1.25 : 0.75;
   const speedFactor = THREE.MathUtils.clamp(player.speed / 40, 0.5, 1.2);
   player.yawVel += steer * steerPower * speedFactor * dt;
-  player.yawVel *= drifting ? 0.88 : 0.82;
+  player.yawVel *= drifting ? 0.84 : 0.74;
+
+  if (steer === 0) {
+    player.yawVel *= 0.7;
+  }
 
   player.heading += player.yawVel;
 
-  const forward = new THREE.Vector3(Math.sin(player.heading), 0, Math.cos(player.heading));
+  const forward = new THREE.Vector3(-Math.sin(player.heading), 0, -Math.cos(player.heading));
   player.pos.addScaledVector(forward, player.speed * dt);
 
   const track = nearestTrackData(player.pos);
@@ -449,10 +453,6 @@ function updatePlayer(dt) {
   if (Math.abs(track.lateral) > halfTrack + 2.8) {
     player.speed *= 0.82;
   }
-
-  const desiredHeading = Math.atan2(track.tan.x, track.tan.z);
-  const turnAlign = THREE.MathUtils.clamp(Math.sin(desiredHeading - player.heading), -1, 1);
-  player.heading += turnAlign * dt * 0.65;
 
   if (drifting) {
     player.driftCharge = Math.min(1.4, player.driftCharge + dt * 1.4);
@@ -511,7 +511,7 @@ function updateKartMeshes() {
 }
 
 function updateCamera() {
-  const forward = new THREE.Vector3(Math.sin(player.heading), 0, Math.cos(player.heading));
+  const forward = new THREE.Vector3(-Math.sin(player.heading), 0, -Math.cos(player.heading));
   const camTarget = player.pos.clone().add(new THREE.Vector3(0, 1.0, 0)).addScaledVector(forward, 4.5);
   const camPos = player.pos.clone().addScaledVector(forward, -8.5).add(new THREE.Vector3(0, 4.4, 0));
   camera.position.lerp(camPos, 0.14);
