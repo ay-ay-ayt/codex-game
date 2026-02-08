@@ -41,18 +41,18 @@ body {
   right: 10px;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(4, max-content);
-  gap: 8px;
+  grid-template-columns: repeat(5, max-content);
+  gap: 6px;
   pointer-events: none;
 }
 
 #hud > * {
-  padding: 7px 10px;
+  padding: 5px 8px;
   border-radius: 10px;
   border: 1px solid var(--line);
   background: var(--glass);
   backdrop-filter: blur(5px);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   pointer-events: auto;
 }
@@ -60,6 +60,11 @@ body {
 #hud select,
 #hud button {
   touch-action: auto;
+}
+
+#hud select {
+  min-width: 72px;
+  padding: 3px 6px;
 }
 
 #title {
@@ -204,7 +209,7 @@ body {
 
 .action-wrap {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   justify-items: center;
 }
 
@@ -227,14 +232,14 @@ body {
 .lever-knob {
   position: absolute;
   left: 50%;
-  bottom: 8px;
+  top: 8px;
   width: 34px;
   height: 34px;
-  margin-left: -17px;
   border-radius: 50%;
   border: 2px solid rgba(206, 242, 255, 0.9);
   background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.72), rgba(112, 196, 234, 0.4));
   box-shadow: 0 0 10px rgba(123, 214, 255, 0.48);
+  transform: translateX(-50%);
 }
 
 .action {
@@ -280,7 +285,7 @@ body {
 
 @media (max-width: 900px) {
   #hud {
-    grid-template-columns: repeat(2, max-content);
+    grid-template-columns: repeat(3, max-content);
   }
 }
 

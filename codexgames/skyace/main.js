@@ -158,24 +158,6 @@ function buildArenaBoundary() {
     new THREE.LineBasicMaterial({ color: 0x9ed6ff, transparent: true, opacity: 0.45 })
   );
   world.add(line);
-
-  const wallMat = new THREE.MeshBasicMaterial({ color: 0x8fd4ff, transparent: true, opacity: 0.08 });
-  const wallX = new THREE.Mesh(new THREE.PlaneGeometry(ARENA * 2, 420), wallMat);
-  wallX.position.set(0, FLOOR_Y + 210, -ARENA);
-  world.add(wallX);
-  const wallX2 = wallX.clone();
-  wallX2.position.z = ARENA;
-  wallX2.rotateY(Math.PI);
-  world.add(wallX2);
-
-  const wallZ = new THREE.Mesh(new THREE.PlaneGeometry(ARENA * 2, 420), wallMat);
-  wallZ.position.set(-ARENA, FLOOR_Y + 210, 0);
-  wallZ.rotateY(Math.PI * 0.5);
-  world.add(wallZ);
-  const wallZ2 = wallZ.clone();
-  wallZ2.position.x = ARENA;
-  wallZ2.rotateY(Math.PI);
-  world.add(wallZ2);
 }
 
 function fitViewport() {
@@ -416,6 +398,9 @@ function createFighter(color, isPlayer = false) {
     glow
   );
   g.position.set(0, 300, 0);
+  g.traverse((node) => {
+    if (node.isMesh) node.frustumCulled = false;
+  });
   world.add(g);
 
   return {
