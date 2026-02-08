@@ -39,9 +39,9 @@ body {
   top: max(8px, env(safe-area-inset-top));
   left: 10px;
   right: 10px;
-  z-index: 8;
+  z-index: 30;
   display: grid;
-  grid-template-columns: repeat(3, max-content);
+  grid-template-columns: repeat(4, max-content);
   gap: 8px;
   pointer-events: none;
 }
@@ -55,6 +55,11 @@ body {
   font-size: 13px;
   font-weight: 700;
   pointer-events: auto;
+}
+
+#hud select,
+#hud button {
+  touch-action: auto;
 }
 
 #title {
@@ -125,6 +130,7 @@ body {
   display: grid;
   place-items: center;
   z-index: 12;
+  pointer-events: none;
   font-size: clamp(28px, 7vw, 64px);
   font-weight: 900;
   background: rgba(0, 8, 16, 0.34);
@@ -138,7 +144,8 @@ body {
   bottom: max(8px, env(safe-area-inset-bottom));
   z-index: 10;
   display: grid;
-  grid-template-columns: auto max-content auto;
+  grid-template-columns: auto max-content;
+  justify-content: space-between;
   align-items: end;
   gap: 10px;
 }
