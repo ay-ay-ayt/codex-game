@@ -144,7 +144,8 @@ body {
   bottom: max(8px, env(safe-area-inset-bottom));
   z-index: 10;
   display: grid;
-  grid-template-columns: auto max-content auto;
+  grid-template-columns: auto max-content;
+  justify-content: space-between;
   align-items: end;
   gap: 10px;
 }
