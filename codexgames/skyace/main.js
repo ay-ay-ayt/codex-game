@@ -59,6 +59,7 @@ const game = {
   bullets: [],
   score: 0,
   over: false,
+  initialBots: 0,
 };
 
 function clamp(v, a, b) {
@@ -508,7 +509,7 @@ function updateState() {
     messageEl.textContent = "MISSION FAILED";
   }
 
-  if (alive === 0 && !game.over) {
+  if (game.initialBots > 0 && alive === 0 && game.player.alive && !game.over) {
     game.over = true;
     messageEl.hidden = false;
     messageEl.textContent = "YOU WIN";
@@ -523,19 +524,28 @@ function resetMatch() {
 
   game.score = 0;
   game.over = false;
+  game.initialBots = 0;
   messageEl.hidden = true;
+  messageEl.textContent = "";
 
   game.player = createFighter(0x48d7ff, true);
   game.player.mesh.position.set(0, 320, 0);
   game.player.mesh.rotation.set(0, -Math.PI * 0.2, 0);
 
   const colors = [0xff615d, 0xffc065, 0xc993ff];
-  game.bots = Array.from({ length: Number(botCountEl.value) }, (_, i) => {
+  const botCount = Number(botCountEl.value);
+  game.bots = Array.from({ length: botCount }, (_, i) => {
     const bot = createFighter(colors[i]);
-    bot.mesh.position.set(rand(-1100, 1100), rand(240, 560), rand(-1100, 1100));
+    for (let tries = 0; tries < 40; tries++) {
+      bot.mesh.position.set(rand(-1100, 1100), rand(240, 560), rand(-1100, 1100));
+      if (intersectsObstacle(bot.mesh.position, 26)) continue;
+      if (bot.mesh.position.distanceToSquared(game.player.mesh.position) < 420 * 420) continue;
+      break;
+    }
     bot.mesh.lookAt(game.player.mesh.position);
     return bot;
   });
+  game.initialBots = game.bots.length;
 }
 
 function syncInput() {
@@ -550,7 +560,7 @@ function syncInput() {
   input.yaw = clamp(input.yaw + ((stickYaw || kYaw) - input.yaw) * 0.36, -1, 1);
   input.pitch = clamp(input.pitch + ((stickPitch || kPitch) - input.pitch) * 0.36, -1, 1);
 
-  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : input.yaw * 0.72;
+  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : -input.yaw * 0.72;
   input.roll = clamp(input.roll + (rollTarget - input.roll) * 0.34, -1, 1);
 
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
@@ -653,7 +663,7 @@ function updateOrientationHint() {
 buildWorld(mapTypeEl.value);
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
-  stickInput.pitch = -y;
+  stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
 bindActionButton(boostBtn);
