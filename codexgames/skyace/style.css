@@ -1,0 +1,238 @@
+:root {
+  --glass: rgba(6, 15, 28, 0.58);
+  --line: rgba(173, 232, 255, 0.42);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: Inter, "Segoe UI", sans-serif;
+  color: #e8f8ff;
+  background: #030c18;
+  touch-action: none;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
+}
+
+#game {
+  width: 100vw;
+  height: 100dvh;
+  display: block;
+}
+
+#hud {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 10px;
+  right: 10px;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: 8px;
+  pointer-events: none;
+}
+
+#hud > * {
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  backdrop-filter: blur(5px);
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: auto;
+}
+
+#title {
+  color: #9fdfff;
+}
+
+#botWrap {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+
+#botCount {
+  border: 0;
+  border-radius: 8px;
+  background: #d7f0ff;
+  padding: 4px 8px;
+  font-weight: 700;
+}
+
+#restartBtn {
+  color: #ecf9ff;
+  background: rgba(28, 74, 117, 0.8);
+  touch-action: manipulation;
+}
+
+#crosshair {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  margin-left: -17px;
+  margin-top: -17px;
+  border: 2px solid rgba(186, 235, 255, 0.8);
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgba(109, 214, 255, 0.5);
+  pointer-events: none;
+  z-index: 6;
+}
+
+#crosshair::before,
+#crosshair::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(186, 235, 255, 0.8);
+}
+
+#crosshair::before {
+  width: 2px;
+  height: 54px;
+  margin-left: -1px;
+  margin-top: -27px;
+}
+
+#crosshair::after {
+  height: 2px;
+  width: 54px;
+  margin-top: -1px;
+  margin-left: -27px;
+}
+
+#message {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 12;
+  font-size: clamp(28px, 7vw, 64px);
+  font-weight: 900;
+  background: rgba(0, 8, 16, 0.34);
+  text-shadow: 0 0 16px rgba(161, 234, 255, 0.8);
+}
+
+#mobileControls {
+  position: fixed;
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 10;
+  display: grid;
+  grid-template-columns: auto max-content auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.stick-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.stick-label {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.stick {
+  width: min(28vw, 150px);
+  height: min(28vw, 150px);
+  border-radius: 50%;
+  border: 2px solid rgba(180, 236, 255, 0.7);
+  background: radial-gradient(circle at center, rgba(121, 221, 255, 0.18), rgba(2, 10, 21, 0.55));
+  position: relative;
+  touch-action: none;
+}
+
+.knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40%;
+  height: 40%;
+  margin-left: -20%;
+  margin-top: -20%;
+  border-radius: 50%;
+  border: 2px solid rgba(206, 242, 255, 0.86);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.65), rgba(112, 196, 234, 0.35));
+  box-shadow: 0 0 12px rgba(123, 214, 255, 0.45);
+  transform: translate(0, 0);
+}
+
+.action-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.action {
+  width: min(18vw, 110px);
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-weight: 800;
+  color: #ecf8ff;
+  background: rgba(5, 29, 53, 0.7);
+  touch-action: manipulation;
+}
+
+.action.active {
+  background: rgba(156, 229, 255, 0.36);
+  transform: translateY(1px);
+}
+
+#rotateHint {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  font-size: clamp(20px, 4vw, 34px);
+  font-weight: 800;
+  background: rgba(3, 8, 18, 0.95);
+  text-align: center;
+  padding: 24px;
+}
+
+#rotateHint small {
+  font-size: clamp(13px, 2.2vw, 18px);
+  color: #a8d4ef;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  #hud {
+    grid-template-columns: repeat(2, max-content);
+  }
+}
+
+@media (orientation: portrait) {
+  #mobileControls {
+    opacity: 0.35;
+  }
+}
