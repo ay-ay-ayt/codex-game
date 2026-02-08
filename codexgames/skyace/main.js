@@ -381,9 +381,9 @@ function updatePlayer(dt) {
   const pitchAmt = input.pitch * dt * 1.12;
   const yawAmt = input.yaw * dt * 1.28;
 
-  p.mesh.rotateX(-pitchAmt);
+  p.mesh.rotateX(-rollAmt);
   p.mesh.rotateY(-yawAmt);
-  p.mesh.rotateZ(-rollAmt);
+  p.mesh.rotateZ(pitchAmt);
   p.mesh.quaternion.normalize();
 
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
@@ -426,8 +426,8 @@ function updateBots(dt) {
     const rollErr = clamp(-yawErr * 1.4, -1, 1);
 
     b.mesh.rotateY(-yawErr * dt * 1.08);
-    b.mesh.rotateX(-pitchErr * dt * 0.86);
-    b.mesh.rotateZ(-rollErr * dt * 1.22);
+    b.mesh.rotateZ(pitchErr * dt * 0.86);
+    b.mesh.rotateX(-rollErr * dt * 1.22);
     b.mesh.quaternion.normalize();
 
     const speedTarget = clamp(185 + (dist > 540 ? 130 : 25), 170, 390);
@@ -510,10 +510,8 @@ function updateState() {
 
   if (alive === 0 && !game.over) {
     game.over = true;
-    game.score += 500;
-    scoreEl.textContent = `SCORE ${game.score}`;
     messageEl.hidden = false;
-    messageEl.textContent = "MISSION COMPLETE";
+    messageEl.textContent = "YOU WIN";
   }
 }
 
@@ -552,7 +550,7 @@ function syncInput() {
   input.yaw = clamp(input.yaw + ((stickYaw || kYaw) - input.yaw) * 0.36, -1, 1);
   input.pitch = clamp(input.pitch + ((stickPitch || kPitch) - input.pitch) * 0.36, -1, 1);
 
-  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : input.yaw * 0.88;
+  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : input.yaw * 0.72;
   input.roll = clamp(input.roll + (rollTarget - input.roll) * 0.34, -1, 1);
 
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
