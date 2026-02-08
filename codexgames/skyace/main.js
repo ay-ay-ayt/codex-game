@@ -45,6 +45,7 @@ const keys = new Set();
 const stickInput = {
   pitch: 0,
   yaw: 0,
+  active: false,
 };
 
 const input = {
@@ -411,9 +412,9 @@ function updatePlayer(dt) {
   const pitchAmt = input.pitch * dt * 1.12;
   const yawAmt = input.yaw * dt * 1.28;
 
-  p.mesh.rotateX(-rollAmt);
-  p.mesh.rotateY(-yawAmt);
-  p.mesh.rotateZ(pitchAmt);
+  p.mesh.rotateX(rollAmt);
+  p.mesh.rotateY(yawAmt);
+  p.mesh.rotateZ(-pitchAmt);
   p.mesh.quaternion.normalize();
 
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
@@ -588,12 +589,17 @@ function syncInput() {
 
   const stickYaw = Math.abs(stickInput.yaw) > 0.01 ? stickInput.yaw : 0;
   const stickPitch = Math.abs(stickInput.pitch) > 0.01 ? stickInput.pitch : 0;
+  const usingStick = stickInput.active;
 
-  input.yaw = clamp(input.yaw + ((stickYaw || kYaw) - input.yaw) * 0.36, -1, 1);
-  input.pitch = clamp(input.pitch + ((stickPitch || kPitch) - input.pitch) * 0.36, -1, 1);
+  const yawTarget = usingStick ? -stickYaw : kYaw;
+  const pitchTarget = usingStick ? -stickPitch : kPitch;
+  const steerLerp = usingStick ? 0.64 : 0.36;
 
-  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : input.yaw * 0.72;
-  input.roll = clamp(input.roll + (rollTarget - input.roll) * 0.34, -1, 1);
+  input.yaw = clamp(input.yaw + (yawTarget - input.yaw) * steerLerp, -1, 1);
+  input.pitch = clamp(input.pitch + (pitchTarget - input.pitch) * steerLerp, -1, 1);
+
+  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : input.yaw * 0.95;
+  input.roll = clamp(input.roll + (rollTarget - input.roll) * (usingStick ? 0.52 : 0.34), -1, 1);
 
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
   input.throttle = clamp(input.throttle + (throttleTarget - input.throttle) * 0.24, -1, 1);
@@ -605,20 +611,19 @@ function syncInput() {
 function setupJoystick(stickId, onMove) {
   const stick = document.getElementById(stickId);
   const knob = stick.querySelector(".knob");
-  const state = { id: null };
+  const state = { pointerId: null, touchId: null };
 
   function updateKnob(nx, ny) {
     const max = stick.clientWidth * 0.34;
     knob.style.transform = `translate(${nx * max}px, ${ny * max}px)`;
   }
 
-  function handleMove(e) {
-    if (state.id !== e.pointerId) return;
+  function moveFromClient(clientX, clientY) {
     const rect = stick.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    let nx = (e.clientX - cx) / (rect.width / 2);
-    let ny = (e.clientY - cy) / (rect.height / 2);
+    let nx = (clientX - cx) / (rect.width / 2);
+    let ny = (clientY - cy) / (rect.height / 2);
     const mag = Math.hypot(nx, ny);
     if (mag > 1) {
       nx /= mag;
@@ -629,26 +634,74 @@ function setupJoystick(stickId, onMove) {
       ny = 0;
     }
     updateKnob(nx, ny);
+    stickInput.active = true;
     onMove(nx, ny);
+  }
+
+  function releaseStick() {
+    state.pointerId = null;
+    state.touchId = null;
+    stickInput.active = false;
+    updateKnob(0, 0);
+    onMove(0, 0);
   }
 
   stick.addEventListener("pointerdown", (e) => {
     e.preventDefault();
-    state.id = e.pointerId;
-    stick.setPointerCapture(e.pointerId);
-    handleMove(e);
+    state.pointerId = e.pointerId;
+    stick.setPointerCapture?.(e.pointerId);
+    moveFromClient(e.clientX, e.clientY);
   });
-
-  const release = (e) => {
-    if (state.id !== e.pointerId) return;
-    state.id = null;
-    updateKnob(0, 0);
-    onMove(0, 0);
+  stick.addEventListener("pointermove", (e) => {
+    if (state.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    moveFromClient(e.clientX, e.clientY);
+  });
+  const onPointerRelease = (e) => {
+    if (state.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    releaseStick();
   };
+  stick.addEventListener("pointerup", onPointerRelease);
+  stick.addEventListener("pointercancel", onPointerRelease);
 
-  stick.addEventListener("pointermove", handleMove);
-  stick.addEventListener("pointerup", release);
-  stick.addEventListener("pointercancel", release);
+  stick.addEventListener(
+    "touchstart",
+    (e) => {
+      if (state.touchId != null) return;
+      const t = e.changedTouches[0];
+      state.touchId = t.identifier;
+      moveFromClient(t.clientX, t.clientY);
+      e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  stick.addEventListener(
+    "touchmove",
+    (e) => {
+      if (state.touchId == null) return;
+      for (const t of e.changedTouches) {
+        if (t.identifier !== state.touchId) continue;
+        moveFromClient(t.clientX, t.clientY);
+        e.preventDefault();
+        break;
+      }
+    },
+    { passive: false }
+  );
+
+  const onTouchEnd = (e) => {
+    if (state.touchId == null) return;
+    for (const t of e.changedTouches) {
+      if (t.identifier !== state.touchId) continue;
+      releaseStick();
+      e.preventDefault();
+      break;
+    }
+  };
+  stick.addEventListener("touchend", onTouchEnd, { passive: false });
+  stick.addEventListener("touchcancel", onTouchEnd, { passive: false });
 }
 
 function bindActionButton(btn) {
@@ -695,7 +748,7 @@ function updateOrientationHint() {
 buildWorld(mapTypeEl.value);
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
-  stickInput.pitch = -y;
+  stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
 bindActionButton(boostBtn);
