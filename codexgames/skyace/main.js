@@ -12,7 +12,6 @@ const restartBtn = document.getElementById("restartBtn");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
-const boostBtn = document.getElementById("boostBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
 
@@ -75,6 +74,11 @@ const input = {
   boost: false,
   boostLevel: 0,
   fire: false,
+};
+
+const boostLeverState = {
+  level: 0,
+  pointerId: null,
 };
 
 const game = {
@@ -141,6 +145,39 @@ function obstacleAvoidance(position, forward, lookAhead = 140) {
   return avoid;
 }
 
+function buildArenaBoundary() {
+  const points = [
+    new THREE.Vector3(-ARENA, FLOOR_Y + 60, -ARENA),
+    new THREE.Vector3(ARENA, FLOOR_Y + 60, -ARENA),
+    new THREE.Vector3(ARENA, FLOOR_Y + 60, ARENA),
+    new THREE.Vector3(-ARENA, FLOOR_Y + 60, ARENA),
+    new THREE.Vector3(-ARENA, FLOOR_Y + 60, -ARENA),
+  ];
+  const line = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(points),
+    new THREE.LineBasicMaterial({ color: 0x9ed6ff, transparent: true, opacity: 0.45 })
+  );
+  world.add(line);
+
+  const wallMat = new THREE.MeshBasicMaterial({ color: 0x8fd4ff, transparent: true, opacity: 0.08 });
+  const wallX = new THREE.Mesh(new THREE.PlaneGeometry(ARENA * 2, 420), wallMat);
+  wallX.position.set(0, FLOOR_Y + 210, -ARENA);
+  world.add(wallX);
+  const wallX2 = wallX.clone();
+  wallX2.position.z = ARENA;
+  wallX2.rotateY(Math.PI);
+  world.add(wallX2);
+
+  const wallZ = new THREE.Mesh(new THREE.PlaneGeometry(ARENA * 2, 420), wallMat);
+  wallZ.position.set(-ARENA, FLOOR_Y + 210, 0);
+  wallZ.rotateY(Math.PI * 0.5);
+  world.add(wallZ);
+  const wallZ2 = wallZ.clone();
+  wallZ2.position.x = ARENA;
+  wallZ2.rotateY(Math.PI);
+  world.add(wallZ2);
+}
+
 function fitViewport() {
   const width = Math.max(1, window.visualViewport?.width || window.innerWidth);
   const height = Math.max(1, window.visualViewport?.height || window.innerHeight);
@@ -161,6 +198,7 @@ function buildWorld(mapType) {
     new THREE.MeshBasicMaterial({ color: isForest ? 0x88c6a0 : 0x75a8e0, side: THREE.BackSide })
   );
   world.add(sky);
+  buildArenaBoundary();
 
   const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: isForest ? 0.42 : 0.5 });
   for (let i = 0; i < 140; i++) {
@@ -442,8 +480,29 @@ function updateEffects(dt) {
 
 function keepInArena(plane) {
   const p = plane.mesh.position;
-  if (Math.abs(p.x) > ARENA) p.x = -Math.sign(p.x) * ARENA;
-  if (Math.abs(p.z) > ARENA) p.z = -Math.sign(p.z) * ARENA;
+  let hitBoundary = false;
+
+  if (p.x > ARENA) {
+    p.x = ARENA;
+    plane.velocity.x = Math.min(plane.velocity.x, 0) * 0.35;
+    hitBoundary = true;
+  } else if (p.x < -ARENA) {
+    p.x = -ARENA;
+    plane.velocity.x = Math.max(plane.velocity.x, 0) * 0.35;
+    hitBoundary = true;
+  }
+
+  if (p.z > ARENA) {
+    p.z = ARENA;
+    plane.velocity.z = Math.min(plane.velocity.z, 0) * 0.35;
+    hitBoundary = true;
+  } else if (p.z < -ARENA) {
+    p.z = -ARENA;
+    plane.velocity.z = Math.max(plane.velocity.z, 0) * 0.35;
+    hitBoundary = true;
+  }
+
+  if (hitBoundary) plane.speed = Math.max(150, plane.speed * 0.9);
   p.y = clamp(p.y, FLOOR_Y + 90, 980);
 }
 
@@ -506,7 +565,7 @@ function updatePlayer(dt) {
 
   qYaw.setFromAxisAngle(AXIS_Y, p.yaw);
   qPitch.setFromAxisAngle(AXIS_Z, p.pitch);
-  qRoll.setFromAxisAngle(AXIS_X, p.roll);
+  qRoll.setFromAxisAngle(AXIS_X, -p.roll);
 
   qMove.copy(qYaw).multiply(qPitch);
   qVisual.copy(qMove).multiply(qRoll);
@@ -721,10 +780,8 @@ function syncInput() {
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
   input.throttle = clamp(input.throttle + (throttleTarget - input.throttle) * 0.24, -1, 1);
 
-  const boostLever = clamp((Number(boostLeverEl.value) || 0) / 100, 0, 1);
-  input.boostLevel = clamp(Math.max(boostLever, boostBtn.classList.contains("active") ? 1 : 0), 0, 1);
-  input.boost = input.boostLevel > 0.01 || keys.has("ShiftLeft") || keys.has("ShiftRight");
-  if (keys.has("ShiftLeft") || keys.has("ShiftRight")) input.boostLevel = Math.max(input.boostLevel, 1);
+  input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
+  input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
 }
 
@@ -824,6 +881,46 @@ function setupJoystick(stickId, onMove) {
   stick.addEventListener("touchcancel", onTouchEnd, { passive: false });
 }
 
+function setupBoostLever() {
+  const knob = boostLeverEl.querySelector(".lever-knob");
+
+  function applyLevel(level) {
+    boostLeverState.level = clamp(level, 0, 1);
+    const maxTravel = boostLeverEl.clientHeight - knob.clientHeight - 16;
+    const y = maxTravel * (1 - boostLeverState.level);
+    knob.style.transform = `translate(-50%, ${y}px)`;
+  }
+
+  function moveFromClient(clientY) {
+    const rect = boostLeverEl.getBoundingClientRect();
+    const top = rect.top + 8;
+    const bottom = rect.bottom - 8;
+    const clampedY = clamp(clientY, top, bottom);
+    const level = 1 - (clampedY - top) / Math.max(1, bottom - top);
+    applyLevel(level);
+  }
+
+  boostLeverEl.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    boostLeverState.pointerId = e.pointerId;
+    boostLeverEl.setPointerCapture?.(e.pointerId);
+    moveFromClient(e.clientY);
+  });
+  boostLeverEl.addEventListener("pointermove", (e) => {
+    if (boostLeverState.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    moveFromClient(e.clientY);
+  });
+  const release = (e) => {
+    if (boostLeverState.pointerId !== e.pointerId) return;
+    boostLeverState.pointerId = null;
+  };
+  boostLeverEl.addEventListener("pointerup", release);
+  boostLeverEl.addEventListener("pointercancel", release);
+
+  applyLevel(0);
+}
+
 function bindActionButton(btn) {
   const press = (e) => {
     e.preventDefault();
@@ -871,7 +968,7 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
-bindActionButton(boostBtn);
+setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
   keys.add(e.code);
