@@ -40,7 +40,22 @@ const tmpVecC = new THREE.Vector3();
 
 const ARENA = 3600;
 const FLOOR_Y = 40;
+const MAX_BANK = THREE.MathUtils.degToRad(55);
+const MAX_PITCH = THREE.MathUtils.degToRad(35);
+const BANK_RATE = 3.0;
+const PITCH_RATE = 2.5;
+const LEVEL_RATE = 1.2;
+const TURN_RATE = 1.0;
 const keys = new Set();
+
+const qYaw = new THREE.Quaternion();
+const qPitch = new THREE.Quaternion();
+const qRoll = new THREE.Quaternion();
+const qMove = new THREE.Quaternion();
+const qVisual = new THREE.Quaternion();
+const AXIS_X = new THREE.Vector3(1, 0, 0);
+const AXIS_Y = new THREE.Vector3(0, 1, 0);
+const AXIS_Z = new THREE.Vector3(0, 0, 1);
 
 const stickInput = {
   pitch: 0,
@@ -71,6 +86,11 @@ function clamp(v, a, b) {
 }
 function rand(a, b) {
   return a + Math.random() * (b - a);
+}
+
+function smoothApproach(current, target, rate, dt) {
+  const t = 1 - Math.exp(-rate * dt);
+  return current + (target - current) * t;
 }
 
 function addObstacle(mesh, padding = 0) {
@@ -360,6 +380,9 @@ function createFighter(color, isPlayer = false) {
     target: null,
     isPlayer,
     isColliding: false,
+    yaw: 0,
+    pitch: 0,
+    roll: 0,
   };
 }
 
@@ -408,16 +431,31 @@ function updatePlayer(dt) {
   p.cooldown -= dt;
   p.speed = clamp(p.speed + input.throttle * dt * 170, 150, 560);
 
-  const rollAmt = input.roll * dt * 1.65;
-  const pitchAmt = input.pitch * dt * 1.12;
-  const yawAmt = input.yaw * dt * 1.28;
+  const rollTarget = clamp(input.roll, -1, 1) * MAX_BANK;
+  const pitchTarget = clamp(input.pitch, -1, 1) * MAX_PITCH;
 
-  p.mesh.rotateX(rollAmt);
-  p.mesh.rotateY(yawAmt);
-  p.mesh.rotateZ(-pitchAmt);
-  p.mesh.quaternion.normalize();
+  p.roll = smoothApproach(p.roll, rollTarget, BANK_RATE, dt);
+  p.pitch = smoothApproach(p.pitch, pitchTarget, PITCH_RATE, dt);
 
-  const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
+  if (Math.abs(input.roll) < 0.06) {
+    p.roll = smoothApproach(p.roll, 0, LEVEL_RATE, dt);
+  }
+
+  p.roll = clamp(p.roll, -MAX_BANK, MAX_BANK);
+  p.pitch = clamp(p.pitch, -MAX_PITCH, MAX_PITCH);
+
+  const yawRate = TURN_RATE * (p.roll / MAX_BANK);
+  p.yaw += yawRate * dt;
+
+  qYaw.setFromAxisAngle(AXIS_Y, p.yaw);
+  qPitch.setFromAxisAngle(AXIS_Z, p.pitch);
+  qRoll.setFromAxisAngle(AXIS_X, p.roll);
+
+  qMove.copy(qYaw).multiply(qPitch);
+  qVisual.copy(qMove).multiply(qRoll);
+  p.mesh.quaternion.copy(qVisual);
+
+  const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(qMove).normalize();
   const targetSpeed = p.speed + (input.boost ? 200 : 0);
   const desiredVel = forward.multiplyScalar(targetSpeed);
   p.velocity.lerp(desiredVel, 0.08);
@@ -563,7 +601,9 @@ function resetMatch() {
 
   game.player = createFighter(0x48d7ff, true);
   game.player.mesh.position.set(0, 320, 0);
-  game.player.mesh.rotation.set(0, -Math.PI * 0.2, 0);
+  game.player.yaw = -Math.PI * 0.2;
+  game.player.pitch = 0;
+  game.player.roll = 0;
 
   const colors = [0xff615d, 0xffc065, 0xc993ff];
   const botCount = Number(botCountEl.value);
@@ -584,22 +624,18 @@ function resetMatch() {
 function syncInput() {
   const kRoll = (keys.has("KeyA") ? -1 : 0) + (keys.has("KeyD") ? 1 : 0);
   const kPitch = (keys.has("KeyW") ? 1 : 0) + (keys.has("KeyS") ? -1 : 0);
-  const kYaw = (keys.has("KeyQ") ? -1 : 0) + (keys.has("KeyE") ? 1 : 0);
   const kThr = (keys.has("ArrowDown") ? -1 : 0) + (keys.has("ArrowUp") ? 1 : 0);
 
-  const stickYaw = Math.abs(stickInput.yaw) > 0.01 ? stickInput.yaw : 0;
+  const stickRoll = Math.abs(stickInput.yaw) > 0.01 ? stickInput.yaw : 0;
   const stickPitch = Math.abs(stickInput.pitch) > 0.01 ? stickInput.pitch : 0;
   const usingStick = stickInput.active;
 
-  const yawTarget = usingStick ? -stickYaw : kYaw;
+  const rollTarget = usingStick ? stickRoll : kRoll;
   const pitchTarget = usingStick ? -stickPitch : kPitch;
-  const steerLerp = usingStick ? 0.64 : 0.36;
 
-  input.yaw = clamp(input.yaw + (yawTarget - input.yaw) * steerLerp, -1, 1);
-  input.pitch = clamp(input.pitch + (pitchTarget - input.pitch) * steerLerp, -1, 1);
-
-  const rollTarget = Math.abs(kRoll) > 0 ? kRoll : input.yaw * 0.95;
-  input.roll = clamp(input.roll + (rollTarget - input.roll) * (usingStick ? 0.52 : 0.34), -1, 1);
+  input.roll = clamp(input.roll + (rollTarget - input.roll) * (usingStick ? 0.62 : 0.36), -1, 1);
+  input.pitch = clamp(input.pitch + (pitchTarget - input.pitch) * (usingStick ? 0.56 : 0.34), -1, 1);
+  input.yaw = 0;
 
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
   input.throttle = clamp(input.throttle + (throttleTarget - input.throttle) * 0.24, -1, 1);
