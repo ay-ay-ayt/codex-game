@@ -18,11 +18,19 @@
     <div id="health">HP 100</div>
     <div id="enemies">ENEMY 0</div>
     <div id="score">SCORE 0</div>
+    <div id="ammo">AMMO 60</div>
+    <div id="boostStat">BOOST 100%</div>
     <label id="botWrap">AI
       <select id="botCount" aria-label="対戦AI数">
         <option value="1">1</option>
         <option value="2" selected>2</option>
         <option value="3">3</option>
+      </select>
+    </label>
+    <label id="mapWrap">MAP
+      <select id="mapType" aria-label="マップ選択">
+        <option value="city" selected>CITY</option>
+        <option value="forest">FOREST</option>
       </select>
     </label>
     <button id="restartBtn" type="button">RESTART</button>
@@ -39,12 +47,10 @@
 
     <div class="action-wrap">
       <button id="fireBtn" class="action">FIRE</button>
-      <button id="boostBtn" class="action">BOOST</button>
-    </div>
-
-    <div class="stick-wrap" id="rightStickWrap">
-      <div class="stick-label">YAW / THROTTLE</div>
-      <div class="stick" id="rightStick"><div class="knob"></div></div>
+      <div class="lever-wrap">
+        <div class="stick-label">BOOST LEVER</div>
+        <div class="lever" id="boostLever"><div class="lever-knob"></div></div>
+      </div>
     </div>
   </div>
 
