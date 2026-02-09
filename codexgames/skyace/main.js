@@ -1019,6 +1019,11 @@ menuBtn.addEventListener("click", (e) => {
 });
 
 botCountEl.addEventListener("change", resetMatch);
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
 
 botCountEl.addEventListener("input", resetMatch);
 mapTypeEl.addEventListener("change", () => {
