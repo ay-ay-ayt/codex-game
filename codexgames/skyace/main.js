@@ -96,6 +96,8 @@ const game = {
   hitConfirmTimer: 0,
 };
 
+let lastHitVibeAt = 0;
+
 function clamp(v, a, b) {
   return Math.max(a, Math.min(b, v));
 }
@@ -185,13 +187,13 @@ function buildWorld(mapType) {
   const cloudMat = new THREE.MeshBasicMaterial({
     color: 0xf4fbff,
     transparent: true,
-    opacity: isForest ? 0.16 : 0.22,
+    opacity: isForest ? 0.2 : 0.27,
     depthWrite: false,
     fog: false,
   });
   for (let i = 0; i < 170; i++) {
-    const cloud = new THREE.Mesh(new THREE.SphereGeometry(rand(22, 52), 12, 10), cloudMat);
-    cloud.scale.set(rand(2.3, 4.8), rand(0.24, 0.45), rand(1.3, 2.7));
+    const cloud = new THREE.Mesh(new THREE.SphereGeometry(rand(26, 68), 12, 10), cloudMat);
+    cloud.scale.set(rand(2.5, 5.3), rand(0.38, 0.72), rand(1.4, 3.0));
     cloud.position.set(rand(-ARENA * 1.2, ARENA * 1.2), rand(640, 1250), rand(-ARENA * 1.2, ARENA * 1.2));
     world.add(cloud);
   }
@@ -321,31 +323,34 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.68 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.28, metalness: 0.68 });
   const trimMat = new THREE.MeshStandardMaterial({ color: 0xdce6ef, roughness: 0.24, metalness: 0.56 });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2d3b, roughness: 0.58, metalness: 0.26 });
 
-  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.95, 30, 16), bodyMat);
+  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.9, 34, 18), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
-  fuselage.castShadow = true;
 
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.95, 10.5, 18), trimMat);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.95, 12.8, 18), trimMat);
   nose.rotation.z = -Math.PI * 0.5;
-  nose.position.x = 20.2;
+  nose.position.x = 23.3;
 
-  const tailCone = new THREE.Mesh(new THREE.ConeGeometry(1.75, 7.2, 14), darkMat);
+  const tailCone = new THREE.Mesh(new THREE.ConeGeometry(1.8, 8.2, 14), darkMat);
   tailCone.rotation.z = Math.PI * 0.5;
-  tailCone.position.x = -18.6;
-
-  const dorsalSpine = new THREE.Mesh(new THREE.BoxGeometry(10.5, 1.25, 1.9), bodyMat);
-  dorsalSpine.position.set(-1.8, 2.35, 0);
+  tailCone.position.x = -21.2;
 
   const cockpit = new THREE.Mesh(
-    new THREE.SphereGeometry(2.5, 16, 14),
-    new THREE.MeshStandardMaterial({ color: 0x9fe9ff, transparent: true, opacity: 0.72, roughness: 0.12, metalness: 0.38 })
+    new THREE.SphereGeometry(2.65, 16, 14),
+    new THREE.MeshStandardMaterial({ color: 0xa8eeff, transparent: true, opacity: 0.72, roughness: 0.12, metalness: 0.38 })
   );
-  cockpit.scale.set(1.75, 0.8, 0.72);
-  cockpit.position.set(6.7, 2.75, 0);
+  cockpit.scale.set(2.0, 0.78, 0.82);
+  cockpit.position.set(7.9, 2.7, 0);
+
+  const enginePodL = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.95, 14.5, 14), bodyMat);
+  enginePodL.rotation.z = -Math.PI * 0.5;
+  enginePodL.position.set(-8.5, 2.6, 2.95);
+  const enginePodR = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.95, 14.5, 14), bodyMat);
+  enginePodR.rotation.z = -Math.PI * 0.5;
+  enginePodR.position.set(-8.5, 2.6, -2.95);
 
   const addPaired = (factory, z, rotY = 0, yOffset = 0, xOffset = 0) => {
     const left = factory();
@@ -357,54 +362,59 @@ function createFighter(color, isPlayer = false) {
     g.add(left, right);
   };
 
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(15, 0.5, 4.8), trimMat), 6.8, 0.28, -0.9, -1.4);
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.35, 2.3), trimMat), 10.2, 0.58, -1.08, 6.4);
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.3, 1.9), trimMat), 4.7, 0.42, 0.18, 10.4);
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.5, 2), trimMat), 3.7, 0.2, 2.3, -13.6);
+  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(19.5, 0.58, 5.6), trimMat), 7.2, 0.24, -1.08, -0.9);
+  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.4, 2.2), trimMat), 12.6, 0.6, -1.2, 7.0);
+  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.28, 1.45), trimMat), 4.4, 0.5, 0.5, 11.8);
 
-  const finL = new THREE.Mesh(new THREE.BoxGeometry(0.6, 6.6, 3.2), bodyMat);
-  finL.position.set(-14.2, 5.1, 2.05);
-  finL.rotation.x = THREE.MathUtils.degToRad(-12);
-  const finR = new THREE.Mesh(new THREE.BoxGeometry(0.6, 6.6, 3.2), bodyMat);
-  finR.position.set(-14.2, 5.1, -2.05);
-  finR.rotation.x = THREE.MathUtils.degToRad(12);
+  const finL = new THREE.Mesh(new THREE.BoxGeometry(0.65, 8.5, 3.4), bodyMat);
+  finL.position.set(-13.1, 7.0, 2.45);
+  finL.rotation.x = THREE.MathUtils.degToRad(-13);
+  const finR = new THREE.Mesh(new THREE.BoxGeometry(0.65, 8.5, 3.4), bodyMat);
+  finR.position.set(-13.1, 7.0, -2.45);
+  finR.rotation.x = THREE.MathUtils.degToRad(13);
 
-  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.65, 1.3), darkMat);
-  intakeL.position.set(8.4, 0.35, 3.05);
-  const intakeR = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.65, 1.3), darkMat);
-  intakeR.position.set(8.4, 0.35, -3.05);
+  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.7, 1.4), darkMat);
+  intakeL.position.set(9.0, 0.2, 3.3);
+  const intakeR = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.7, 1.4), darkMat);
+  intakeR.position.set(9.0, 0.2, -3.3);
 
-  const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.92, 3.4, 14), darkMat);
-  exhaust.rotation.z = Math.PI * 0.5;
-  exhaust.position.x = -19.5;
+  const exhaustL = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.35, 3.2, 12), darkMat);
+  exhaustL.rotation.z = Math.PI * 0.5;
+  exhaustL.position.set(-20.9, 1.8, 2.9);
+  const exhaustR = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.35, 3.2, 12), darkMat);
+  exhaustR.rotation.z = Math.PI * 0.5;
+  exhaustR.position.set(-20.9, 1.8, -2.9);
 
   const missileMat = new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.22, metalness: 0.2 });
-  const missileL = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.4, 8.8, 8), missileMat);
+  const missileL = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 9.4, 8), missileMat);
   missileL.rotation.z = Math.PI * 0.5;
-  missileL.position.set(0.6, -1.85, 9.3);
-  const missileR = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.4, 8.8, 8), missileMat);
+  missileL.position.set(1.0, -2.15, 10.2);
+  const missileR = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 9.4, 8), missileMat);
   missileR.rotation.z = Math.PI * 0.5;
-  missileR.position.set(0.6, -1.85, -9.3);
+  missileR.position.set(1.0, -2.15, -10.2);
 
-  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.45, 12, 10), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a }));
-  glow.position.x = -19.1;
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.55, 12, 10), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a }));
+  glow.position.x = -21.4;
 
   g.add(
     fuselage,
     nose,
     tailCone,
-    dorsalSpine,
     cockpit,
+    enginePodL,
+    enginePodR,
     finL,
     finR,
     intakeL,
     intakeR,
-    exhaust,
+    exhaustL,
+    exhaustR,
     missileL,
     missileR,
     glow
   );
 
+  g.scale.setScalar(1.14);
   g.position.set(0, 300, 0);
   g.traverse((node) => {
     if (node.isMesh) {
@@ -643,12 +653,24 @@ function updateBots(dt) {
   }
 }
 
+function vibrateOnHit() {
+  const vib = navigator.vibrate;
+  if (typeof vib !== "function") return;
+  const now = performance.now();
+  if (now - lastHitVibeAt < 90) return;
+  lastHitVibeAt = now;
+  navigator.vibrate(18);
+}
+
 function hitPlane(plane, dmg, attackerTeam = null) {
   if (!plane.alive) return;
   plane.hp -= dmg;
   spawnImpactFx(plane.mesh.position, plane.isPlayer ? 0xff7a6e : 0x9dffb3);
   if (plane.isPlayer && attackerTeam === "bot") game.playerHitTimer = 0.18;
-  if (!plane.isPlayer && attackerTeam === "player") game.hitConfirmTimer = 0.16;
+  if (!plane.isPlayer && attackerTeam === "player") {
+    game.hitConfirmTimer = 0.16;
+    vibrateOnHit();
+  }
   if (plane.hp <= 0) {
     plane.alive = false;
     plane.mesh.visible = false;
@@ -689,9 +711,9 @@ function updateCamera(dt) {
   if (!p) return;
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
   const up = new THREE.Vector3(0, 1, 0).applyQuaternion(p.mesh.quaternion).normalize();
-  const camPos = p.mesh.position.clone().addScaledVector(forward, -84).addScaledVector(up, 26);
+  const camPos = p.mesh.position.clone().addScaledVector(forward, -72).addScaledVector(up, 25);
   camera.position.lerp(camPos, 1 - Math.exp(-dt * 8));
-  camera.lookAt(p.mesh.position.clone().addScaledVector(forward, 220));
+  camera.lookAt(p.mesh.position.clone().addScaledVector(forward, 208).addScaledVector(up, 18));
 }
 
 function updateState() {
