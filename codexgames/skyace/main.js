@@ -624,6 +624,15 @@ function updateBots(dt) {
     const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
     const dist = Math.max(1, toTarget.length());
     const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
+    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 780, 0.06, 0.45));
+
+    const desired = toTarget.add(lead).normalize();
+    const avoid = obstacleAvoidance(b.mesh.position, forward, 190);
+    const altitudeErr = clamp((b.target.mesh.position.y - b.mesh.position.y) / 260, -1, 1);
+
+    const steer = desired.clone().addScaledVector(avoid, 1.5);
+    steer.y += altitudeErr * 0.3;
+    steer.normalize();
 
     const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
     const desired = toTarget.add(lead).normalize();
@@ -662,8 +671,8 @@ function updateBots(dt) {
 
     const prevPos = b.mesh.position.clone();
     b.mesh.position.addScaledVector(b.velocity, dt);
+    if (b.mesh.position.y < FLOOR_Y + 110) b.mesh.position.y += 120 * dt;
 
-    if (b.mesh.position.y < FLOOR_Y + 102) b.mesh.position.y += 130 * dt;
     keepInArena(b);
     collidePlaneWithObstacles(b, prevPos);
 
@@ -1034,6 +1043,17 @@ menuBtn.addEventListener("click", (e) => {
 });
 
 botCountEl.addEventListener("change", resetMatch);
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
+
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
 
 botCountEl.addEventListener("input", resetMatch);
 mapTypeEl.addEventListener("change", () => {
