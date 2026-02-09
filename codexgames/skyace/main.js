@@ -18,12 +18,35 @@ const fireBtn = document.getElementById("fireBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-renderer.setClearColor(0x6f9ed4, 1);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
+  || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+function createRenderer() {
+  const attempts = [
+    { canvas, antialias: !isMobile, powerPreference: isMobile ? "low-power" : "high-performance" },
+    { canvas, antialias: false, powerPreference: "low-power" },
+    { canvas, antialias: false },
+  ];
+
+  for (const options of attempts) {
+    try {
+      return new THREE.WebGLRenderer(options);
+    } catch {
+      // fall through to the next option
+    }
+  }
+  return null;
+}
+
+const renderer = createRenderer();
+const rendererReady = Boolean(renderer);
+if (rendererReady) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+  renderer.setClearColor(0x6f9ed4, 1);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = !isMobile;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+}
 
 const scene = new THREE.Scene();
 
@@ -31,7 +54,7 @@ const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
 const sun = new THREE.DirectionalLight(0xffffff, 1.15);
 sun.position.set(700, 900, 300);
-sun.castShadow = true;
+sun.castShadow = !isMobile;
 sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun);
 
@@ -46,6 +69,9 @@ const tmpVecC = new THREE.Vector3();
 
 const ARENA = 3600;
 const FLOOR_Y = 40;
+const worldDetail = isMobile
+  ? { clouds: 80, hills: 40, forestCenters: 6, forestDenseTrees: 60, forestSparseTrees: 320, cityBuildings: 180 }
+  : { clouds: 170, hills: 95, forestCenters: 10, forestDenseTrees: 120, forestSparseTrees: 900, cityBuildings: 420 };
 const MAX_BANK = THREE.MathUtils.degToRad(55);
 const MAX_PITCH = THREE.MathUtils.degToRad(35);
 const BANK_RATE = 3.0;
@@ -194,7 +220,7 @@ function buildWorld(mapType) {
     depthWrite: false,
     fog: false,
   });
-  for (let i = 0; i < 170; i++) {
+  for (let i = 0; i < worldDetail.clouds; i++) {
     const cloud = new THREE.Mesh(new THREE.SphereGeometry(rand(26, 68), 12, 10), cloudMat);
     cloud.scale.set(rand(2.5, 5.3), rand(0.38, 0.72), rand(1.4, 3.0));
     cloud.position.set(rand(-ARENA * 1.2, ARENA * 1.2), rand(640, 1250), rand(-ARENA * 1.2, ARENA * 1.2));
@@ -212,7 +238,7 @@ function buildWorld(mapType) {
     world.add(ground);
 
     const hillMat = new THREE.MeshStandardMaterial({ color: 0x5d7f57, roughness: 0.95 });
-    for (let i = 0; i < 95; i++) {
+    for (let i = 0; i < worldDetail.hills; i++) {
       const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(90, 260), 16, 12), hillMat);
       hill.scale.y = rand(0.24, 0.55);
       hill.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(8, 32), rand(-ARENA * 1.2, ARENA * 1.2));
@@ -222,7 +248,7 @@ function buildWorld(mapType) {
 
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
     const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
-    const forestCenters = Array.from({ length: 10 }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
+    const forestCenters = Array.from({ length: worldDetail.forestCenters }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
 
     const placeTree = (px, pz, dense = false) => {
       if (Math.abs(px) < 160 && Math.abs(pz) < 160) return;
@@ -246,14 +272,14 @@ function buildWorld(mapType) {
     };
 
     for (const center of forestCenters) {
-      for (let i = 0; i < 120; i++) {
+      for (let i = 0; i < worldDetail.forestDenseTrees; i++) {
         const angle = Math.random() * Math.PI * 2;
         const radius = rand(0, 260) * Math.sqrt(Math.random());
         placeTree(center.x + Math.cos(angle) * radius, center.y + Math.sin(angle) * radius, true);
       }
     }
 
-    for (let i = 0; i < 900; i++) {
+    for (let i = 0; i < worldDetail.forestSparseTrees; i++) {
       placeTree(rand(-ARENA * 1.2, ARENA * 1.2), rand(-ARENA * 1.2, ARENA * 1.2), false);
     }
     return;
@@ -291,7 +317,7 @@ function buildWorld(mapType) {
   }
 
   const buildingPalette = [0x7f8b98, 0x8e97a5, 0x646f7d, 0x5a6370, 0x9ba4b4];
-  for (let i = 0; i < 420; i++) {
+  for (let i = 0; i < worldDetail.cityBuildings; i++) {
     const px = rand(-ARENA * 1.15, ARENA * 1.15);
     const pz = rand(-ARENA * 1.15, ARENA * 1.15);
     if (Math.abs(px) < 260 && Math.abs(pz) < 260) continue;
@@ -1008,6 +1034,18 @@ async function lockLandscape() {
 function updateOrientationHint() {
   rotateHint.hidden = window.innerWidth >= window.innerHeight;
 }
+
+if (!rendererReady) {
+  messageEl.hidden = false;
+  messageEl.textContent = "WebGLを初期化できませんでした。タブを減らして再読み込みしてください。";
+  throw new Error("SkyAce: WebGL renderer initialization failed");
+}
+
+canvas.addEventListener("webglcontextlost", (e) => {
+  e.preventDefault();
+  messageEl.hidden = false;
+  messageEl.textContent = "描画コンテキストが失われました。再読み込みしてください。";
+});
 
 buildWorld(mapTypeEl.value);
 setupJoystick("leftStick", (x, y) => {
