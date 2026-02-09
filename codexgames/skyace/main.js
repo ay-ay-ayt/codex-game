@@ -70,7 +70,7 @@ const tmpVecC = new THREE.Vector3();
 const ARENA = 3600;
 const FLOOR_Y = 40;
 const worldDetail = isMobile
-  ? { clouds: 80, hills: 40, forestCenters: 6, forestDenseTrees: 60, forestSparseTrees: 320, cityBuildings: 180 }
+  ? { clouds: 80, hills: 40, forestCenters: 6, forestDenseTrees: 60, forestSparseTrees: 320, cityBuildings: 320 }
   : { clouds: 170, hills: 95, forestCenters: 10, forestDenseTrees: 120, forestSparseTrees: 900, cityBuildings: 420 };
 const MAX_BANK = THREE.MathUtils.degToRad(55);
 const MAX_PITCH = THREE.MathUtils.degToRad(35);
