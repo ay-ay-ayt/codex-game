@@ -369,10 +369,10 @@ function createFighter(color, isPlayer = false) {
 
   const finL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 8, 1.8), bodyMat);
   finL.position.set(-13.1, 7.0, 2.45);
-  finL.rotation.x = THREE.MathUtils.degToRad(-13);
+  finL.rotation.x = 0;
   const finR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 8, 1.8), bodyMat);
   finR.position.set(-13.1, 7.0, -2.45);
-  finR.rotation.x = THREE.MathUtils.degToRad(13);
+  finR.rotation.x = 0;
 
   const intakeL = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.7, 1.4), darkMat);
   intakeL.position.set(9.0, 0.2, 3.3);
@@ -611,6 +611,9 @@ function updatePlayer(dt) {
 
 function updateBots(dt) {
   const player = game.player;
+  const botMinSpeed = 150;
+  const botMaxSpeed = 560;
+
   for (const b of game.bots) {
     if (!b.alive) continue;
 
@@ -631,19 +634,40 @@ function updateBots(dt) {
     steer.y += altitudeErr * 0.3;
     steer.normalize();
 
-    const targetQuat = new THREE.Quaternion().setFromUnitVectors(AXIS_X, steer);
-    b.mesh.quaternion.slerp(targetQuat, 1 - Math.exp(-dt * 2.8));
+    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
+    const desired = toTarget.add(lead).normalize();
+    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
 
-    const turnedForward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
-    const yawErr = forward.clone().cross(steer).y;
-    const rollTarget = clamp(-yawErr * 0.65, -0.7, 0.7);
-    b.roll = smoothApproach(b.roll, rollTarget, 3.2, dt);
-    b.mesh.rotateOnAxis(turnedForward, b.roll * dt * 1.1);
-    b.mesh.quaternion.normalize();
+    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
+    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
+    const pitchErr = clamp(steer.y - forward.y, -1, 1);
 
-    const speedTarget = clamp(170 + (dist > 520 ? 150 : 48) + Math.abs(altitudeErr) * 26, 165, 420);
-    b.speed = THREE.MathUtils.lerp(b.speed, speedTarget, 0.05);
-    b.velocity.lerp(turnedForward.multiplyScalar(b.speed), 0.08);
+    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
+    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
+
+    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
+    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
+    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
+    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
+
+    const yawRate = TURN_RATE * (b.roll / MAX_BANK);
+    b.yaw += yawRate * dt;
+
+    qYaw.setFromAxisAngle(AXIS_Y, b.yaw);
+    qPitch.setFromAxisAngle(AXIS_Z, b.pitch);
+    qRoll.setFromAxisAngle(AXIS_X, -b.roll);
+
+    qMove.copy(qYaw).multiply(qPitch);
+    qVisual.copy(qMove).multiply(qRoll);
+    b.mesh.quaternion.copy(qVisual);
+
+    const newForward = new THREE.Vector3(1, 0, 0).applyQuaternion(qMove).normalize();
+
+    const throttleTarget = dist > 650 ? 0.9 : dist > 360 ? 0.45 : 0.1;
+    b.speed = clamp(b.speed + throttleTarget * dt * 170, botMinSpeed, botMaxSpeed);
+
+    const desiredVel = newForward.multiplyScalar(b.speed);
+    b.velocity.lerp(desiredVel, 0.08);
 
     const prevPos = b.mesh.position.clone();
     b.mesh.position.addScaledVector(b.velocity, dt);
@@ -652,10 +676,10 @@ function updateBots(dt) {
     keepInArena(b);
     collidePlaneWithObstacles(b, prevPos);
 
-    const aimDot = turnedForward.dot(toTarget.normalize());
-    if (dist < 840 && aimDot > 0.93 && b.cooldown <= 0) {
+    const aimDot = newForward.dot(toTarget.normalize());
+    if (dist < 820 && aimDot > 0.94 && b.cooldown <= 0) {
       spawnBullet(b, 0xffb67e);
-      b.cooldown = rand(0.16, 0.31);
+      b.cooldown = 0.11;
     }
   }
 }
@@ -1019,6 +1043,12 @@ menuBtn.addEventListener("click", (e) => {
 });
 
 botCountEl.addEventListener("change", resetMatch);
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
+
 botCountEl.addEventListener("input", resetMatch);
 mapTypeEl.addEventListener("change", () => {
   buildWorld(mapTypeEl.value);
