@@ -258,6 +258,64 @@ function buildWorld(mapType) {
     return;
   }
 
+  if (isForest) {
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
+      new THREE.MeshStandardMaterial({ color: 0x49643f, roughness: 0.98, metalness: 0.02 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = FLOOR_Y;
+    ground.receiveShadow = true;
+    world.add(ground);
+
+    const hillMat = new THREE.MeshStandardMaterial({ color: 0x5d7f57, roughness: 0.95 });
+    for (let i = 0; i < 95; i++) {
+      const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(90, 260), 16, 12), hillMat);
+      hill.scale.y = rand(0.24, 0.55);
+      hill.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(8, 32), rand(-ARENA * 1.2, ARENA * 1.2));
+      hill.receiveShadow = true;
+      world.add(hill);
+    }
+
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
+    const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
+    const forestCenters = Array.from({ length: 10 }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
+
+    const placeTree = (px, pz, dense = false) => {
+      if (Math.abs(px) < 160 && Math.abs(pz) < 160) return;
+      const h = dense ? rand(68, 172) : rand(45, 132);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(dense ? rand(2.8, 5.4) : rand(2.2, 4.2), dense ? rand(4.1, 6.6) : rand(3.1, 5.2), h, 8), trunkMat);
+      trunk.position.set(px, FLOOR_Y + h / 2, pz);
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      world.add(trunk);
+      addObstacle(trunk, 5);
+
+      const crown = new THREE.Mesh(
+        new THREE.ConeGeometry(dense ? rand(22, 40) : rand(14, 28), dense ? rand(44, 84) : rand(30, 58), 9),
+        new THREE.MeshStandardMaterial({ color: leafPalette[(Math.random() * leafPalette.length) | 0], roughness: 0.95 })
+      );
+      crown.position.set(px, FLOOR_Y + h + crown.geometry.parameters.height * 0.42, pz);
+      crown.castShadow = true;
+      crown.receiveShadow = true;
+      world.add(crown);
+      addObstacle(crown, 2);
+    };
+
+    for (const center of forestCenters) {
+      for (let i = 0; i < 120; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = rand(0, 260) * Math.sqrt(Math.random());
+        placeTree(center.x + Math.cos(angle) * radius, center.y + Math.sin(angle) * radius, true);
+      }
+    }
+
+    for (let i = 0; i < 900; i++) {
+      placeTree(rand(-ARENA * 1.2, ARENA * 1.2), rand(-ARENA * 1.2, ARENA * 1.2), false);
+    }
+    return;
+  }
+
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
     new THREE.MeshStandardMaterial({ color: 0x42464d, roughness: 0.98, metalness: 0.05 })
