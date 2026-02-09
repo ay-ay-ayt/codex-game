@@ -174,21 +174,88 @@ function buildWorld(mapType) {
   staticObstacles.length = 0;
 
   const isForest = mapType === "forest";
-  scene.fog = isForest ? new THREE.FogExp2(0x86b78d, 0.00016) : null;
+  const skyColor = isForest ? 0x89b992 : 0x7594ba;
+  scene.background = new THREE.Color(skyColor);
+  scene.fog = isForest
+    ? new THREE.FogExp2(skyColor, 0.0001)
+    : new THREE.FogExp2(skyColor, 0.000075);
 
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(9000, 36, 26),
-    new THREE.MeshBasicMaterial({ color: isForest ? 0x88c6a0 : 0x75a8e0, side: THREE.BackSide })
+    new THREE.MeshBasicMaterial({ color: isForest ? 0x93caa3 : 0x83aee2, side: THREE.BackSide })
   );
   world.add(sky);
   buildArenaBoundary();
 
-  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xf4fbff, transparent: true, opacity: isForest ? 0.24 : 0.3, depthWrite: false });
-  for (let i = 0; i < 140; i++) {
-    const c = new THREE.Mesh(new THREE.SphereGeometry(rand(34, 110), 14, 12), cloudMat);
-    c.scale.set(rand(1.2, 3.2), rand(0.4, 0.92), rand(1.2, 3.2));
-    c.position.set(rand(-ARENA * 1.1, ARENA * 1.1), rand(420, 980), rand(-ARENA * 1.1, ARENA * 1.1));
-    world.add(c);
+  const cloudMat = new THREE.MeshBasicMaterial({
+    color: 0xf4fbff,
+    transparent: true,
+    opacity: isForest ? 0.18 : 0.24,
+    depthWrite: false,
+  });
+  for (let i = 0; i < 170; i++) {
+    const cloud = new THREE.Mesh(new THREE.SphereGeometry(rand(22, 52), 12, 10), cloudMat);
+    cloud.scale.set(rand(2.3, 4.8), rand(0.24, 0.45), rand(1.3, 2.7));
+    cloud.position.set(rand(-ARENA * 1.2, ARENA * 1.2), rand(640, 1250), rand(-ARENA * 1.2, ARENA * 1.2));
+    world.add(cloud);
+  }
+
+  if (isForest) {
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
+      new THREE.MeshStandardMaterial({ color: 0x49643f, roughness: 0.98, metalness: 0.02 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = FLOOR_Y;
+    ground.receiveShadow = true;
+    world.add(ground);
+
+    const hillMat = new THREE.MeshStandardMaterial({ color: 0x5d7f57, roughness: 0.95 });
+    for (let i = 0; i < 95; i++) {
+      const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(90, 260), 16, 12), hillMat);
+      hill.scale.y = rand(0.24, 0.55);
+      hill.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(8, 32), rand(-ARENA * 1.2, ARENA * 1.2));
+      hill.receiveShadow = true;
+      world.add(hill);
+    }
+
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
+    const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
+    const forestCenters = Array.from({ length: 10 }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
+
+    const placeTree = (px, pz, dense = false) => {
+      if (Math.abs(px) < 160 && Math.abs(pz) < 160) return;
+      const h = dense ? rand(68, 172) : rand(45, 132);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(dense ? rand(2.8, 5.4) : rand(2.2, 4.2), dense ? rand(4.1, 6.6) : rand(3.1, 5.2), h, 8), trunkMat);
+      trunk.position.set(px, FLOOR_Y + h / 2, pz);
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      world.add(trunk);
+      addObstacle(trunk, 5);
+
+      const crown = new THREE.Mesh(
+        new THREE.ConeGeometry(dense ? rand(22, 40) : rand(14, 28), dense ? rand(44, 84) : rand(30, 58), 9),
+        new THREE.MeshStandardMaterial({ color: leafPalette[(Math.random() * leafPalette.length) | 0], roughness: 0.95 })
+      );
+      crown.position.set(px, FLOOR_Y + h + crown.geometry.parameters.height * 0.42, pz);
+      crown.castShadow = true;
+      crown.receiveShadow = true;
+      world.add(crown);
+      addObstacle(crown, 2);
+    };
+
+    for (const center of forestCenters) {
+      for (let i = 0; i < 120; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = rand(0, 260) * Math.sqrt(Math.random());
+        placeTree(center.x + Math.cos(angle) * radius, center.y + Math.sin(angle) * radius, true);
+      }
+    }
+
+    for (let i = 0; i < 900; i++) {
+      placeTree(rand(-ARENA * 1.2, ARENA * 1.2), rand(-ARENA * 1.2, ARENA * 1.2), false);
+    }
+    return;
   }
 
   if (isForest) {
@@ -316,82 +383,94 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.32, metalness: 0.64, side: THREE.DoubleSide });
-  const trimMat = new THREE.MeshStandardMaterial({ color: 0xd9e2ea, roughness: 0.28, metalness: 0.6, side: THREE.DoubleSide });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x243342, roughness: 0.56, metalness: 0.32, side: THREE.DoubleSide });
+  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.68, side: THREE.DoubleSide });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0xdce6ef, roughness: 0.24, metalness: 0.56, side: THREE.DoubleSide });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2d3b, roughness: 0.58, metalness: 0.26, side: THREE.DoubleSide });
 
-  const fuselage = new THREE.Mesh(new THREE.CapsuleGeometry(2.9, 24, 8, 18), bodyMat);
-  fuselage.rotation.z = Math.PI * 0.5;
+  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.95, 30, 16), bodyMat);
+  fuselage.rotation.z = -Math.PI * 0.5;
   fuselage.castShadow = true;
 
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(2.05, 11.5, 16), trimMat);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.95, 10.5, 18), trimMat);
   nose.rotation.z = -Math.PI * 0.5;
-  nose.position.x = 20.8;
+  nose.position.x = 20.2;
   nose.castShadow = true;
 
+  const tailCone = new THREE.Mesh(new THREE.ConeGeometry(1.75, 7.2, 14), darkMat);
+  tailCone.rotation.z = Math.PI * 0.5;
+  tailCone.position.x = -18.6;
+
+  const dorsalSpine = new THREE.Mesh(new THREE.BoxGeometry(10.5, 1.25, 1.9), bodyMat);
+  dorsalSpine.position.set(-1.8, 2.35, 0);
+
   const cockpit = new THREE.Mesh(
-    new THREE.SphereGeometry(2.6, 16, 14),
-    new THREE.MeshStandardMaterial({ color: 0x9fe9ff, transparent: true, opacity: 0.76, roughness: 0.14, metalness: 0.42, side: THREE.DoubleSide })
+    new THREE.SphereGeometry(2.5, 16, 14),
+    new THREE.MeshStandardMaterial({ color: 0x9fe9ff, transparent: true, opacity: 0.72, roughness: 0.12, metalness: 0.38, side: THREE.DoubleSide })
   );
-  cockpit.scale.set(1.65, 0.82, 0.74);
-  cockpit.position.set(6.4, 2.55, 0);
+  cockpit.scale.set(1.75, 0.8, 0.72);
+  cockpit.position.set(6.7, 2.75, 0);
 
   const wingShape = new THREE.Shape([
-    new THREE.Vector2(-7, 0),
-    new THREE.Vector2(10.5, 1.5),
-    new THREE.Vector2(15.5, 6.4),
-    new THREE.Vector2(-3.5, 8.1),
+    new THREE.Vector2(-9.6, 0),
+    new THREE.Vector2(7.8, 0.2),
+    new THREE.Vector2(14.8, 5.4),
+    new THREE.Vector2(3.4, 8.7),
+    new THREE.Vector2(-11.2, 5.7),
   ]);
-  const wingGeo = new THREE.ExtrudeGeometry(wingShape, { depth: 0.65, bevelEnabled: false });
+  const wingGeo = new THREE.ExtrudeGeometry(wingShape, { depth: 0.42, bevelEnabled: false });
 
   const wingL = new THREE.Mesh(wingGeo, trimMat);
   wingL.rotation.set(0, Math.PI * 0.5, Math.PI);
-  wingL.position.set(-1.2, -1.45, 7.3);
+  wingL.position.set(-1.6, -1.05, 7.4);
   wingL.castShadow = true;
 
   const wingR = wingL.clone();
   wingR.scale.z = -1;
-  wingR.position.z = -7.3;
+  wingR.position.z = -7.4;
 
   const canardShape = new THREE.Shape([
-    new THREE.Vector2(-2.5, 0),
-    new THREE.Vector2(4, 0.8),
-    new THREE.Vector2(1.5, 2.8),
-    new THREE.Vector2(-3.2, 2.4),
+    new THREE.Vector2(-3.4, 0),
+    new THREE.Vector2(3.3, 0.7),
+    new THREE.Vector2(0.8, 3.1),
+    new THREE.Vector2(-4.2, 2.5),
   ]);
-  const canardGeo = new THREE.ExtrudeGeometry(canardShape, { depth: 0.45, bevelEnabled: false });
+  const canardGeo = new THREE.ExtrudeGeometry(canardShape, { depth: 0.35, bevelEnabled: false });
   const canardL = new THREE.Mesh(canardGeo, trimMat);
   canardL.rotation.set(0, Math.PI * 0.5, Math.PI);
-  canardL.position.set(10.6, -0.9, 4.9);
+  canardL.position.set(10.4, -0.15, 4.8);
   canardL.castShadow = true;
 
   const canardR = canardL.clone();
   canardR.scale.z = -1;
-  canardR.position.z = -4.9;
+  canardR.position.z = -4.8;
 
-  const tailWingL = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.75, 2.4), trimMat);
-  tailWingL.position.set(-12.5, 1.35, 4.6);
-  const tailWingR = tailWingL.clone();
-  tailWingR.position.z = -4.6;
+  const stabL = new THREE.Mesh(new THREE.BoxGeometry(6.3, 0.62, 2.1), trimMat);
+  stabL.position.set(-13.5, 2.6, 3.8);
+  const stabR = stabL.clone();
+  stabR.position.z = -3.8;
 
-  const tailFin = new THREE.Mesh(new THREE.BoxGeometry(5.5, 7.2, 0.75), bodyMat);
-  tailFin.position.set(-12.8, 5.15, 0);
+  const finL = new THREE.Mesh(new THREE.BoxGeometry(3.2, 6.6, 0.55), bodyMat);
+  finL.position.set(-14.2, 5.2, 2.05);
+  finL.rotation.x = THREE.MathUtils.degToRad(-12);
+  const finR = finL.clone();
+  finR.position.z = -2.05;
+  finR.rotation.x = THREE.MathUtils.degToRad(12);
 
-  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 2, 1.35), darkMat);
-  intakeL.position.set(8.6, 0.2, 3.1);
+  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.65, 1.3), darkMat);
+  intakeL.position.set(8.4, 0.35, 3.05);
   const intakeR = intakeL.clone();
-  intakeR.position.z = -3.1;
+  intakeR.position.z = -3.05;
 
-  const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 2.2, 3.3, 12), darkMat);
+  const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.92, 3.4, 14), darkMat);
   exhaust.rotation.z = Math.PI * 0.5;
-  exhaust.position.x = -18;
+  exhaust.position.x = -19.5;
 
   const missileMat = new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.22, metalness: 0.2, side: THREE.DoubleSide });
-  const missileL = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 9.4, 8), missileMat);
+  const missileL = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.4, 8.8, 8), missileMat);
   missileL.rotation.z = Math.PI * 0.5;
-  missileL.position.set(2.1, -2.15, 10.1);
+  missileL.position.set(0.6, -1.85, 9.3);
   const missileR = missileL.clone();
-  missileR.position.z = -10.1;
+  missileR.position.z = -9.3;
 
   const glow = new THREE.Mesh(new THREE.SphereGeometry(1.45, 12, 10), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a }));
   glow.position.x = -19.1;
@@ -399,14 +478,17 @@ function createFighter(color, isPlayer = false) {
   g.add(
     fuselage,
     nose,
+    tailCone,
+    dorsalSpine,
     cockpit,
     wingL,
     wingR,
     canardL,
     canardR,
-    tailWingL,
-    tailWingR,
-    tailFin,
+    stabL,
+    stabR,
+    finL,
+    finR,
     intakeL,
     intakeR,
     exhaust,
