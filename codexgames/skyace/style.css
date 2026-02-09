@@ -26,6 +26,8 @@ body {
   position: fixed;
   inset: 0;
   overscroll-behavior: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #game {
@@ -41,7 +43,7 @@ body {
   right: 10px;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(5, max-content);
+  grid-template-columns: repeat(4, max-content);
   gap: 6px;
   pointer-events: none;
 }
@@ -57,19 +59,52 @@ body {
   pointer-events: auto;
 }
 
-#hud select,
-#hud button {
+#hud button,
+#menuPanel select {
   touch-action: auto;
 }
 
 #hud,
+#menuPanel,
 #mobileControls,
 #rotateHint,
 #message {
   -webkit-touch-callout: none;
 }
 
-#hud select {
+
+#menuBtn,
+#restartBtn {
+  color: #ecf9ff;
+  background: rgba(28, 74, 117, 0.8);
+  touch-action: manipulation;
+}
+
+#menuPanel {
+  position: fixed;
+  top: max(68px, calc(env(safe-area-inset-top) + 58px));
+  left: 10px;
+  z-index: 31;
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 6px;
+}
+
+#menuPanel[hidden] {
+  display: none;
+}
+
+#menuPanel > * {
+  padding: 5px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  backdrop-filter: blur(5px);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#menuPanel select {
   min-width: 72px;
   padding: 3px 6px;
 }
@@ -84,7 +119,8 @@ body {
   align-items: center;
 }
 
-#botCount {
+#botCount,
+#mapType {
   border: 0;
   border-radius: 8px;
   background: #d7f0ff;
@@ -96,12 +132,6 @@ body {
 #health.flash {
   box-shadow: 0 0 18px rgba(255, 110, 110, 0.85);
   border-color: rgba(255, 130, 130, 0.95);
-}
-
-#restartBtn {
-  color: #ecf9ff;
-  background: rgba(28, 74, 117, 0.8);
-  touch-action: manipulation;
 }
 
 #crosshair {
@@ -299,6 +329,10 @@ body {
 @media (max-width: 900px) {
   #hud {
     grid-template-columns: repeat(3, max-content);
+  }
+
+  #menuPanel {
+    grid-template-columns: 1fr;
   }
 }
 

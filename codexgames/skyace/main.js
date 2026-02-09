@@ -3,12 +3,13 @@ import * as THREE from "../../vendor/three.module.min.js";
 const canvas = document.getElementById("game");
 const healthEl = document.getElementById("health");
 const enemiesEl = document.getElementById("enemies");
-const scoreEl = document.getElementById("score");
 const ammoEl = document.getElementById("ammo");
 const boostStatEl = document.getElementById("boostStat");
 const botCountEl = document.getElementById("botCount");
 const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
+const menuBtn = document.getElementById("menuBtn");
+const menuPanel = document.getElementById("menuPanel");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
@@ -366,10 +367,10 @@ function createFighter(color, isPlayer = false) {
   addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.4, 2.2), trimMat), 12.6, 0.6, -1.2, 7.0);
   addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.28, 1.45), trimMat), 4.4, 0.5, 0.5, 11.8);
 
-  const finL = new THREE.Mesh(new THREE.BoxGeometry(0.65, 8.5, 3.4), bodyMat);
+  const finL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 8, 1.8), bodyMat);
   finL.position.set(-13.1, 7.0, 2.45);
   finL.rotation.x = THREE.MathUtils.degToRad(-13);
-  const finR = new THREE.Mesh(new THREE.BoxGeometry(0.65, 8.5, 3.4), bodyMat);
+  const finR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 8, 1.8), bodyMat);
   finR.position.set(-13.1, 7.0, -2.45);
   finR.rotation.x = THREE.MathUtils.degToRad(13);
 
@@ -617,38 +618,44 @@ function updateBots(dt) {
     b.target = player.alive ? player : game.bots.find((x) => x !== b && x.alive) || null;
     if (!b.target) continue;
 
-    const to = b.target.mesh.position.clone().sub(b.mesh.position);
-    const dist = to.length();
-    const desired = to.normalize();
+    const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
+    const dist = Math.max(1, toTarget.length());
     const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 160);
+    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 780, 0.06, 0.45));
 
-    const steer = desired.clone().addScaledVector(avoid, 1.75).normalize();
+    const desired = toTarget.add(lead).normalize();
+    const avoid = obstacleAvoidance(b.mesh.position, forward, 190);
+    const altitudeErr = clamp((b.target.mesh.position.y - b.mesh.position.y) / 260, -1, 1);
+
+    const steer = desired.clone().addScaledVector(avoid, 1.5);
+    steer.y += altitudeErr * 0.3;
+    steer.normalize();
+
+    const targetQuat = new THREE.Quaternion().setFromUnitVectors(AXIS_X, steer);
+    b.mesh.quaternion.slerp(targetQuat, 1 - Math.exp(-dt * 2.8));
+
+    const turnedForward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
     const yawErr = forward.clone().cross(steer).y;
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-    const rollErr = clamp(-yawErr * 1.4, -1, 1);
-
-
-    b.mesh.rotateY(-yawErr * dt * 1.08);
-    b.mesh.rotateZ(pitchErr * dt * 0.86);
-    b.mesh.rotateX(-rollErr * dt * 1.22);
+    const rollTarget = clamp(-yawErr * 0.65, -0.7, 0.7);
+    b.roll = smoothApproach(b.roll, rollTarget, 3.2, dt);
+    b.mesh.rotateOnAxis(turnedForward, b.roll * dt * 1.1);
     b.mesh.quaternion.normalize();
 
-    const speedTarget = clamp(185 + (dist > 540 ? 130 : 25), 170, 390);
+    const speedTarget = clamp(170 + (dist > 520 ? 150 : 48) + Math.abs(altitudeErr) * 26, 165, 420);
     b.speed = THREE.MathUtils.lerp(b.speed, speedTarget, 0.05);
-    const newForward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
-    b.velocity.lerp(newForward.multiplyScalar(b.speed), 0.08);
+    b.velocity.lerp(turnedForward.multiplyScalar(b.speed), 0.08);
+
     const prevPos = b.mesh.position.clone();
     b.mesh.position.addScaledVector(b.velocity, dt);
+    if (b.mesh.position.y < FLOOR_Y + 110) b.mesh.position.y += 120 * dt;
 
-    if (b.mesh.position.y < FLOOR_Y + 102) b.mesh.position.y += 130 * dt;
     keepInArena(b);
     collidePlaneWithObstacles(b, prevPos);
 
-    const aimDot = newForward.dot(to.normalize());
-    if (dist < 780 && aimDot > 0.94 && b.cooldown <= 0) {
+    const aimDot = turnedForward.dot(toTarget.normalize());
+    if (dist < 840 && aimDot > 0.93 && b.cooldown <= 0) {
       spawnBullet(b, 0xffb67e);
-      b.cooldown = rand(0.14, 0.28);
+      b.cooldown = rand(0.16, 0.31);
     }
   }
 }
@@ -720,7 +727,6 @@ function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
   healthEl.textContent = `HP ${Math.max(0, Math.round(game.player.hp))}`;
   enemiesEl.textContent = `ENEMY ${alive}`;
-  scoreEl.textContent = `SCORE ${game.score}`;
   ammoEl.textContent = `AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
 
@@ -1007,7 +1013,18 @@ const restartFromHud = (e) => {
 restartBtn.addEventListener("click", restartFromHud);
 restartBtn.addEventListener("pointerup", restartFromHud);
 
+menuBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  menuPanel.hidden = !menuPanel.hidden;
+});
+
 botCountEl.addEventListener("change", resetMatch);
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
+
 botCountEl.addEventListener("input", resetMatch);
 mapTypeEl.addEventListener("change", () => {
   buildWorld(mapTypeEl.value);
@@ -1017,6 +1034,16 @@ mapTypeEl.addEventListener("change", () => {
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 window.addEventListener("selectstart", (e) => e.preventDefault());
 window.addEventListener("dragstart", (e) => e.preventDefault());
+window.addEventListener("gesturestart", (e) => e.preventDefault());
+window.addEventListener("touchstart", (e) => {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+document.addEventListener("pointerdown", (e) => {
+  if (menuPanel.hidden) return;
+  if (menuPanel.contains(e.target) || menuBtn.contains(e.target)) return;
+  menuPanel.hidden = true;
+});
 
 window.addEventListener("resize", () => {
   fitViewport();
