@@ -23,7 +23,6 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x6ea2df, 900, 7200);
 
 const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
@@ -175,7 +174,7 @@ function buildWorld(mapType) {
   staticObstacles.length = 0;
 
   const isForest = mapType === "forest";
-  scene.fog = isForest ? new THREE.Fog(0x86b78d, 650, 5200) : new THREE.Fog(0x6ea2df, 900, 7200);
+  scene.fog = isForest ? new THREE.FogExp2(0x86b78d, 0.00016) : null;
 
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(9000, 36, 26),
@@ -184,11 +183,11 @@ function buildWorld(mapType) {
   world.add(sky);
   buildArenaBoundary();
 
-  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: isForest ? 0.42 : 0.5 });
+  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xf4fbff, transparent: true, opacity: isForest ? 0.24 : 0.3, depthWrite: false });
   for (let i = 0; i < 140; i++) {
     const c = new THREE.Mesh(new THREE.SphereGeometry(rand(34, 110), 14, 12), cloudMat);
     c.scale.set(rand(1.2, 3.2), rand(0.4, 0.92), rand(1.2, 3.2));
-    c.position.set(rand(-ARENA * 1.1, ARENA * 1.1), rand(180, 900), rand(-ARENA * 1.1, ARENA * 1.1));
+    c.position.set(rand(-ARENA * 1.1, ARENA * 1.1), rand(420, 980), rand(-ARENA * 1.1, ARENA * 1.1));
     world.add(c);
   }
 
@@ -317,71 +316,85 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.62, side: THREE.DoubleSide });
-  const trimMat = new THREE.MeshStandardMaterial({ color: 0xd9e2ea, roughness: 0.32, metalness: 0.58, side: THREE.DoubleSide });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a3744, roughness: 0.58, metalness: 0.35, side: THREE.DoubleSide });
+  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.32, metalness: 0.64, side: THREE.DoubleSide });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0xd9e2ea, roughness: 0.28, metalness: 0.6, side: THREE.DoubleSide });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x243342, roughness: 0.56, metalness: 0.32, side: THREE.DoubleSide });
 
-  const fuselage = new THREE.Mesh(new THREE.CapsuleGeometry(3.3, 24, 8, 18), bodyMat);
+  const fuselage = new THREE.Mesh(new THREE.CapsuleGeometry(2.9, 24, 8, 18), bodyMat);
   fuselage.rotation.z = Math.PI * 0.5;
   fuselage.castShadow = true;
 
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(2.2, 11, 14), trimMat);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(2.05, 11.5, 16), trimMat);
   nose.rotation.z = -Math.PI * 0.5;
-  nose.position.x = 20.5;
+  nose.position.x = 20.8;
   nose.castShadow = true;
 
   const cockpit = new THREE.Mesh(
-    new THREE.SphereGeometry(2.7, 14, 12),
-    new THREE.MeshStandardMaterial({ color: 0x9ae4ff, transparent: true, opacity: 0.78, roughness: 0.18, metalness: 0.45 })
+    new THREE.SphereGeometry(2.6, 16, 14),
+    new THREE.MeshStandardMaterial({ color: 0x9fe9ff, transparent: true, opacity: 0.76, roughness: 0.14, metalness: 0.42, side: THREE.DoubleSide })
   );
-  cockpit.scale.set(1.8, 0.8, 0.72);
-  cockpit.position.set(6.8, 2.65, 0);
+  cockpit.scale.set(1.65, 0.82, 0.74);
+  cockpit.position.set(6.4, 2.55, 0);
 
-  const wingGeom = new THREE.ExtrudeGeometry(
-    new THREE.Shape([
-      new THREE.Vector2(-1, 0),
-      new THREE.Vector2(17, 1.2),
-      new THREE.Vector2(8, 7.6),
-      new THREE.Vector2(-4, 6),
-    ]),
-    { depth: 0.8, bevelEnabled: false }
-  );
+  const wingShape = new THREE.Shape([
+    new THREE.Vector2(-7, 0),
+    new THREE.Vector2(10.5, 1.5),
+    new THREE.Vector2(15.5, 6.4),
+    new THREE.Vector2(-3.5, 8.1),
+  ]);
+  const wingGeo = new THREE.ExtrudeGeometry(wingShape, { depth: 0.65, bevelEnabled: false });
 
-  const wingL = new THREE.Mesh(wingGeom, trimMat);
+  const wingL = new THREE.Mesh(wingGeo, trimMat);
   wingL.rotation.set(0, Math.PI * 0.5, Math.PI);
-  wingL.position.set(-1, -1.4, 7.1);
+  wingL.position.set(-1.2, -1.45, 7.3);
   wingL.castShadow = true;
 
   const wingR = wingL.clone();
   wingR.scale.z = -1;
-  wingR.position.z = -7.1;
+  wingR.position.z = -7.3;
 
-  const tailWingL = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.8, 2.8), trimMat);
-  tailWingL.position.set(-12.5, 1.5, 4.6);
+  const canardShape = new THREE.Shape([
+    new THREE.Vector2(-2.5, 0),
+    new THREE.Vector2(4, 0.8),
+    new THREE.Vector2(1.5, 2.8),
+    new THREE.Vector2(-3.2, 2.4),
+  ]);
+  const canardGeo = new THREE.ExtrudeGeometry(canardShape, { depth: 0.45, bevelEnabled: false });
+  const canardL = new THREE.Mesh(canardGeo, trimMat);
+  canardL.rotation.set(0, Math.PI * 0.5, Math.PI);
+  canardL.position.set(10.6, -0.9, 4.9);
+  canardL.castShadow = true;
+
+  const canardR = canardL.clone();
+  canardR.scale.z = -1;
+  canardR.position.z = -4.9;
+
+  const tailWingL = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.75, 2.4), trimMat);
+  tailWingL.position.set(-12.5, 1.35, 4.6);
   const tailWingR = tailWingL.clone();
   tailWingR.position.z = -4.6;
 
-  const tailFin = new THREE.Mesh(new THREE.BoxGeometry(5.6, 6.8, 0.8), bodyMat);
-  tailFin.position.set(-12.3, 5.2, 0);
+  const tailFin = new THREE.Mesh(new THREE.BoxGeometry(5.5, 7.2, 0.75), bodyMat);
+  tailFin.position.set(-12.8, 5.15, 0);
 
-  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 2.1, 1.4), darkMat);
-  intakeL.position.set(8.5, 0.2, 3.1);
+  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 2, 1.35), darkMat);
+  intakeL.position.set(8.6, 0.2, 3.1);
   const intakeR = intakeL.clone();
   intakeR.position.z = -3.1;
 
-  const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 2.2, 3.2, 12), darkMat);
+  const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 2.2, 3.3, 12), darkMat);
   exhaust.rotation.z = Math.PI * 0.5;
-  exhaust.position.x = -17.6;
+  exhaust.position.x = -18;
 
-  const missileMat = new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.24, metalness: 0.2, side: THREE.DoubleSide });
-  const missileL = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 9.5, 8), missileMat);
+  const missileMat = new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.22, metalness: 0.2, side: THREE.DoubleSide });
+  const missileL = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 9.4, 8), missileMat);
   missileL.rotation.z = Math.PI * 0.5;
-  missileL.position.set(2, -2.2, 10.2);
+  missileL.position.set(2.1, -2.15, 10.1);
   const missileR = missileL.clone();
-  missileR.position.z = -10.2;
+  missileR.position.z = -10.1;
 
-  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.5, 12, 10), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a }));
-  glow.position.x = -19.2;
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.45, 12, 10), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a }));
+  glow.position.x = -19.1;
 
   g.add(
     fuselage,
@@ -389,6 +402,8 @@ function createFighter(color, isPlayer = false) {
     cockpit,
     wingL,
     wingR,
+    canardL,
+    canardR,
     tailWingL,
     tailWingR,
     tailFin,

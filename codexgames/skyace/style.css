@@ -216,8 +216,14 @@ body {
 
 .action-wrap {
   display: grid;
-  gap: 6px;
-  justify-items: center;
+  grid-template-columns: max-content max-content;
+  align-items: end;
+  gap: 8px;
+}
+
+#fireBtn {
+  align-self: end;
+  margin-bottom: 12px;
 }
 
 .lever-wrap {
