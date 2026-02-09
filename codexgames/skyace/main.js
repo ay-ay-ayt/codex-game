@@ -10,6 +10,8 @@ const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
 const menuPanel = document.getElementById("menuPanel");
+menuPanel.hidden = false;
+menuBtn.setAttribute("aria-expanded", "true");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
@@ -685,6 +687,22 @@ function updateBots(dt) {
     b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
     b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
 
+    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
+    const desired = toTarget.add(lead).normalize();
+    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
+
+    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
+    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
+    const pitchErr = clamp(steer.y - forward.y, -1, 1);
+
+    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
+    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
+
+    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
+    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
+    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
+    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
+
     const yawRate = TURN_RATE * (b.roll / MAX_BANK);
     b.yaw += yawRate * dt;
 
@@ -1109,6 +1127,12 @@ mapTypeEl.addEventListener("change", () => {
   resetMatch();
 });
 
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
+
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 window.addEventListener("selectstart", (e) => e.preventDefault());
 window.addEventListener("dragstart", (e) => e.preventDefault());
@@ -1116,13 +1140,6 @@ window.addEventListener("gesturestart", (e) => e.preventDefault());
 window.addEventListener("touchstart", (e) => {
   if (e.touches.length > 1) e.preventDefault();
 }, { passive: false });
-
-document.addEventListener("pointerdown", (e) => {
-  if (menuPanel.hidden) return;
-  if (menuPanel.contains(e.target) || menuBtn.contains(e.target)) return;
-  menuPanel.hidden = true;
-  menuBtn.setAttribute("aria-expanded", "false");
-});
 
 window.addEventListener("resize", () => {
   fitViewport();
