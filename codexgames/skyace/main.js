@@ -626,72 +626,15 @@ function updateBots(dt) {
     const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
     const dist = Math.max(1, toTarget.length());
     const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 780, 0.06, 0.45));
-
+    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
     const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 190);
+    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
     const altitudeErr = clamp((b.target.mesh.position.y - b.mesh.position.y) / 260, -1, 1);
 
-    const steer = desired.clone().addScaledVector(avoid, 1.5);
+    const steer = desired.clone().addScaledVector(avoid, 1.45);
     steer.y += altitudeErr * 0.3;
     steer.normalize();
 
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
-
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
-
-    const yawRate = TURN_RATE * (b.roll / MAX_BANK);
-    b.yaw += yawRate * dt;
-
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
-
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
-
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
-
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
-
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
     const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
     const pitchErr = clamp(steer.y - forward.y, -1, 1);
 
@@ -1097,36 +1040,6 @@ menuBtn.addEventListener("click", (e) => {
 });
 
 botCountEl.addEventListener("change", resetMatch);
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
 botCountEl.addEventListener("input", resetMatch);
 mapTypeEl.addEventListener("change", () => {
   buildWorld(mapTypeEl.value);
