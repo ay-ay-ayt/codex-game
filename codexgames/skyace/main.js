@@ -653,6 +653,25 @@ function updateBots(dt) {
     const yawRate = TURN_RATE * (b.roll / MAX_BANK);
     b.yaw += yawRate * dt;
 
+    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
+    const desired = toTarget.add(lead).normalize();
+    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
+
+    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
+    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
+    const pitchErr = clamp(steer.y - forward.y, -1, 1);
+
+    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
+    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
+
+    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
+    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
+    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
+    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
+
+    const yawRate = TURN_RATE * (b.roll / MAX_BANK);
+    b.yaw += yawRate * dt;
+
     qYaw.setFromAxisAngle(AXIS_Y, b.yaw);
     qPitch.setFromAxisAngle(AXIS_Z, b.pitch);
     qRoll.setFromAxisAngle(AXIS_X, -b.roll);
@@ -1040,9 +1059,16 @@ restartBtn.addEventListener("pointerup", restartFromHud);
 menuBtn.addEventListener("click", (e) => {
   e.preventDefault();
   menuPanel.hidden = !menuPanel.hidden;
+  menuBtn.setAttribute("aria-expanded", String(!menuPanel.hidden));
 });
 
 botCountEl.addEventListener("change", resetMatch);
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
+
 botCountEl.addEventListener("input", resetMatch);
 mapTypeEl.addEventListener("change", () => {
   buildWorld(mapTypeEl.value);
@@ -1073,6 +1099,7 @@ document.addEventListener("pointerdown", (e) => {
   if (menuPanel.hidden) return;
   if (menuPanel.contains(e.target) || menuBtn.contains(e.target)) return;
   menuPanel.hidden = true;
+  menuBtn.setAttribute("aria-expanded", "false");
 });
 
 window.addEventListener("resize", () => {
