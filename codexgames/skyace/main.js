@@ -10,8 +10,8 @@ const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
 const menuPanel = document.getElementById("menuPanel");
-menuPanel.hidden = false;
-menuBtn.setAttribute("aria-expanded", "true");
+menuPanel.hidden = true;
+menuBtn.setAttribute("aria-expanded", "false");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
@@ -352,7 +352,13 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.28, metalness: 0.68 });
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.28,
+    metalness: 0.68,
+    emissive: isPlayer ? 0x000000 : color,
+    emissiveIntensity: isPlayer ? 0 : 0.16,
+  });
   const trimMat = new THREE.MeshStandardMaterial({ color: 0xdce6ef, roughness: 0.24, metalness: 0.56 });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2d3b, roughness: 0.58, metalness: 0.26 });
 
@@ -424,6 +430,18 @@ function createFighter(color, isPlayer = false) {
 
   const glow = new THREE.Mesh(new THREE.SphereGeometry(1.55, 12, 10), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a }));
   glow.position.x = -21.4;
+
+  const targetMarker = !isPlayer
+    ? new THREE.Mesh(
+      new THREE.TorusGeometry(6.8, 0.7, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0xfff27a, transparent: true, opacity: 0.95 })
+    )
+    : null;
+  if (targetMarker) {
+    targetMarker.rotation.x = Math.PI * 0.5;
+    targetMarker.position.set(0, 12.5, 0);
+    g.add(targetMarker);
+  }
 
   g.add(
     fuselage,
