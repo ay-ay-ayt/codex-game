@@ -17,6 +17,7 @@ const crosshairEl = document.getElementById("crosshair");
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x6f9ed4, 1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -79,6 +80,7 @@ const input = {
 const boostLeverState = {
   level: 0,
   pointerId: null,
+  applyLevel: null,
 };
 
 const game = {
@@ -315,9 +317,9 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.62 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.62, side: THREE.DoubleSide });
   const trimMat = new THREE.MeshStandardMaterial({ color: 0xd9e2ea, roughness: 0.32, metalness: 0.58, side: THREE.DoubleSide });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a3744, roughness: 0.58, metalness: 0.35 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a3744, roughness: 0.58, metalness: 0.35, side: THREE.DoubleSide });
 
   const fuselage = new THREE.Mesh(new THREE.CapsuleGeometry(3.3, 24, 8, 18), bodyMat);
   fuselage.rotation.z = Math.PI * 0.5;
@@ -371,7 +373,7 @@ function createFighter(color, isPlayer = false) {
   exhaust.rotation.z = Math.PI * 0.5;
   exhaust.position.x = -17.6;
 
-  const missileMat = new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.24, metalness: 0.2 });
+  const missileMat = new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.24, metalness: 0.2, side: THREE.DoubleSide });
   const missileL = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 9.5, 8), missileMat);
   missileL.rotation.z = Math.PI * 0.5;
   missileL.position.set(2, -2.2, 10.2);
@@ -724,6 +726,8 @@ function resetMatch() {
   messageEl.hidden = true;
   messageEl.textContent = "";
 
+  boostLeverState.applyLevel?.(0);
+
   game.player = createFighter(0x48d7ff, true);
   game.player.mesh.position.set(0, 320, 0);
   game.player.yaw = -Math.PI * 0.2;
@@ -875,6 +879,7 @@ function setupBoostLever() {
     const y = maxTravel * (1 - boostLeverState.level);
     knob.style.transform = `translate(-50%, ${y}px)`;
   }
+  boostLeverState.applyLevel = applyLevel;
 
   function moveFromClient(clientY) {
     const rect = boostLeverEl.getBoundingClientRect();
@@ -979,6 +984,8 @@ mapTypeEl.addEventListener("change", () => {
 });
 
 window.addEventListener("contextmenu", (e) => e.preventDefault());
+window.addEventListener("selectstart", (e) => e.preventDefault());
+window.addEventListener("dragstart", (e) => e.preventDefault());
 
 window.addEventListener("resize", () => {
   fitViewport();

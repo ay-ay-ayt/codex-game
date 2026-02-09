@@ -62,6 +62,13 @@ body {
   touch-action: auto;
 }
 
+#hud,
+#mobileControls,
+#rotateHint,
+#message {
+  -webkit-touch-callout: none;
+}
+
 #hud select {
   min-width: 72px;
   padding: 3px 6px;
