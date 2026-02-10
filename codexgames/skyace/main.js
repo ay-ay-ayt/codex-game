@@ -503,7 +503,7 @@ function spawnBullet(owner, color) {
   const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
   b.userData = {
-    vel: dir.multiplyScalar(780).add(owner.velocity.clone().multiplyScalar(0.4)),
+    vel: dir.multiplyScalar(900).add(owner.velocity.clone().multiplyScalar(0.4)),
     life: 1.9,
     team: owner === game.player ? "player" : "bot",
   };
