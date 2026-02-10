@@ -84,6 +84,29 @@ if (rendererReady) {
 
 const scene = new THREE.Scene();
 
+const textureLoader = new THREE.TextureLoader();
+const textureAnisotropy = rendererReady ? Math.min(8, renderer.capabilities.getMaxAnisotropy()) : 1;
+
+function loadTiledTexture(path, repeat = [1, 1], colorSpace = THREE.NoColorSpace) {
+  const tex = textureLoader.load(path);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeat[0], repeat[1]);
+  tex.colorSpace = colorSpace;
+  tex.anisotropy = textureAnisotropy;
+  return tex;
+}
+
+const fighterTextures = {
+  bodyColor: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_diff_2k.jpg", [3.2, 1.1], THREE.SRGBColorSpace),
+  bodyNormal: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_nor_gl_2k.jpg", [3.2, 1.1]),
+  bodyRoughness: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_rough_2k.jpg", [3.2, 1.1]),
+  bodyMetalness: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_metal_2k.jpg", [3.2, 1.1]),
+  trimColor: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_diff_2k.jpg", [1.8, 1], THREE.SRGBColorSpace),
+  trimNormal: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_nor_gl_2k.jpg", [1.8, 1]),
+  trimRoughness: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough_2k.jpg", [1.8, 1]),
+};
+
 const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
 const sun = new THREE.DirectionalLight(0xffffff, 1.15);
@@ -485,17 +508,33 @@ function createFighter(color, isPlayer = false) {
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color,
-    roughness: 0.3,
-    metalness: 0.58,
+    map: fighterTextures.bodyColor,
+    normalMap: fighterTextures.bodyNormal,
+    roughnessMap: fighterTextures.bodyRoughness,
+    metalnessMap: fighterTextures.bodyMetalness,
+    normalScale: new THREE.Vector2(0.42, 0.42),
+    roughness: 0.42,
+    metalness: 0.64,
     emissive: isPlayer ? 0x000000 : color,
-    emissiveIntensity: isPlayer ? 0 : 0.1,
+    emissiveIntensity: isPlayer ? 0 : 0.08,
   });
   const trimMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0xd7e4ee : 0xe5cda8,
-    roughness: 0.24,
+    map: fighterTextures.trimColor,
+    normalMap: fighterTextures.trimNormal,
+    roughnessMap: fighterTextures.trimRoughness,
+    normalScale: new THREE.Vector2(0.26, 0.26),
+    roughness: 0.34,
     metalness: 0.46,
   });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x142231, roughness: 0.5, metalness: 0.28 });
+  const darkMat = new THREE.MeshStandardMaterial({
+    color: 0x142231,
+    roughnessMap: fighterTextures.bodyRoughness,
+    normalMap: fighterTextures.bodyNormal,
+    normalScale: new THREE.Vector2(0.2, 0.2),
+    roughness: 0.52,
+    metalness: 0.28,
+  });
 
   const fuselageProfile = [
     new THREE.Vector2(0.18, -19.5),
@@ -560,6 +599,21 @@ function createFighter(color, isPlayer = false) {
   const nozzleR = nozzleL.clone();
   nozzleR.position.z = -3.0;
 
+  const burnerL = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.6, 0.8, 1.2, 14),
+    new THREE.MeshStandardMaterial({
+      color: isPlayer ? 0x7fe6ff : 0xff9f6a,
+      emissive: isPlayer ? 0x54dfff : 0xff7c38,
+      emissiveIntensity: isPlayer ? 0.6 : 0.5,
+      roughness: 0.2,
+      metalness: 0.6,
+    })
+  );
+  burnerL.rotation.z = Math.PI * 0.5;
+  burnerL.position.set(-24.9, 1.86, 3.0);
+  const burnerR = burnerL.clone();
+  burnerR.position.z = -3.0;
+
   const intakeL = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.35, 1.2), darkMat);
   intakeL.position.set(9.6, 0.28, 3.1);
   const intakeR = intakeL.clone();
@@ -588,6 +642,17 @@ function createFighter(color, isPlayer = false) {
   pylonR.position.z = -10.3;
   pylonR.rotation.z = -0.24;
 
+  const missileMat = new THREE.MeshStandardMaterial({
+    color: isPlayer ? 0xe5f7ff : 0xf7d8b8,
+    roughness: 0.3,
+    metalness: 0.52,
+  });
+  const missileL = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 3.2, 4, 8), missileMat);
+  missileL.rotation.z = -Math.PI * 0.5;
+  missileL.position.set(-1.6, -2.2, 11.6);
+  const missileR = missileL.clone();
+  missileR.position.z = -11.6;
+
   const glow = new THREE.Mesh(
     new THREE.SphereGeometry(isPlayer ? 1.45 : 1.65, 12, 10),
     new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a })
@@ -607,6 +672,8 @@ function createFighter(color, isPlayer = false) {
     engineR,
     nozzleL,
     nozzleR,
+    burnerL,
+    burnerR,
     intakeL,
     intakeR,
     tailL,
@@ -615,6 +682,8 @@ function createFighter(color, isPlayer = false) {
     finR,
     pylonL,
     pylonR,
+    missileL,
+    missileR,
     glow
   );
 
