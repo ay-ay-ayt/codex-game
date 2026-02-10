@@ -995,7 +995,7 @@ function resetMatch() {
   game.player.pitch = 0;
   game.player.roll = 0;
 
-  const colors = [0xff615d, 0xffc065, 0xc993ff];
+  const colors = [0xff615d, 0xffc065, 0xc993ff, 0x62e7b3, 0xff7eb9];
   const botCount = Number(botCountEl.value);
   game.bots = Array.from({ length: botCount }, (_, i) => {
     const bot = createFighter(colors[i]);
