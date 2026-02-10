@@ -70,8 +70,30 @@ const tmpVecC = new THREE.Vector3();
 const ARENA = 3600;
 const FLOOR_Y = 40;
 const worldDetail = isMobile
-  ? { clouds: 80, hills: 40, forestCenters: 6, forestDenseTrees: 60, forestSparseTrees: 320, cityBuildings: 320 }
-  : { clouds: 170, hills: 95, forestCenters: 10, forestDenseTrees: 120, forestSparseTrees: 900, cityBuildings: 420 };
+  ? {
+    clouds: 110,
+    cloudBands: 16,
+    hills: 52,
+    forestCenters: 7,
+    forestDenseTrees: 76,
+    forestSparseTrees: 420,
+    forestRocks: 170,
+    forestShrubs: 240,
+    cityBuildings: 380,
+    cityWindowBands: 1,
+  }
+  : {
+    clouds: 220,
+    cloudBands: 34,
+    hills: 120,
+    forestCenters: 12,
+    forestDenseTrees: 140,
+    forestSparseTrees: 1050,
+    forestRocks: 420,
+    forestShrubs: 520,
+    cityBuildings: 520,
+    cityWindowBands: 2,
+  };
 const MAX_BANK = THREE.MathUtils.degToRad(55);
 const MAX_PITCH = THREE.MathUtils.degToRad(35);
 const BANK_RATE = 3.0;
@@ -227,6 +249,21 @@ function buildWorld(mapType) {
     world.add(cloud);
   }
 
+  const cirrusMat = new THREE.MeshBasicMaterial({
+    color: isForest ? 0xe9f6ef : 0xeef6ff,
+    transparent: true,
+    opacity: isForest ? 0.1 : 0.14,
+    depthWrite: false,
+    fog: false,
+  });
+  for (let i = 0; i < worldDetail.cloudBands; i++) {
+    const band = new THREE.Mesh(new THREE.PlaneGeometry(rand(420, 860), rand(58, 120)), cirrusMat);
+    band.rotation.x = -Math.PI / 2;
+    band.rotation.z = rand(-0.45, 0.45);
+    band.position.set(rand(-ARENA * 1.25, ARENA * 1.25), rand(780, 1320), rand(-ARENA * 1.25, ARENA * 1.25));
+    world.add(band);
+  }
+
   if (isForest) {
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
@@ -244,6 +281,27 @@ function buildWorld(mapType) {
       hill.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(8, 32), rand(-ARENA * 1.2, ARENA * 1.2));
       hill.receiveShadow = true;
       world.add(hill);
+    }
+
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x6f7668, roughness: 0.96, metalness: 0.03 });
+    for (let i = 0; i < worldDetail.forestRocks; i++) {
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(8, 26), 0), rockMat);
+      rock.scale.y = rand(0.45, 1.0);
+      rock.rotation.set(rand(-0.3, 0.3), rand(0, Math.PI), rand(-0.2, 0.2));
+      rock.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(4, 15), rand(-ARENA * 1.2, ARENA * 1.2));
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      world.add(rock);
+      addObstacle(rock, 2);
+    }
+
+    const shrubMat = new THREE.MeshStandardMaterial({ color: 0x567a48, roughness: 0.94 });
+    for (let i = 0; i < worldDetail.forestShrubs; i++) {
+      const shrub = new THREE.Mesh(new THREE.SphereGeometry(rand(10, 24), 10, 8), shrubMat);
+      shrub.scale.y = rand(0.3, 0.7);
+      shrub.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(4, 10), rand(-ARENA * 1.2, ARENA * 1.2));
+      shrub.receiveShadow = true;
+      world.add(shrub);
     }
 
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
@@ -337,6 +395,17 @@ function buildWorld(mapType) {
     world.add(tower);
     addObstacle(tower, 3);
 
+    for (let j = 0; j < worldDetail.cityWindowBands; j++) {
+      if (h < 140 && j > 0) continue;
+      const bandY = FLOOR_Y + h * rand(0.25, 0.86);
+      const band = new THREE.Mesh(
+        new THREE.BoxGeometry(w * 1.01, rand(2.2, 4.6), d * 1.01),
+        new THREE.MeshBasicMaterial({ color: 0xcde6ff, transparent: true, opacity: rand(0.14, 0.24) })
+      );
+      band.position.set(px, bandY, pz);
+      world.add(band);
+    }
+
     if (Math.random() > 0.55) {
       const roof = new THREE.Mesh(
         new THREE.BoxGeometry(w * 0.7, rand(12, 28), d * 0.7),
@@ -346,6 +415,15 @@ function buildWorld(mapType) {
       roof.castShadow = true;
       world.add(roof);
       addObstacle(roof, 2);
+
+      if (Math.random() > 0.5) {
+        const antenna = new THREE.Mesh(
+          new THREE.CylinderGeometry(rand(0.6, 1.2), rand(0.8, 1.4), rand(18, 42), 8),
+          new THREE.MeshStandardMaterial({ color: 0xb9c4d1, roughness: 0.48, metalness: 0.5 })
+        );
+        antenna.position.set(px + rand(-w * 0.18, w * 0.18), FLOOR_Y + h + roof.geometry.parameters.height + antenna.geometry.parameters.height / 2, pz + rand(-d * 0.18, d * 0.18));
+        world.add(antenna);
+      }
     }
   }
 }
