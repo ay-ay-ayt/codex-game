@@ -357,9 +357,15 @@ function createFighter(color, isPlayer = false) {
     roughness: 0.28,
     metalness: 0.68,
     emissive: isPlayer ? 0x000000 : color,
-    emissiveIntensity: isPlayer ? 0 : 0.16,
+    emissiveIntensity: isPlayer ? 0 : 0.2,
   });
-  const trimMat = new THREE.MeshStandardMaterial({ color: 0xdce6ef, roughness: 0.24, metalness: 0.56 });
+  const trimMat = new THREE.MeshStandardMaterial({
+    color: isPlayer ? 0xdce6ef : 0xfff1c6,
+    roughness: 0.24,
+    metalness: 0.56,
+    emissive: isPlayer ? 0x000000 : 0x7a5e1f,
+    emissiveIntensity: isPlayer ? 0 : 0.22,
+  });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2d3b, roughness: 0.58, metalness: 0.26 });
 
   const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.9, 34, 18), bodyMat);
@@ -428,19 +434,21 @@ function createFighter(color, isPlayer = false) {
   missileR.rotation.z = Math.PI * 0.5;
   missileR.position.set(1.0, -2.15, -10.2);
 
-  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.55, 12, 10), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a }));
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(isPlayer ? 1.55 : 1.8, 12, 10),
+    new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a })
+  );
   glow.position.x = -21.4;
 
-  const targetMarker = !isPlayer
-    ? new THREE.Mesh(
-      new THREE.TorusGeometry(6.8, 0.7, 8, 24),
-      new THREE.MeshBasicMaterial({ color: 0xfff27a, transparent: true, opacity: 0.95 })
-    )
-    : null;
-  if (targetMarker) {
-    targetMarker.rotation.x = Math.PI * 0.5;
-    targetMarker.position.set(0, 12.5, 0);
-    g.add(targetMarker);
+  if (!isPlayer) {
+    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.72, 8, 6), navMat);
+    navL.position.set(9.2, 0.05, 13.0);
+    const navR = navL.clone();
+    navR.position.z = -13.0;
+    const topBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.64, 8, 6), navMat);
+    topBeacon.position.set(-2.4, 5.9, 0);
+    g.add(navL, navR, topBeacon);
   }
 
   g.add(
