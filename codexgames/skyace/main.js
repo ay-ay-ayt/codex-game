@@ -257,6 +257,13 @@ function fitViewport() {
   renderer.setSize(width, height, false);
 }
 
+
+function updateMenuPanelPosition() {
+  const menuRect = menuBtn.getBoundingClientRect();
+  const menuBottom = Math.ceil(menuRect.bottom);
+  document.documentElement.style.setProperty("--menu-bottom", `${menuBottom}px`);
+}
+
 function buildWorld(mapType) {
   world.clear();
   staticObstacles.length = 0;
@@ -932,6 +939,13 @@ function updateState() {
   }
 }
 
+
+function clearPlaneHpLabel(plane) {
+  if (!plane?.hpLabel) return;
+  world.remove(plane.hpLabel);
+  plane.hpLabel = null;
+}
+
 function resetMatch() {
   for (const b of game.bullets) world.remove(b);
   game.bullets = [];
@@ -980,6 +994,7 @@ function resetMatch() {
     return bot;
   });
   game.initialBots = game.bots.length;
+  updateHudHealthPanel();
 }
 
 function syncInput() {
@@ -1198,6 +1213,7 @@ canvas.addEventListener("webglcontextlost", (e) => {
 
 setupHudHealthPanel();
 buildWorld(mapTypeEl.value);
+updateMenuPanelPosition();
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
   stickInput.pitch = y;
@@ -1223,6 +1239,7 @@ restartBtn.addEventListener("pointerup", restartFromHud);
 
 menuBtn.addEventListener("click", (e) => {
   e.preventDefault();
+  updateMenuPanelPosition();
   menuPanel.hidden = !menuPanel.hidden;
   menuBtn.setAttribute("aria-expanded", String(!menuPanel.hidden));
 });
@@ -1244,9 +1261,13 @@ window.addEventListener("touchstart", (e) => {
 
 window.addEventListener("resize", () => {
   fitViewport();
+  updateMenuPanelPosition();
   updateOrientationHint();
 });
-window.visualViewport?.addEventListener("resize", fitViewport);
+window.visualViewport?.addEventListener("resize", () => {
+  fitViewport();
+  updateMenuPanelPosition();
+});
 
 window.addEventListener(
   "pointerdown",
