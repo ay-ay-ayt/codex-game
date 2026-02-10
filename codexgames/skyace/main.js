@@ -10,20 +10,136 @@ const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
 const menuPanel = document.getElementById("menuPanel");
-menuPanel.hidden = false;
-menuBtn.setAttribute("aria-expanded", "true");
+menuPanel.hidden = true;
+menuBtn.setAttribute("aria-expanded", "false");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
+let hudHealthFillEl = null;
+let hudHealthValEl = null;
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-renderer.setClearColor(0x6f9ed4, 1);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
+  || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+function setupHudHealthBar() {
+  healthEl.innerHTML = `
+    <span class="hud-hp-label">HP</span>
+    <span class="hud-hp-track"><span class="hud-hp-fill"></span></span>
+    <span class="hud-hp-val">100</span>
+  `;
+  hudHealthFillEl = healthEl.querySelector(".hud-hp-fill");
+  hudHealthValEl = healthEl.querySelector(".hud-hp-val");
+}
+
+function updateHudHealthBar(hp) {
+  const hpInt = Math.max(0, Math.round(hp));
+  const ratio = clamp(hpInt / 100, 0, 1);
+  if (hudHealthFillEl) hudHealthFillEl.style.width = `${Math.round(ratio * 100)}%`;
+  if (hudHealthValEl) hudHealthValEl.textContent = String(hpInt);
+}
+
+function createPlaneHpLabel(plane) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 176;
+  canvas.height = 48;
+  const ctx = canvas.getContext("2d");
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+  }));
+  sprite.renderOrder = 20;
+  sprite.scale.set(26, 7, 1);
+  world.add(sprite);
+
+  plane.hpLabel = { sprite, canvas, ctx, texture, lastHp: -1, lastAlive: null };
+}
+
+function updatePlaneHpLabel(plane) {
+  if (!plane?.hpLabel) return;
+  const ui = plane.hpLabel;
+  const hpInt = Math.max(0, Math.round(plane.hp));
+
+  ui.sprite.visible = plane.alive;
+  if (!plane.alive) return;
+
+  ui.sprite.position.copy(plane.mesh.position);
+  ui.sprite.position.y += plane.isPlayer ? 34 : 24;
+
+  if (ui.lastHp === hpInt && ui.lastAlive === plane.alive) return;
+  ui.lastHp = hpInt;
+  ui.lastAlive = plane.alive;
+
+  const ctx = ui.ctx;
+  const w = ui.canvas.width;
+  const h = ui.canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.fillStyle = plane.isPlayer ? "rgba(12, 40, 62, 0.84)" : "rgba(52, 26, 16, 0.84)";
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = plane.isPlayer ? "rgba(142, 218, 255, 0.95)" : "rgba(255, 176, 128, 0.95)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(1.5, 1.5, w - 3, h - 3);
+
+  const trackX = 10;
+  const trackY = 16;
+  const trackW = 120;
+  const trackH = 18;
+  ctx.fillStyle = "rgba(9, 17, 25, 0.7)";
+  ctx.fillRect(trackX, trackY, trackW, trackH);
+
+  const ratio = clamp(hpInt / 100, 0, 1);
+  ctx.fillStyle = ratio > 0.6 ? "#62f79e" : ratio > 0.3 ? "#ffd26f" : "#ff6f72";
+  ctx.fillRect(trackX, trackY, Math.max(2, Math.round(trackW * ratio)), trackH);
+
+  ctx.font = "bold 18px sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(`HP ${hpInt}`, 136, 31);
+
+  ui.texture.needsUpdate = true;
+}
+
+function clearPlaneHpLabel(plane) {
+  if (!plane?.hpLabel) return;
+  world.remove(plane.hpLabel.sprite);
+  plane.hpLabel.texture.dispose();
+  plane.hpLabel.sprite.material.dispose();
+  plane.hpLabel = null;
+}
+
+function createRenderer() {
+  const attempts = [
+    { canvas, antialias: !isMobile, powerPreference: isMobile ? "low-power" : "high-performance" },
+    { canvas, antialias: false, powerPreference: "low-power" },
+    { canvas, antialias: false },
+  ];
+
+  for (const options of attempts) {
+    try {
+      return new THREE.WebGLRenderer(options);
+    } catch {
+      // fall through to the next option
+    }
+  }
+  return null;
+}
+
+const renderer = createRenderer();
+const rendererReady = Boolean(renderer);
+if (rendererReady) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+  renderer.setClearColor(0x6f9ed4, 1);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = !isMobile;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+}
 
 const scene = new THREE.Scene();
 
@@ -31,7 +147,7 @@ const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
 const sun = new THREE.DirectionalLight(0xffffff, 1.15);
 sun.position.set(700, 900, 300);
-sun.castShadow = true;
+sun.castShadow = !isMobile;
 sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun);
 
@@ -46,6 +162,31 @@ const tmpVecC = new THREE.Vector3();
 
 const ARENA = 3600;
 const FLOOR_Y = 40;
+const worldDetail = isMobile
+  ? {
+    clouds: 110,
+    cloudBands: 16,
+    hills: 52,
+    forestCenters: 7,
+    forestDenseTrees: 76,
+    forestSparseTrees: 420,
+    forestRocks: 170,
+    forestShrubs: 240,
+    cityBuildings: 380,
+    cityWindowBands: 1,
+  }
+  : {
+    clouds: 220,
+    cloudBands: 34,
+    hills: 120,
+    forestCenters: 12,
+    forestDenseTrees: 140,
+    forestSparseTrees: 1050,
+    forestRocks: 420,
+    forestShrubs: 520,
+    cityBuildings: 520,
+    cityWindowBands: 2,
+  };
 const MAX_BANK = THREE.MathUtils.degToRad(55);
 const MAX_PITCH = THREE.MathUtils.degToRad(35);
 const BANK_RATE = 3.0;
@@ -194,11 +335,26 @@ function buildWorld(mapType) {
     depthWrite: false,
     fog: false,
   });
-  for (let i = 0; i < 170; i++) {
+  for (let i = 0; i < worldDetail.clouds; i++) {
     const cloud = new THREE.Mesh(new THREE.SphereGeometry(rand(26, 68), 12, 10), cloudMat);
     cloud.scale.set(rand(2.5, 5.3), rand(0.38, 0.72), rand(1.4, 3.0));
     cloud.position.set(rand(-ARENA * 1.2, ARENA * 1.2), rand(640, 1250), rand(-ARENA * 1.2, ARENA * 1.2));
     world.add(cloud);
+  }
+
+  const cirrusMat = new THREE.MeshBasicMaterial({
+    color: isForest ? 0xe9f6ef : 0xeef6ff,
+    transparent: true,
+    opacity: isForest ? 0.1 : 0.14,
+    depthWrite: false,
+    fog: false,
+  });
+  for (let i = 0; i < worldDetail.cloudBands; i++) {
+    const band = new THREE.Mesh(new THREE.PlaneGeometry(rand(420, 860), rand(58, 120)), cirrusMat);
+    band.rotation.x = -Math.PI / 2;
+    band.rotation.z = rand(-0.45, 0.45);
+    band.position.set(rand(-ARENA * 1.25, ARENA * 1.25), rand(780, 1320), rand(-ARENA * 1.25, ARENA * 1.25));
+    world.add(band);
   }
 
   if (isForest) {
@@ -212,7 +368,7 @@ function buildWorld(mapType) {
     world.add(ground);
 
     const hillMat = new THREE.MeshStandardMaterial({ color: 0x5d7f57, roughness: 0.95 });
-    for (let i = 0; i < 95; i++) {
+    for (let i = 0; i < worldDetail.hills; i++) {
       const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(90, 260), 16, 12), hillMat);
       hill.scale.y = rand(0.24, 0.55);
       hill.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(8, 32), rand(-ARENA * 1.2, ARENA * 1.2));
@@ -220,9 +376,30 @@ function buildWorld(mapType) {
       world.add(hill);
     }
 
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x6f7668, roughness: 0.96, metalness: 0.03 });
+    for (let i = 0; i < worldDetail.forestRocks; i++) {
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(8, 26), 0), rockMat);
+      rock.scale.y = rand(0.45, 1.0);
+      rock.rotation.set(rand(-0.3, 0.3), rand(0, Math.PI), rand(-0.2, 0.2));
+      rock.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(4, 15), rand(-ARENA * 1.2, ARENA * 1.2));
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      world.add(rock);
+      addObstacle(rock, 2);
+    }
+
+    const shrubMat = new THREE.MeshStandardMaterial({ color: 0x567a48, roughness: 0.94 });
+    for (let i = 0; i < worldDetail.forestShrubs; i++) {
+      const shrub = new THREE.Mesh(new THREE.SphereGeometry(rand(10, 24), 10, 8), shrubMat);
+      shrub.scale.y = rand(0.3, 0.7);
+      shrub.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(4, 10), rand(-ARENA * 1.2, ARENA * 1.2));
+      shrub.receiveShadow = true;
+      world.add(shrub);
+    }
+
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
     const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
-    const forestCenters = Array.from({ length: 10 }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
+    const forestCenters = Array.from({ length: worldDetail.forestCenters }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
 
     const placeTree = (px, pz, dense = false) => {
       if (Math.abs(px) < 160 && Math.abs(pz) < 160) return;
@@ -246,14 +423,14 @@ function buildWorld(mapType) {
     };
 
     for (const center of forestCenters) {
-      for (let i = 0; i < 120; i++) {
+      for (let i = 0; i < worldDetail.forestDenseTrees; i++) {
         const angle = Math.random() * Math.PI * 2;
         const radius = rand(0, 260) * Math.sqrt(Math.random());
         placeTree(center.x + Math.cos(angle) * radius, center.y + Math.sin(angle) * radius, true);
       }
     }
 
-    for (let i = 0; i < 900; i++) {
+    for (let i = 0; i < worldDetail.forestSparseTrees; i++) {
       placeTree(rand(-ARENA * 1.2, ARENA * 1.2), rand(-ARENA * 1.2, ARENA * 1.2), false);
     }
     return;
@@ -291,7 +468,7 @@ function buildWorld(mapType) {
   }
 
   const buildingPalette = [0x7f8b98, 0x8e97a5, 0x646f7d, 0x5a6370, 0x9ba4b4];
-  for (let i = 0; i < 420; i++) {
+  for (let i = 0; i < worldDetail.cityBuildings; i++) {
     const px = rand(-ARENA * 1.15, ARENA * 1.15);
     const pz = rand(-ARENA * 1.15, ARENA * 1.15);
     if (Math.abs(px) < 260 && Math.abs(pz) < 260) continue;
@@ -311,6 +488,17 @@ function buildWorld(mapType) {
     world.add(tower);
     addObstacle(tower, 3);
 
+    for (let j = 0; j < worldDetail.cityWindowBands; j++) {
+      if (h < 140 && j > 0) continue;
+      const bandY = FLOOR_Y + h * rand(0.25, 0.86);
+      const band = new THREE.Mesh(
+        new THREE.BoxGeometry(w * 1.01, rand(2.2, 4.6), d * 1.01),
+        new THREE.MeshBasicMaterial({ color: 0xcde6ff, transparent: true, opacity: rand(0.14, 0.24) })
+      );
+      band.position.set(px, bandY, pz);
+      world.add(band);
+    }
+
     if (Math.random() > 0.55) {
       const roof = new THREE.Mesh(
         new THREE.BoxGeometry(w * 0.7, rand(12, 28), d * 0.7),
@@ -320,14 +508,35 @@ function buildWorld(mapType) {
       roof.castShadow = true;
       world.add(roof);
       addObstacle(roof, 2);
+
+      if (Math.random() > 0.5) {
+        const antenna = new THREE.Mesh(
+          new THREE.CylinderGeometry(rand(0.6, 1.2), rand(0.8, 1.4), rand(18, 42), 8),
+          new THREE.MeshStandardMaterial({ color: 0xb9c4d1, roughness: 0.48, metalness: 0.5 })
+        );
+        antenna.position.set(px + rand(-w * 0.18, w * 0.18), FLOOR_Y + h + roof.geometry.parameters.height + antenna.geometry.parameters.height / 2, pz + rand(-d * 0.18, d * 0.18));
+        world.add(antenna);
+      }
     }
   }
 }
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.28, metalness: 0.68 });
-  const trimMat = new THREE.MeshStandardMaterial({ color: 0xdce6ef, roughness: 0.24, metalness: 0.56 });
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.28,
+    metalness: 0.68,
+    emissive: isPlayer ? 0x000000 : color,
+    emissiveIntensity: isPlayer ? 0 : 0.2,
+  });
+  const trimMat = new THREE.MeshStandardMaterial({
+    color: isPlayer ? 0xdce6ef : 0xfff1c6,
+    roughness: 0.24,
+    metalness: 0.56,
+    emissive: isPlayer ? 0x000000 : 0x7a5e1f,
+    emissiveIntensity: isPlayer ? 0 : 0.22,
+  });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2d3b, roughness: 0.58, metalness: 0.26 });
 
   const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.9, 34, 18), bodyMat);
@@ -396,8 +605,22 @@ function createFighter(color, isPlayer = false) {
   missileR.rotation.z = Math.PI * 0.5;
   missileR.position.set(1.0, -2.15, -10.2);
 
-  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.55, 12, 10), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a }));
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(isPlayer ? 1.55 : 1.8, 12, 10),
+    new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a })
+  );
   glow.position.x = -21.4;
+
+  if (!isPlayer) {
+    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.72, 8, 6), navMat);
+    navL.position.set(9.2, 0.05, 13.0);
+    const navR = navL.clone();
+    navR.position.z = -13.0;
+    const topBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.64, 8, 6), navMat);
+    topBeacon.position.set(-2.4, 5.9, 0);
+    g.add(navL, navR, topBeacon);
+  }
 
   g.add(
     fuselage,
@@ -427,7 +650,7 @@ function createFighter(color, isPlayer = false) {
   });
   world.add(g);
 
-  return {
+  const plane = {
     mesh: g,
     velocity: new THREE.Vector3(200, 0, 0),
     hp: 100,
@@ -440,7 +663,12 @@ function createFighter(color, isPlayer = false) {
     yaw: 0,
     pitch: 0,
     roll: 0,
+    hpLabel: null,
   };
+
+  createPlaneHpLabel(plane);
+  updatePlaneHpLabel(plane);
+  return plane;
 }
 
 function spawnBullet(owner, color) {
@@ -451,7 +679,7 @@ function spawnBullet(owner, color) {
   const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
   b.userData = {
-    vel: dir.multiplyScalar(780).add(owner.velocity.clone().multiplyScalar(0.4)),
+    vel: dir.multiplyScalar(900).add(owner.velocity.clone().multiplyScalar(0.4)),
     life: 1.9,
     team: owner === game.player ? "player" : "bot",
   };
@@ -626,72 +854,15 @@ function updateBots(dt) {
     const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
     const dist = Math.max(1, toTarget.length());
     const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 780, 0.06, 0.45));
-
+    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
     const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 190);
+    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
     const altitudeErr = clamp((b.target.mesh.position.y - b.mesh.position.y) / 260, -1, 1);
 
-    const steer = desired.clone().addScaledVector(avoid, 1.5);
+    const steer = desired.clone().addScaledVector(avoid, 1.45);
     steer.y += altitudeErr * 0.3;
     steer.normalize();
 
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
-
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
-
-    const yawRate = TURN_RATE * (b.roll / MAX_BANK);
-    b.yaw += yawRate * dt;
-
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
-
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
-
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
-
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
-
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
     const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
     const pitchErr = clamp(steer.y - forward.y, -1, 1);
 
@@ -802,10 +973,13 @@ function updateCamera(dt) {
 
 function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
-  healthEl.textContent = `HP ${Math.max(0, Math.round(game.player.hp))}`;
+  updateHudHealthBar(game.player.hp);
   enemiesEl.textContent = `ENEMY ${alive}`;
   ammoEl.textContent = `AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
+
+  updatePlaneHpLabel(game.player);
+  for (const b of game.bots) updatePlaneHpLabel(b);
 
   if (!game.player.alive && !game.over) {
     game.over = true;
@@ -823,8 +997,14 @@ function updateState() {
 function resetMatch() {
   for (const b of game.bullets) world.remove(b);
   game.bullets = [];
-  if (game.player) world.remove(game.player.mesh);
-  for (const b of game.bots) world.remove(b.mesh);
+  if (game.player) {
+    clearPlaneHpLabel(game.player);
+    world.remove(game.player.mesh);
+  }
+  for (const b of game.bots) {
+    clearPlaneHpLabel(b);
+    world.remove(b.mesh);
+  }
   for (const fx of game.effects) world.remove(fx.mesh);
   game.effects = [];
 
@@ -1066,6 +1246,19 @@ function updateOrientationHint() {
   rotateHint.hidden = window.innerWidth >= window.innerHeight;
 }
 
+if (!rendererReady) {
+  messageEl.hidden = false;
+  messageEl.textContent = "WebGLを初期化できませんでした。タブを減らして再読み込みしてください。";
+  throw new Error("SkyAce: WebGL renderer initialization failed");
+}
+
+canvas.addEventListener("webglcontextlost", (e) => {
+  e.preventDefault();
+  messageEl.hidden = false;
+  messageEl.textContent = "描画コンテキストが失われました。再読み込みしてください。";
+});
+
+setupHudHealthBar();
 buildWorld(mapTypeEl.value);
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
@@ -1097,36 +1290,6 @@ menuBtn.addEventListener("click", (e) => {
 });
 
 botCountEl.addEventListener("change", resetMatch);
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
 botCountEl.addEventListener("input", resetMatch);
 mapTypeEl.addEventListener("change", () => {
   buildWorld(mapTypeEl.value);
