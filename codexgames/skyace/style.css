@@ -43,7 +43,7 @@ body {
   right: 10px;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(4, max-content);
+  grid-template-columns: repeat(5, max-content);
   gap: 6px;
   pointer-events: none;
 }
@@ -82,7 +82,7 @@ body {
 
 #menuPanel {
   position: fixed;
-  top: max(68px, calc(env(safe-area-inset-top) + 58px));
+  top: max(84px, calc(env(safe-area-inset-top) + 74px));
   left: 10px;
   z-index: 31;
   display: grid;
@@ -113,6 +113,12 @@ body {
   color: #9fdfff;
 }
 
+
+#boostStat {
+  padding-inline: 6px;
+  min-width: 0;
+}
+
 #botWrap {
   display: inline-flex;
   gap: 7px;
@@ -128,6 +134,57 @@ body {
   font-weight: 700;
 }
 
+
+#health {
+  display: grid;
+  gap: 4px;
+  min-width: 212px;
+  grid-column: 1 / 2;
+}
+
+.hp-row {
+  display: grid;
+  grid-template-columns: 30px minmax(78px, 112px) 30px;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.hp-row.large {
+  grid-template-columns: 36px minmax(92px, 126px) 34px;
+  font-size: 11px;
+}
+
+.hp-name,
+.hp-val {
+  font-weight: 800;
+}
+
+.hp-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(9, 22, 35, 0.9);
+  border: 1px solid rgba(160, 230, 255, 0.35);
+}
+
+.hp-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+}
+
+.hp-fill.good {
+  background: linear-gradient(90deg, #4eea99, #8cffbf);
+}
+
+.hp-fill.warn {
+  background: linear-gradient(90deg, #ffc46a, #ffe38e);
+}
+
+.hp-fill.danger {
+  background: linear-gradient(90deg, #ff6f72, #ff9b91);
+}
 
 #health.flash {
   box-shadow: 0 0 18px rgba(255, 110, 110, 0.85);
@@ -328,7 +385,7 @@ body {
 
 @media (max-width: 900px) {
   #hud {
-    grid-template-columns: repeat(3, max-content);
+    grid-template-columns: repeat(4, max-content);
   }
 
   #menuPanel {
