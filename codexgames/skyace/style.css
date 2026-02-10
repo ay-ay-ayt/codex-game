@@ -43,7 +43,8 @@ body {
   right: 10px;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(4, max-content) 1fr max-content;
+  grid-template-columns: max-content max-content max-content 1fr max-content;
+  grid-template-rows: auto auto;
   gap: 6px;
   align-items: start;
   pointer-events: none;
@@ -88,6 +89,7 @@ body {
 
 #menuBtn {
   grid-column: -2 / -1;
+  grid-row: 1 / 2;
   justify-self: end;
   min-width: 96px;
   min-height: 40px;
@@ -133,10 +135,16 @@ body {
 
 #title {
   color: #9fdfff;
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
 }
 
+#ammo {
+  grid-row: 1 / 2;
+}
 
 #boostStat {
+  grid-row: 1 / 2;
   padding-inline: 6px;
   min-width: 0;
 }
@@ -162,6 +170,7 @@ body {
   gap: 4px;
   min-width: 212px;
   grid-column: 1 / 2;
+  grid-row: 2 / 3;
 }
 
 .hp-row {
@@ -403,7 +412,7 @@ body {
 
 @media (max-width: 900px) {
   #hud {
-    grid-template-columns: repeat(2, max-content) 1fr max-content;
+    grid-template-columns: max-content max-content 1fr max-content;
   }
 }
 
