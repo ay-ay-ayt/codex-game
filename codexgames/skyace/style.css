@@ -150,10 +150,6 @@ body {
   font-size: 10px;
 }
 
-.hp-row.large {
-  grid-template-columns: 36px minmax(92px, 126px) 34px;
-  font-size: 11px;
-}
 
 .hp-name,
 .hp-val {

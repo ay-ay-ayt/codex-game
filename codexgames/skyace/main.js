@@ -33,10 +33,10 @@ function hpBarClass(ratio) {
   return "danger";
 }
 
-function hpRowMarkup(label, hp, large = false) {
+function hpRowMarkup(label, hp) {
   const hpInt = Math.max(0, Math.round(hp));
   const ratio = clamp(hpInt / 100, 0, 1);
-  const sizeClass = large ? "hp-row large" : "hp-row";
+  const sizeClass = "hp-row";
   return `
     <div class="${sizeClass}">
       <span class="hp-name">${label}</span>
@@ -49,7 +49,7 @@ function hpRowMarkup(label, hp, large = false) {
 function updateHudHealthPanel() {
   if (!hpPanelReady || !game.player) return;
 
-  const rows = [hpRowMarkup("YOU", game.player.hp, true)];
+  const rows = [hpRowMarkup("YOU", game.player.hp)];
   game.bots.forEach((b, i) => {
     rows.push(hpRowMarkup(`EN${i + 1}`, b.hp));
   });
