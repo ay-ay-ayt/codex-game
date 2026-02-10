@@ -135,6 +135,34 @@ body {
 }
 
 
+#health {
+  display: inline-grid;
+  grid-template-columns: max-content minmax(78px, 92px) max-content;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-hp-label,
+.hud-hp-val {
+  font-weight: 800;
+}
+
+.hud-hp-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(9, 22, 35, 0.9);
+  border: 1px solid rgba(160, 230, 255, 0.35);
+}
+
+.hud-hp-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  background: linear-gradient(90deg, #4eea99, #8cffbf);
+}
+
 #health.flash {
   box-shadow: 0 0 18px rgba(255, 110, 110, 0.85);
   border-color: rgba(255, 130, 130, 0.95);
