@@ -2,7 +2,6 @@ import * as THREE from "../../vendor/three.module.min.js";
 
 const canvas = document.getElementById("game");
 const healthEl = document.getElementById("health");
-const enemiesEl = document.getElementById("enemies");
 const ammoEl = document.getElementById("ammo");
 const boostStatEl = document.getElementById("boostStat");
 const botCountEl = document.getElementById("botCount");
@@ -180,6 +179,7 @@ const game = {
   effects: [],
   playerHitTimer: 0,
   hitConfirmTimer: 0,
+  boostAutoDropAt: null,
 };
 
 let lastHitVibeAt = 0;
@@ -209,6 +209,16 @@ function intersectsObstacle(position, radius = 0) {
     if (tmpBox.containsPoint(position)) return true;
   }
   return false;
+}
+
+
+function obstacleThreat(position, forward, distances = [70, 120, 180], radius = 26) {
+  const probe = new THREE.Vector3();
+  for (const d of distances) {
+    probe.copy(forward).multiplyScalar(d).add(position);
+    if (intersectsObstacle(probe, radius)) return 1 - (d / Math.max(...distances));
+  }
+  return 0;
 }
 
 function obstacleAvoidance(position, forward, lookAhead = 140) {
@@ -255,6 +265,13 @@ function fitViewport() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height, false);
+}
+
+
+function updateMenuPanelPosition() {
+  const menuRect = menuBtn.getBoundingClientRect();
+  const menuBottom = Math.ceil(menuRect.bottom);
+  document.documentElement.style.setProperty("--menu-bottom", `${menuBottom}px`);
 }
 
 function buildWorld(mapType) {
@@ -749,9 +766,25 @@ function updatePlayer(dt) {
   p.mesh.quaternion.copy(qVisual);
 
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(qMove).normalize();
-  const boostLevel = input.boostLevel > 0 ? Math.min(input.boostLevel, game.boostFuel / 20) : 0;
+
+  if (
+    game.boostAutoDropAt != null
+    && performance.now() >= game.boostAutoDropAt
+  ) {
+    boostLeverState.applyLevel?.(0);
+    game.boostAutoDropAt = null;
+  }
+
+  const boostAllowed = game.boostAutoDropAt == null && game.boostFuel > 0.01;
+  const boostLevel = input.boostLevel > 0 && boostAllowed ? input.boostLevel : 0;
   if (boostLevel > 0) {
     game.boostFuel = Math.max(0, game.boostFuel - 22 * boostLevel * dt);
+    if (game.boostFuel <= 0.01) {
+      game.boostFuel = 0;
+      if (boostLeverState.level > 0 && game.boostAutoDropAt == null) {
+        game.boostAutoDropAt = performance.now() + 1000;
+      }
+    }
   } else {
     game.boostFuel = Math.min(100, game.boostFuel + 12 * dt);
   }
@@ -796,11 +829,17 @@ function updateBots(dt) {
     const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
     const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
     const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
+    const avoidNear = obstacleAvoidance(b.mesh.position, forward, 140);
+    const avoidFar = obstacleAvoidance(b.mesh.position, forward, 230);
+    const avoid = avoidNear.multiplyScalar(1.8).addScaledVector(avoidFar, 0.9);
+    const threat = obstacleThreat(b.mesh.position, forward);
     const altitudeErr = clamp((b.target.mesh.position.y - b.mesh.position.y) / 260, -1, 1);
 
-    const steer = desired.clone().addScaledVector(avoid, 1.45);
-    steer.y += altitudeErr * 0.3;
+    const steer = desired.clone().addScaledVector(avoid, 1.8 + threat * 1.4);
+    steer.y += altitudeErr * (0.25 + threat * 0.55);
+    if (threat > 0.01) {
+      steer.y = Math.max(steer.y, 0.18 + threat * 0.4);
+    }
     steer.normalize();
 
     const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
@@ -827,7 +866,8 @@ function updateBots(dt) {
 
     const newForward = new THREE.Vector3(1, 0, 0).applyQuaternion(qMove).normalize();
 
-    const throttleTarget = dist > 650 ? 0.9 : dist > 360 ? 0.45 : 0.1;
+    const throttleTargetBase = dist > 650 ? 0.9 : dist > 360 ? 0.45 : 0.1;
+    const throttleTarget = throttleTargetBase * (1 - threat * 0.65);
     b.speed = clamp(b.speed + throttleTarget * dt * 170, botMinSpeed, botMaxSpeed);
 
     const desiredVel = newForward.multiplyScalar(b.speed);
@@ -914,7 +954,6 @@ function updateCamera(dt) {
 function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
   updateHudHealthPanel();
-  enemiesEl.textContent = `ENEMY ${alive}`;
   ammoEl.textContent = `AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
 
@@ -930,6 +969,13 @@ function updateState() {
     messageEl.hidden = false;
     messageEl.textContent = "YOU WIN";
   }
+}
+
+
+function clearPlaneHpLabel(plane) {
+  if (!plane?.hpLabel) return;
+  world.remove(plane.hpLabel);
+  plane.hpLabel = null;
 }
 
 function resetMatch() {
@@ -951,6 +997,7 @@ function resetMatch() {
   game.boostFuel = 100;
   game.playerHitTimer = 0;
   game.hitConfirmTimer = 0;
+  game.boostAutoDropAt = null;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -966,7 +1013,7 @@ function resetMatch() {
   game.player.pitch = 0;
   game.player.roll = 0;
 
-  const colors = [0xff615d, 0xffc065, 0xc993ff];
+  const colors = [0xff615d, 0xffc065, 0xc993ff, 0x62e7b3, 0xff7eb9];
   const botCount = Number(botCountEl.value);
   game.bots = Array.from({ length: botCount }, (_, i) => {
     const bot = createFighter(colors[i]);
@@ -980,6 +1027,7 @@ function resetMatch() {
     return bot;
   });
   game.initialBots = game.bots.length;
+  updateHudHealthPanel();
 }
 
 function syncInput() {
@@ -1114,6 +1162,10 @@ function setupBoostLever() {
   boostLeverState.applyLevel = applyLevel;
 
   function moveFromClient(clientY) {
+    if (game.boostFuel <= 0.01 || game.boostAutoDropAt != null) {
+      applyLevel(0);
+      return;
+    }
     const rect = boostLeverEl.getBoundingClientRect();
     const top = rect.top + 8;
     const bottom = rect.bottom - 8;
@@ -1198,6 +1250,7 @@ canvas.addEventListener("webglcontextlost", (e) => {
 
 setupHudHealthPanel();
 buildWorld(mapTypeEl.value);
+updateMenuPanelPosition();
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
   stickInput.pitch = y;
@@ -1221,10 +1274,24 @@ const restartFromHud = (e) => {
 restartBtn.addEventListener("click", restartFromHud);
 restartBtn.addEventListener("pointerup", restartFromHud);
 
-menuBtn.addEventListener("click", (e) => {
-  e.preventDefault();
+let lastMenuToggleAt = 0;
+
+function toggleMenuPanel() {
+  updateMenuPanelPosition();
   menuPanel.hidden = !menuPanel.hidden;
   menuBtn.setAttribute("aria-expanded", String(!menuPanel.hidden));
+  lastMenuToggleAt = performance.now();
+}
+
+menuBtn.addEventListener("pointerup", (e) => {
+  e.preventDefault();
+  toggleMenuPanel();
+});
+
+menuBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (performance.now() - lastMenuToggleAt < 350) return;
+  toggleMenuPanel();
 });
 
 botCountEl.addEventListener("change", resetMatch);
@@ -1239,14 +1306,22 @@ window.addEventListener("selectstart", (e) => e.preventDefault());
 window.addEventListener("dragstart", (e) => e.preventDefault());
 window.addEventListener("gesturestart", (e) => e.preventDefault());
 window.addEventListener("touchstart", (e) => {
-  if (e.touches.length > 1) e.preventDefault();
+  if (e.touches.length <= 1) return;
+  const target = e.target;
+  const menuTouch = target instanceof Element
+    && (menuBtn.contains(target) || menuPanel.contains(target));
+  if (!menuTouch) e.preventDefault();
 }, { passive: false });
 
 window.addEventListener("resize", () => {
   fitViewport();
+  updateMenuPanelPosition();
   updateOrientationHint();
 });
-window.visualViewport?.addEventListener("resize", fitViewport);
+window.visualViewport?.addEventListener("resize", () => {
+  fitViewport();
+  updateMenuPanelPosition();
+});
 
 window.addEventListener(
   "pointerdown",

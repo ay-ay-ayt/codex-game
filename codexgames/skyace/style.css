@@ -43,8 +43,10 @@ body {
   right: 10px;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(5, max-content);
+  grid-template-columns: max-content max-content max-content 1fr max-content;
+  grid-template-rows: auto auto;
   gap: 6px;
+  align-items: start;
   pointer-events: none;
 }
 
@@ -80,14 +82,32 @@ body {
   touch-action: manipulation;
 }
 
+#restartBtn {
+  background: rgba(35, 99, 158, 0.92);
+  border-color: rgba(196, 238, 255, 0.8);
+}
+
+#menuBtn {
+  grid-column: -2 / -1;
+  grid-row: 1 / 2;
+  justify-self: end;
+  min-width: 96px;
+  min-height: 40px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
 #menuPanel {
   position: fixed;
-  top: max(84px, calc(env(safe-area-inset-top) + 74px));
-  left: 10px;
+  top: calc(var(--menu-bottom, max(54px, calc(env(safe-area-inset-top) + 44px))) + 6px);
+  right: 10px;
   z-index: 31;
   display: grid;
-  grid-template-columns: repeat(2, max-content);
+  justify-items: stretch;
+  grid-template-columns: 1fr;
   gap: 6px;
+  min-width: 136px;
+  pointer-events: auto;
 }
 
 #menuPanel[hidden] {
@@ -104,6 +124,10 @@ body {
   font-weight: 700;
 }
 
+#menuPanel button {
+  width: 100%;
+}
+
 #menuPanel select {
   min-width: 72px;
   padding: 3px 6px;
@@ -111,10 +135,16 @@ body {
 
 #title {
   color: #9fdfff;
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
 }
 
+#ammo {
+  grid-row: 1 / 2;
+}
 
 #boostStat {
+  grid-row: 1 / 2;
   padding-inline: 6px;
   min-width: 0;
 }
@@ -140,6 +170,7 @@ body {
   gap: 4px;
   min-width: 212px;
   grid-column: 1 / 2;
+  grid-row: 2 / 3;
 }
 
 .hp-row {
@@ -381,11 +412,7 @@ body {
 
 @media (max-width: 900px) {
   #hud {
-    grid-template-columns: repeat(4, max-content);
-  }
-
-  #menuPanel {
-    grid-template-columns: 1fr;
+    grid-template-columns: max-content max-content 1fr max-content;
   }
 }
 
