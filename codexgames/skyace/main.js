@@ -605,6 +605,7 @@ function createFighter(color, isPlayer = false) {
     yaw: 0,
     pitch: 0,
     roll: 0,
+    hpLabel: null,
   };
 
   return plane;
@@ -934,8 +935,14 @@ function updateState() {
 function resetMatch() {
   for (const b of game.bullets) world.remove(b);
   game.bullets = [];
-  if (game.player) world.remove(game.player.mesh);
-  for (const b of game.bots) world.remove(b.mesh);
+  if (game.player) {
+    clearPlaneHpLabel(game.player);
+    world.remove(game.player.mesh);
+  }
+  for (const b of game.bots) {
+    clearPlaneHpLabel(b);
+    world.remove(b.mesh);
+  }
   for (const fx of game.effects) world.remove(fx.mesh);
   game.effects = [];
 
