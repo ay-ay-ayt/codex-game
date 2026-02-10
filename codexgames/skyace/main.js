@@ -10,20 +10,43 @@ const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
 const menuPanel = document.getElementById("menuPanel");
-menuPanel.hidden = false;
-menuBtn.setAttribute("aria-expanded", "true");
+menuPanel.hidden = true;
+menuBtn.setAttribute("aria-expanded", "false");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-renderer.setClearColor(0x6f9ed4, 1);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
+  || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+function createRenderer() {
+  const attempts = [
+    { canvas, antialias: !isMobile, powerPreference: isMobile ? "low-power" : "high-performance" },
+    { canvas, antialias: false, powerPreference: "low-power" },
+    { canvas, antialias: false },
+  ];
+
+  for (const options of attempts) {
+    try {
+      return new THREE.WebGLRenderer(options);
+    } catch {
+      // fall through to the next option
+    }
+  }
+  return null;
+}
+
+const renderer = createRenderer();
+const rendererReady = Boolean(renderer);
+if (rendererReady) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+  renderer.setClearColor(0x6f9ed4, 1);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = !isMobile;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+}
 
 const scene = new THREE.Scene();
 
@@ -31,7 +54,7 @@ const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
 const sun = new THREE.DirectionalLight(0xffffff, 1.15);
 sun.position.set(700, 900, 300);
-sun.castShadow = true;
+sun.castShadow = !isMobile;
 sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun);
 
@@ -46,6 +69,9 @@ const tmpVecC = new THREE.Vector3();
 
 const ARENA = 3600;
 const FLOOR_Y = 40;
+const worldDetail = isMobile
+  ? { clouds: 80, hills: 40, forestCenters: 6, forestDenseTrees: 60, forestSparseTrees: 320, cityBuildings: 320 }
+  : { clouds: 170, hills: 95, forestCenters: 10, forestDenseTrees: 120, forestSparseTrees: 900, cityBuildings: 420 };
 const MAX_BANK = THREE.MathUtils.degToRad(55);
 const MAX_PITCH = THREE.MathUtils.degToRad(35);
 const BANK_RATE = 3.0;
@@ -194,7 +220,7 @@ function buildWorld(mapType) {
     depthWrite: false,
     fog: false,
   });
-  for (let i = 0; i < 170; i++) {
+  for (let i = 0; i < worldDetail.clouds; i++) {
     const cloud = new THREE.Mesh(new THREE.SphereGeometry(rand(26, 68), 12, 10), cloudMat);
     cloud.scale.set(rand(2.5, 5.3), rand(0.38, 0.72), rand(1.4, 3.0));
     cloud.position.set(rand(-ARENA * 1.2, ARENA * 1.2), rand(640, 1250), rand(-ARENA * 1.2, ARENA * 1.2));
@@ -212,7 +238,7 @@ function buildWorld(mapType) {
     world.add(ground);
 
     const hillMat = new THREE.MeshStandardMaterial({ color: 0x5d7f57, roughness: 0.95 });
-    for (let i = 0; i < 95; i++) {
+    for (let i = 0; i < worldDetail.hills; i++) {
       const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(90, 260), 16, 12), hillMat);
       hill.scale.y = rand(0.24, 0.55);
       hill.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(8, 32), rand(-ARENA * 1.2, ARENA * 1.2));
@@ -222,7 +248,7 @@ function buildWorld(mapType) {
 
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
     const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
-    const forestCenters = Array.from({ length: 10 }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
+    const forestCenters = Array.from({ length: worldDetail.forestCenters }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
 
     const placeTree = (px, pz, dense = false) => {
       if (Math.abs(px) < 160 && Math.abs(pz) < 160) return;
@@ -246,14 +272,14 @@ function buildWorld(mapType) {
     };
 
     for (const center of forestCenters) {
-      for (let i = 0; i < 120; i++) {
+      for (let i = 0; i < worldDetail.forestDenseTrees; i++) {
         const angle = Math.random() * Math.PI * 2;
         const radius = rand(0, 260) * Math.sqrt(Math.random());
         placeTree(center.x + Math.cos(angle) * radius, center.y + Math.sin(angle) * radius, true);
       }
     }
 
-    for (let i = 0; i < 900; i++) {
+    for (let i = 0; i < worldDetail.forestSparseTrees; i++) {
       placeTree(rand(-ARENA * 1.2, ARENA * 1.2), rand(-ARENA * 1.2, ARENA * 1.2), false);
     }
     return;
@@ -291,7 +317,7 @@ function buildWorld(mapType) {
   }
 
   const buildingPalette = [0x7f8b98, 0x8e97a5, 0x646f7d, 0x5a6370, 0x9ba4b4];
-  for (let i = 0; i < 420; i++) {
+  for (let i = 0; i < worldDetail.cityBuildings; i++) {
     const px = rand(-ARENA * 1.15, ARENA * 1.15);
     const pz = rand(-ARENA * 1.15, ARENA * 1.15);
     if (Math.abs(px) < 260 && Math.abs(pz) < 260) continue;
@@ -326,8 +352,20 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.28, metalness: 0.68 });
-  const trimMat = new THREE.MeshStandardMaterial({ color: 0xdce6ef, roughness: 0.24, metalness: 0.56 });
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.28,
+    metalness: 0.68,
+    emissive: isPlayer ? 0x000000 : color,
+    emissiveIntensity: isPlayer ? 0 : 0.2,
+  });
+  const trimMat = new THREE.MeshStandardMaterial({
+    color: isPlayer ? 0xdce6ef : 0xfff1c6,
+    roughness: 0.24,
+    metalness: 0.56,
+    emissive: isPlayer ? 0x000000 : 0x7a5e1f,
+    emissiveIntensity: isPlayer ? 0 : 0.22,
+  });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2d3b, roughness: 0.58, metalness: 0.26 });
 
   const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.9, 34, 18), bodyMat);
@@ -396,8 +434,22 @@ function createFighter(color, isPlayer = false) {
   missileR.rotation.z = Math.PI * 0.5;
   missileR.position.set(1.0, -2.15, -10.2);
 
-  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.55, 12, 10), new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a }));
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(isPlayer ? 1.55 : 1.8, 12, 10),
+    new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a })
+  );
   glow.position.x = -21.4;
+
+  if (!isPlayer) {
+    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.72, 8, 6), navMat);
+    navL.position.set(9.2, 0.05, 13.0);
+    const navR = navL.clone();
+    navR.position.z = -13.0;
+    const topBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.64, 8, 6), navMat);
+    topBeacon.position.set(-2.4, 5.9, 0);
+    g.add(navL, navR, topBeacon);
+  }
 
   g.add(
     fuselage,
@@ -451,7 +503,7 @@ function spawnBullet(owner, color) {
   const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
   b.userData = {
-    vel: dir.multiplyScalar(780).add(owner.velocity.clone().multiplyScalar(0.4)),
+    vel: dir.multiplyScalar(900).add(owner.velocity.clone().multiplyScalar(0.4)),
     life: 1.9,
     team: owner === game.player ? "player" : "bot",
   };
@@ -626,72 +678,15 @@ function updateBots(dt) {
     const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
     const dist = Math.max(1, toTarget.length());
     const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 780, 0.06, 0.45));
-
+    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
     const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 190);
+    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
     const altitudeErr = clamp((b.target.mesh.position.y - b.mesh.position.y) / 260, -1, 1);
 
-    const steer = desired.clone().addScaledVector(avoid, 1.5);
+    const steer = desired.clone().addScaledVector(avoid, 1.45);
     steer.y += altitudeErr * 0.3;
     steer.normalize();
 
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
-
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
-
-    const yawRate = TURN_RATE * (b.roll / MAX_BANK);
-    b.yaw += yawRate * dt;
-
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
-
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
-
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
-
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
-
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
-
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoid = obstacleAvoidance(b.mesh.position, forward, 185);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.45).normalize();
     const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
     const pitchErr = clamp(steer.y - forward.y, -1, 1);
 
@@ -1066,6 +1061,18 @@ function updateOrientationHint() {
   rotateHint.hidden = window.innerWidth >= window.innerHeight;
 }
 
+if (!rendererReady) {
+  messageEl.hidden = false;
+  messageEl.textContent = "WebGLを初期化できませんでした。タブを減らして再読み込みしてください。";
+  throw new Error("SkyAce: WebGL renderer initialization failed");
+}
+
+canvas.addEventListener("webglcontextlost", (e) => {
+  e.preventDefault();
+  messageEl.hidden = false;
+  messageEl.textContent = "描画コンテキストが失われました。再読み込みしてください。";
+});
+
 buildWorld(mapTypeEl.value);
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
@@ -1097,36 +1104,6 @@ menuBtn.addEventListener("click", (e) => {
 });
 
 botCountEl.addEventListener("change", resetMatch);
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
 botCountEl.addEventListener("input", resetMatch);
 mapTypeEl.addEventListener("change", () => {
   buildWorld(mapTypeEl.value);
