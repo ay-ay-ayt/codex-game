@@ -17,101 +17,43 @@ const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
-let hudHealthFillEl = null;
-let hudHealthValEl = null;
+let hpPanelReady = false;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
   || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-function setupHudHealthBar() {
-  healthEl.innerHTML = `
-    <span class="hud-hp-label">HP</span>
-    <span class="hud-hp-track"><span class="hud-hp-fill"></span></span>
-    <span class="hud-hp-val">100</span>
-  `;
-  hudHealthFillEl = healthEl.querySelector(".hud-hp-fill");
-  hudHealthValEl = healthEl.querySelector(".hud-hp-val");
+function setupHudHealthPanel() {
+  healthEl.innerHTML = "";
+  hpPanelReady = true;
 }
 
-function updateHudHealthBar(hp) {
+function hpBarClass(ratio) {
+  if (ratio > 0.6) return "good";
+  if (ratio > 0.3) return "warn";
+  return "danger";
+}
+
+function hpRowMarkup(label, hp, large = false) {
   const hpInt = Math.max(0, Math.round(hp));
   const ratio = clamp(hpInt / 100, 0, 1);
-  if (hudHealthFillEl) hudHealthFillEl.style.width = `${Math.round(ratio * 100)}%`;
-  if (hudHealthValEl) hudHealthValEl.textContent = String(hpInt);
+  const sizeClass = large ? "hp-row large" : "hp-row";
+  return `
+    <div class="${sizeClass}">
+      <span class="hp-name">${label}</span>
+      <span class="hp-track"><span class="hp-fill ${hpBarClass(ratio)}" style="width:${Math.round(ratio * 100)}%"></span></span>
+      <span class="hp-val">${hpInt}</span>
+    </div>
+  `;
 }
 
-function createPlaneHpLabel(plane) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 176;
-  canvas.height = 48;
-  const ctx = canvas.getContext("2d");
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
+function updateHudHealthPanel() {
+  if (!hpPanelReady || !game.player) return;
 
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: texture,
-    transparent: true,
-    depthTest: false,
-    depthWrite: false,
-  }));
-  sprite.renderOrder = 20;
-  sprite.scale.set(26, 7, 1);
-  world.add(sprite);
-
-  plane.hpLabel = { sprite, canvas, ctx, texture, lastHp: -1, lastAlive: null };
-}
-
-function updatePlaneHpLabel(plane) {
-  if (!plane?.hpLabel) return;
-  const ui = plane.hpLabel;
-  const hpInt = Math.max(0, Math.round(plane.hp));
-
-  ui.sprite.visible = plane.alive;
-  if (!plane.alive) return;
-
-  ui.sprite.position.copy(plane.mesh.position);
-  ui.sprite.position.y += plane.isPlayer ? 34 : 24;
-
-  if (ui.lastHp === hpInt && ui.lastAlive === plane.alive) return;
-  ui.lastHp = hpInt;
-  ui.lastAlive = plane.alive;
-
-  const ctx = ui.ctx;
-  const w = ui.canvas.width;
-  const h = ui.canvas.height;
-  ctx.clearRect(0, 0, w, h);
-
-  ctx.fillStyle = plane.isPlayer ? "rgba(12, 40, 62, 0.84)" : "rgba(52, 26, 16, 0.84)";
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.strokeStyle = plane.isPlayer ? "rgba(142, 218, 255, 0.95)" : "rgba(255, 176, 128, 0.95)";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(1.5, 1.5, w - 3, h - 3);
-
-  const trackX = 10;
-  const trackY = 16;
-  const trackW = 120;
-  const trackH = 18;
-  ctx.fillStyle = "rgba(9, 17, 25, 0.7)";
-  ctx.fillRect(trackX, trackY, trackW, trackH);
-
-  const ratio = clamp(hpInt / 100, 0, 1);
-  ctx.fillStyle = ratio > 0.6 ? "#62f79e" : ratio > 0.3 ? "#ffd26f" : "#ff6f72";
-  ctx.fillRect(trackX, trackY, Math.max(2, Math.round(trackW * ratio)), trackH);
-
-  ctx.font = "bold 18px sans-serif";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(`HP ${hpInt}`, 136, 31);
-
-  ui.texture.needsUpdate = true;
-}
-
-function clearPlaneHpLabel(plane) {
-  if (!plane?.hpLabel) return;
-  world.remove(plane.hpLabel.sprite);
-  plane.hpLabel.texture.dispose();
-  plane.hpLabel.sprite.material.dispose();
-  plane.hpLabel = null;
+  const rows = [hpRowMarkup("YOU", game.player.hp, true)];
+  game.bots.forEach((b, i) => {
+    rows.push(hpRowMarkup(`EN${i + 1}`, b.hp));
+  });
+  healthEl.innerHTML = rows.join("");
 }
 
 function createRenderer() {
@@ -666,8 +608,6 @@ function createFighter(color, isPlayer = false) {
     hpLabel: null,
   };
 
-  createPlaneHpLabel(plane);
-  updatePlaneHpLabel(plane);
   return plane;
 }
 
@@ -973,13 +913,11 @@ function updateCamera(dt) {
 
 function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
-  updateHudHealthBar(game.player.hp);
+  updateHudHealthPanel();
   enemiesEl.textContent = `ENEMY ${alive}`;
   ammoEl.textContent = `AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
 
-  updatePlaneHpLabel(game.player);
-  for (const b of game.bots) updatePlaneHpLabel(b);
 
   if (!game.player.alive && !game.over) {
     game.over = true;
@@ -1258,7 +1196,7 @@ canvas.addEventListener("webglcontextlost", (e) => {
   messageEl.textContent = "描画コンテキストが失われました。再読み込みしてください。";
 });
 
-setupHudHealthBar();
+setupHudHealthPanel();
 buildWorld(mapTypeEl.value);
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;

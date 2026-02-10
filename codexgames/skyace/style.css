@@ -136,18 +136,31 @@ body {
 
 
 #health {
-  display: inline-grid;
-  grid-template-columns: max-content minmax(78px, 92px) max-content;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  gap: 4px;
+  min-width: 212px;
+  grid-column: 1 / 2;
 }
 
-.hud-hp-label,
-.hud-hp-val {
+.hp-row {
+  display: grid;
+  grid-template-columns: 30px minmax(78px, 112px) 30px;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.hp-row.large {
+  grid-template-columns: 36px minmax(92px, 126px) 34px;
+  font-size: 11px;
+}
+
+.hp-name,
+.hp-val {
   font-weight: 800;
 }
 
-.hud-hp-track {
+.hp-track {
   position: relative;
   height: 8px;
   border-radius: 999px;
@@ -156,11 +169,21 @@ body {
   border: 1px solid rgba(160, 230, 255, 0.35);
 }
 
-.hud-hp-fill {
+.hp-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 100%;
+}
+
+.hp-fill.good {
   background: linear-gradient(90deg, #4eea99, #8cffbf);
+}
+
+.hp-fill.warn {
+  background: linear-gradient(90deg, #ffc46a, #ffe38e);
+}
+
+.hp-fill.danger {
+  background: linear-gradient(90deg, #ff6f72, #ff9b91);
 }
 
 #health.flash {
