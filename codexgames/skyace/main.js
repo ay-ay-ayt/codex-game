@@ -257,6 +257,13 @@ function fitViewport() {
   renderer.setSize(width, height, false);
 }
 
+
+function updateMenuPanelPosition() {
+  const hudRect = hud.getBoundingClientRect();
+  const hudBottom = Math.ceil(hudRect.bottom + 6);
+  document.documentElement.style.setProperty("--hud-bottom", `${hudBottom}px`);
+}
+
 function buildWorld(mapType) {
   world.clear();
   staticObstacles.length = 0;
@@ -1198,6 +1205,7 @@ canvas.addEventListener("webglcontextlost", (e) => {
 
 setupHudHealthPanel();
 buildWorld(mapTypeEl.value);
+updateMenuPanelPosition();
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
   stickInput.pitch = y;
@@ -1244,9 +1252,13 @@ window.addEventListener("touchstart", (e) => {
 
 window.addEventListener("resize", () => {
   fitViewport();
+  updateMenuPanelPosition();
   updateOrientationHint();
 });
-window.visualViewport?.addEventListener("resize", fitViewport);
+window.visualViewport?.addEventListener("resize", () => {
+  fitViewport();
+  updateMenuPanelPosition();
+});
 
 window.addEventListener(
   "pointerdown",

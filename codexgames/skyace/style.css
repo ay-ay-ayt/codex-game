@@ -82,7 +82,7 @@ body {
 
 #menuPanel {
   position: fixed;
-  top: max(84px, calc(env(safe-area-inset-top) + 74px));
+  top: calc(var(--hud-bottom, max(84px, calc(env(safe-area-inset-top) + 74px))) + 6px);
   left: 10px;
   z-index: 31;
   display: grid;
