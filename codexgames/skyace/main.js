@@ -179,6 +179,7 @@ const game = {
   effects: [],
   playerHitTimer: 0,
   hitConfirmTimer: 0,
+  boostAutoDropAt: null,
 };
 
 let lastHitVibeAt = 0;
@@ -481,124 +482,152 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
+
   const bodyMat = new THREE.MeshStandardMaterial({
     color,
-    roughness: 0.28,
-    metalness: 0.68,
+    roughness: 0.3,
+    metalness: 0.58,
     emissive: isPlayer ? 0x000000 : color,
-    emissiveIntensity: isPlayer ? 0 : 0.2,
+    emissiveIntensity: isPlayer ? 0 : 0.1,
   });
   const trimMat = new THREE.MeshStandardMaterial({
-    color: isPlayer ? 0xdce6ef : 0xfff1c6,
+    color: isPlayer ? 0xd7e4ee : 0xe5cda8,
     roughness: 0.24,
-    metalness: 0.56,
-    emissive: isPlayer ? 0x000000 : 0x7a5e1f,
-    emissiveIntensity: isPlayer ? 0 : 0.22,
+    metalness: 0.46,
   });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2d3b, roughness: 0.58, metalness: 0.26 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x142231, roughness: 0.5, metalness: 0.28 });
 
-  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.9, 34, 18), bodyMat);
+  const fuselageProfile = [
+    new THREE.Vector2(0.18, -19.5),
+    new THREE.Vector2(0.9, -18.2),
+    new THREE.Vector2(1.8, -14.8),
+    new THREE.Vector2(2.35, -9.5),
+    new THREE.Vector2(2.55, -2.6),
+    new THREE.Vector2(2.35, 5.8),
+    new THREE.Vector2(1.95, 12.6),
+    new THREE.Vector2(1.1, 17.4),
+    new THREE.Vector2(0.22, 20.8),
+  ];
+  const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 30), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
+  fuselage.rotation.x = Math.PI;
 
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.95, 12.8, 18), trimMat);
-  nose.rotation.z = -Math.PI * 0.5;
-  nose.position.x = 23.3;
-
-  const tailCone = new THREE.Mesh(new THREE.ConeGeometry(1.8, 8.2, 14), darkMat);
-  tailCone.rotation.z = Math.PI * 0.5;
-  tailCone.position.x = -21.2;
-
-  const cockpit = new THREE.Mesh(
-    new THREE.SphereGeometry(2.65, 16, 14),
-    new THREE.MeshStandardMaterial({ color: 0xa8eeff, transparent: true, opacity: 0.72, roughness: 0.12, metalness: 0.38 })
+  const canopy = new THREE.Mesh(
+    new THREE.SphereGeometry(2.55, 20, 14),
+    new THREE.MeshStandardMaterial({
+      color: 0xb5ebff,
+      transparent: true,
+      opacity: 0.72,
+      roughness: 0.06,
+      metalness: 0.2,
+    })
   );
-  cockpit.scale.set(2.0, 0.78, 0.82);
-  cockpit.position.set(7.9, 2.7, 0);
+  canopy.scale.set(2.25, 0.66, 0.8);
+  canopy.position.set(7.5, 2.45, 0);
 
-  const enginePodL = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.95, 14.5, 14), bodyMat);
-  enginePodL.rotation.z = -Math.PI * 0.5;
-  enginePodL.position.set(-8.5, 2.6, 2.95);
-  const enginePodR = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.95, 14.5, 14), bodyMat);
-  enginePodR.rotation.z = -Math.PI * 0.5;
-  enginePodR.position.set(-8.5, 2.6, -2.95);
+  const noseProbe = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, 2.9, 8), trimMat);
+  noseProbe.rotation.z = -Math.PI * 0.5;
+  noseProbe.position.set(30.6, 0.1, 0);
 
-  const addPaired = (factory, z, rotY = 0, yOffset = 0, xOffset = 0) => {
-    const left = factory();
-    left.position.set(xOffset, yOffset, z);
-    left.rotation.y = rotY;
-    const right = factory();
-    right.position.set(xOffset, yOffset, -z);
-    right.rotation.y = -rotY;
-    g.add(left, right);
-  };
+  const spine = new THREE.Mesh(new THREE.BoxGeometry(10.6, 0.85, 1.4), bodyMat);
+  spine.position.set(-2.6, 2.85, 0);
 
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(19.5, 0.58, 5.6), trimMat), 7.2, 0.24, -1.08, -0.9);
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.4, 2.2), trimMat), 12.6, 0.6, -1.2, 7.0);
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.28, 1.45), trimMat), 4.4, 0.5, 0.5, 11.8);
+  const wingL = new THREE.Mesh(new THREE.BoxGeometry(24.8, 0.26, 7.4), trimMat);
+  wingL.position.set(-2.8, -0.85, 7.8);
+  wingL.rotation.y = 0.46;
+  wingL.rotation.z = -0.05;
+  const wingR = wingL.clone();
+  wingR.position.z = -7.8;
+  wingR.rotation.y = -0.46;
+  wingR.rotation.z = 0.05;
 
-  const finL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 8, 1.8), bodyMat);
-  finL.position.set(-13.1, 7.0, 2.45);
-  finL.rotation.x = 0;
-  const finR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 8, 1.8), bodyMat);
-  finR.position.set(-13.1, 7.0, -2.45);
-  finR.rotation.x = 0;
+  const lERXL = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.24, 2.1), bodyMat);
+  lERXL.position.set(8.0, -0.42, 4.6);
+  lERXL.rotation.y = 0.52;
+  const lERXR = lERXL.clone();
+  lERXR.position.z = -4.6;
+  lERXR.rotation.y = -0.52;
 
-  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.7, 1.4), darkMat);
-  intakeL.position.set(9.0, 0.2, 3.3);
-  const intakeR = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.7, 1.4), darkMat);
-  intakeR.position.set(9.0, 0.2, -3.3);
+  const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.58, 1.95, 15.8, 16), bodyMat);
+  engineL.rotation.z = -Math.PI * 0.5;
+  engineL.position.set(-10.2, 2.0, 3.0);
+  const engineR = engineL.clone();
+  engineR.position.z = -3.0;
 
-  const exhaustL = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.35, 3.2, 12), darkMat);
-  exhaustL.rotation.z = Math.PI * 0.5;
-  exhaustL.position.set(-20.9, 1.8, 2.9);
-  const exhaustR = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.35, 3.2, 12), darkMat);
-  exhaustR.rotation.z = Math.PI * 0.5;
-  exhaustR.position.set(-20.9, 1.8, -2.9);
+  const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 1.45, 3.8, 14), darkMat);
+  nozzleL.rotation.z = Math.PI * 0.5;
+  nozzleL.position.set(-23.0, 1.86, 3.0);
+  const nozzleR = nozzleL.clone();
+  nozzleR.position.z = -3.0;
 
-  const missileMat = new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.22, metalness: 0.2 });
-  const missileL = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 9.4, 8), missileMat);
-  missileL.rotation.z = Math.PI * 0.5;
-  missileL.position.set(1.0, -2.15, 10.2);
-  const missileR = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 9.4, 8), missileMat);
-  missileR.rotation.z = Math.PI * 0.5;
-  missileR.position.set(1.0, -2.15, -10.2);
+  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.35, 1.2), darkMat);
+  intakeL.position.set(9.6, 0.28, 3.1);
+  const intakeR = intakeL.clone();
+  intakeR.position.z = -3.1;
+
+  const tailL = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.22, 2.2), trimMat);
+  tailL.position.set(-16.2, 2.9, 5.2);
+  tailL.rotation.y = 0.52;
+  tailL.rotation.x = -0.08;
+  const tailR = tailL.clone();
+  tailR.position.z = -5.2;
+  tailR.rotation.y = -0.52;
+  tailR.rotation.x = 0.08;
+
+  const finL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 10.8, 0.9), bodyMat);
+  finL.position.set(-13.7, 8.2, 2.5);
+  finL.rotation.set(0, 0.18, -0.1);
+  const finR = finL.clone();
+  finR.position.z = -2.5;
+  finR.rotation.set(0, -0.18, 0.1);
+
+  const pylonL = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.2, 0.6), darkMat);
+  pylonL.position.set(-0.4, -1.95, 10.3);
+  pylonL.rotation.z = 0.24;
+  const pylonR = pylonL.clone();
+  pylonR.position.z = -10.3;
+  pylonR.rotation.z = -0.24;
 
   const glow = new THREE.Mesh(
-    new THREE.SphereGeometry(isPlayer ? 1.55 : 1.8, 12, 10),
+    new THREE.SphereGeometry(isPlayer ? 1.45 : 1.65, 12, 10),
     new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a })
   );
-  glow.position.x = -21.4;
-
-  if (!isPlayer) {
-    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
-    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.72, 8, 6), navMat);
-    navL.position.set(9.2, 0.05, 13.0);
-    const navR = navL.clone();
-    navR.position.z = -13.0;
-    const topBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.64, 8, 6), navMat);
-    topBeacon.position.set(-2.4, 5.9, 0);
-    g.add(navL, navR, topBeacon);
-  }
+  glow.position.x = -23.9;
 
   g.add(
     fuselage,
-    nose,
-    tailCone,
-    cockpit,
-    enginePodL,
-    enginePodR,
-    finL,
-    finR,
+    canopy,
+    noseProbe,
+    spine,
+    wingL,
+    wingR,
+    lERXL,
+    lERXR,
+    engineL,
+    engineR,
+    nozzleL,
+    nozzleR,
     intakeL,
     intakeR,
-    exhaustL,
-    exhaustR,
-    missileL,
-    missileR,
+    tailL,
+    tailR,
+    finL,
+    finR,
+    pylonL,
+    pylonR,
     glow
   );
 
-  g.scale.setScalar(1.14);
+  if (!isPlayer) {
+    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 6), navMat);
+    navL.position.set(8.8, 0.22, 12.8);
+    const navR = navL.clone();
+    navR.position.z = -12.8;
+    g.add(navL, navR);
+  }
+
+  g.scale.setScalar(1.26);
   g.position.set(0, 300, 0);
   g.traverse((node) => {
     if (node.isMesh) {
@@ -765,11 +794,29 @@ function updatePlayer(dt) {
   p.mesh.quaternion.copy(qVisual);
 
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(qMove).normalize();
-  const boostLevel = input.boostLevel > 0 ? Math.min(input.boostLevel, game.boostFuel / 20) : 0;
+
+  if (
+    game.boostAutoDropAt != null
+    && performance.now() >= game.boostAutoDropAt
+  ) {
+    boostLeverState.applyLevel?.(0);
+    game.boostAutoDropAt = null;
+  }
+
+  const boostAllowed = game.boostAutoDropAt == null && game.boostFuel > 0.01;
+  const boostLevel = input.boostLevel > 0 && boostAllowed ? input.boostLevel : 0;
   if (boostLevel > 0) {
     game.boostFuel = Math.max(0, game.boostFuel - 22 * boostLevel * dt);
-  } else {
+    if (game.boostFuel <= 0.01) {
+      game.boostFuel = 0;
+      if (boostLeverState.level > 0 && game.boostAutoDropAt == null) {
+        game.boostAutoDropAt = performance.now() + 1000;
+      }
+    }
+  } else if (game.boostAutoDropAt == null) {
     game.boostFuel = Math.min(100, game.boostFuel + 12 * dt);
+  } else {
+    game.boostFuel = 0;
   }
 
   const targetSpeed = p.speed + boostLevel * 220;
@@ -980,6 +1027,7 @@ function resetMatch() {
   game.boostFuel = 100;
   game.playerHitTimer = 0;
   game.hitConfirmTimer = 0;
+  game.boostAutoDropAt = null;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -1144,6 +1192,10 @@ function setupBoostLever() {
   boostLeverState.applyLevel = applyLevel;
 
   function moveFromClient(clientY) {
+    if (game.boostFuel <= 0.01 || game.boostAutoDropAt != null) {
+      applyLevel(0);
+      return;
+    }
     const rect = boostLeverEl.getBoundingClientRect();
     const top = rect.top + 8;
     const bottom = rect.bottom - 8;
@@ -1252,11 +1304,24 @@ const restartFromHud = (e) => {
 restartBtn.addEventListener("click", restartFromHud);
 restartBtn.addEventListener("pointerup", restartFromHud);
 
-menuBtn.addEventListener("click", (e) => {
-  e.preventDefault();
+let lastMenuToggleAt = 0;
+
+function toggleMenuPanel() {
   updateMenuPanelPosition();
   menuPanel.hidden = !menuPanel.hidden;
   menuBtn.setAttribute("aria-expanded", String(!menuPanel.hidden));
+  lastMenuToggleAt = performance.now();
+}
+
+menuBtn.addEventListener("pointerup", (e) => {
+  e.preventDefault();
+  toggleMenuPanel();
+});
+
+menuBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (performance.now() - lastMenuToggleAt < 350) return;
+  toggleMenuPanel();
 });
 
 botCountEl.addEventListener("change", resetMatch);
