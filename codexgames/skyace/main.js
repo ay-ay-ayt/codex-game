@@ -683,7 +683,7 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const flameL = new THREE.Mesh(new THREE.ConeGeometry(1.18, 5.3, 18), flameMat);
+  const flameL = new THREE.Mesh(new THREE.ConeGeometry(1.35, 6.8, 18), flameMat);
   flameL.rotation.z = Math.PI * 0.5;
   flameL.position.set(-29.7, 1.9, 3.35);
   const flameR = flameL.clone();
@@ -796,9 +796,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     flame.scale.set(
       (0.98 + i * 0.03) * radiusGain,
       pulseA * lengthGain,
-      pulseB * (1 + boostLevel * 0.3)
+      pulseB * (1 + boostLevel * 0.5)
     );
-    flame.material.opacity = clamp(0.76 + boostLevel * 0.2, 0.45, 0.99);
+    flame.material.opacity = clamp(0.76 + boostLevel * 0.22, 0.45, 0.99);
   });
 
   plane.exhaust.burners.forEach((burner) => {
