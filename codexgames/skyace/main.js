@@ -59,6 +59,8 @@ function createRenderer() {
   const attempts = [
     { canvas, antialias: !isMobile, powerPreference: isMobile ? "low-power" : "high-performance" },
     { canvas, antialias: false, powerPreference: "low-power" },
+    { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", depth: false, stencil: false },
+    { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", alpha: false, depth: false, stencil: false },
     { canvas, antialias: false },
   ];
 
@@ -516,6 +518,15 @@ function createFighter(color, isPlayer = false) {
     geo.translate(0, -thickness * 0.5, 0);
     return geo;
   };
+  const buildVerticalSurface = (points, thickness = 0.24) => {
+    const shape = new THREE.Shape();
+    shape.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
+    shape.closePath();
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+    geo.translate(0, 0, -thickness * 0.5);
+    return geo;
+  };
   const mirrorPoints = (points) => points.map(([x, z]) => [x, -z]).reverse();
 
   const bodyMat = new THREE.MeshStandardMaterial({
@@ -529,13 +540,14 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.62,
   });
   const wingMat = new THREE.MeshStandardMaterial({
-    color: isPlayer ? 0xd4e1eb : 0xe7d0b1,
-    map: fighterTextures.trimColor,
-    normalMap: fighterTextures.trimNormal,
-    roughnessMap: fighterTextures.trimRoughness,
-    normalScale: new THREE.Vector2(0.2, 0.2),
-    roughness: 0.36,
-    metalness: 0.46,
+    color: isPlayer ? 0xdce7f1 : 0xddd4c2,
+    map: fighterTextures.bodyColor,
+    normalMap: fighterTextures.bodyNormal,
+    roughnessMap: fighterTextures.bodyRoughness,
+    metalnessMap: fighterTextures.bodyMetalness,
+    normalScale: new THREE.Vector2(0.28, 0.28),
+    roughness: 0.4,
+    metalness: 0.58,
   });
   const darkMat = new THREE.MeshStandardMaterial({
     color: 0x142231,
@@ -578,71 +590,73 @@ function createFighter(color, isPlayer = false) {
   canopy.scale.set(2.0, 1.0, 0.9);
   canopy.position.set(11.5, 3.08, 0);
 
-  // main wing like reference: broad, clean trapezoid/delta blend
+  // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
-    [10.8, 2.8],
-    [2.6, 10.9],
-    [-9.6, 16.1],
-    [-24.2, 18.4],
-    [-19.2, 9.4],
-    [-8.8, 4.5],
-    [0.0, 3.3],
+    [6.2, 1.8],
+    [4.2, 14.4],
+    [1.0, 18.0],
+    [-2.8, 18.3],
+    [-3.9, 3.5],
   ];
   const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.5), wingMat);
-  mainWingL.position.set(0.0, -2.0, 0);
+  mainWingL.position.set(-2.2, -2.0, 0);
   mainWingL.rotation.x = -0.028;
   const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 0.5), wingMat);
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
-  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(17.5, 1.0, 17.4), bodyMat);
-  wingCenter.position.set(-1.0, -1.72, 0);
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.98, 14.8), bodyMat);
+  wingCenter.position.set(-0.8, -1.7, 0);
 
-  // LERX / shoulder blending
+  // LERX / shoulder blending: further narrowed so wing root doesn't look vertically thick
   const shoulderL = new THREE.Mesh(buildSurface([
-    [14.0, 1.0],
-    [8.6, 6.8],
-    [2.2, 5.8],
-    [5.2, 1.6],
-  ], 0.24), bodyMat);
-  shoulderL.position.set(0, -0.52, 0);
+    [11.8, 0.7],
+    [8.8, 3.8],
+    [5.6, 3.5],
+    [6.8, 1.0],
+  ], 0.2), bodyMat);
+  shoulderL.position.set(0, -0.56, 0);
   const shoulderR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [14.0, 1.0],
-    [8.6, 6.8],
-    [2.2, 5.8],
-    [5.2, 1.6],
-  ]), 0.24), bodyMat);
+    [11.8, 0.7],
+    [8.8, 3.8],
+    [5.6, 3.5],
+    [6.8, 1.0],
+  ]), 0.2), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
-  // smaller aft sub-wings (horizontal stabilizers)
+  // Tailplanes: straight-edged trapezoids with visible gap from main wing and slight rear overhang past jets
   const subWingL = new THREE.Mesh(buildSurface([
-    [-14.5, 1.4],
-    [-18.6, 6.2],
-    [-25.6, 8.1],
-    [-22.9, 3.6],
-  ], 0.2), wingMat);
-  subWingL.position.set(0.0, 1.1, 0);
-  subWingL.rotation.x = 0.01;
+    [-14.4, 0.8],
+    [-17.2, 4.3],
+    [-22.4, 5.8],
+    [-24.2, 5.5],
+    [-24.0, 0.0],
+    [-18.0, -0.1],
+  ], 0.24), wingMat);
+  subWingL.position.set(-2.0, 1.52, 0);
+  subWingL.rotation.x = 0.018;
   const subWingR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [-14.5, 1.4],
-    [-18.6, 6.2],
-    [-25.6, 8.1],
-    [-22.9, 3.6],
-  ]), 0.2), wingMat);
+    [-14.4, 0.8],
+    [-17.2, 4.3],
+    [-22.4, 5.8],
+    [-24.2, 5.5],
+    [-24.0, 0.0],
+    [-18.0, -0.1],
+  ]), 0.24), wingMat);
   subWingR.position.copy(subWingL.position);
   subWingR.rotation.x = subWingL.rotation.x;
 
   const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.86, 2.2, 18.8, 18), bodyMat);
   engineL.rotation.z = -Math.PI * 0.5;
-  engineL.position.set(-10.6, 1.95, 3.35);
+  engineL.position.set(-10.6, 1.95, 2.75);
   const engineR = engineL.clone();
-  engineR.position.z = -3.35;
+  engineR.position.z = -2.75;
 
   const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.96, 4.8, 20), darkMat);
   nozzleL.rotation.z = Math.PI * 0.5;
-  nozzleL.position.set(-24.9, 1.9, 3.35);
+  nozzleL.position.set(-24.9, 1.9, 2.75);
   const nozzleR = nozzleL.clone();
-  nozzleR.position.z = -3.35;
+  nozzleR.position.z = -2.75;
 
   const burnerMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0x82e9ff : 0xffad77,
@@ -653,9 +667,9 @@ function createFighter(color, isPlayer = false) {
   });
   const burnerL = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.16, 2.1, 18), burnerMat);
   burnerL.rotation.z = Math.PI * 0.5;
-  burnerL.position.set(-27.0, 1.9, 3.35);
+  burnerL.position.set(-27.0, 1.9, 2.75);
   const burnerR = burnerL.clone();
-  burnerR.position.z = -3.35;
+  burnerR.position.z = -2.75;
 
   const flameMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0x5ad5ff : 0xffa368,
@@ -664,11 +678,11 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const flameL = new THREE.Mesh(new THREE.ConeGeometry(1.18, 5.3, 18), flameMat);
+  const flameL = new THREE.Mesh(new THREE.ConeGeometry(1.35, 6.8, 18), flameMat);
   flameL.rotation.z = Math.PI * 0.5;
-  flameL.position.set(-29.7, 1.9, 3.35);
+  flameL.position.set(-29.7, 1.9, 2.75);
   const flameR = flameL.clone();
-  flameR.position.z = -3.35;
+  flameR.position.z = -2.75;
 
   const heatRingMat = new THREE.MeshBasicMaterial({
     color: 0xff9b45,
@@ -679,29 +693,14 @@ function createFighter(color, isPlayer = false) {
   });
   const heatRingL = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.18, 10, 20), heatRingMat);
   heatRingL.rotation.y = Math.PI * 0.5;
-  heatRingL.position.set(-26.1, 1.9, 3.35);
+  heatRingL.position.set(-26.1, 1.9, 2.75);
   const heatRingR = heatRingL.clone();
-  heatRingR.position.z = -3.35;
-
-  // vertical fins: beside engines, behind main wing, around sub-wing zone
-  const finL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 8.0, 1.5), bodyMat);
-  finL.position.set(-20.2, 4.95, 4.55);
-  finL.rotation.set(0.015, 0.2, -0.05);
-  const finR = finL.clone();
-  finR.position.z = -4.55;
-  finR.rotation.set(-0.015, -0.2, 0.05);
-
-  const finBaseL = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.05, 1.8), bodyMat);
-  finBaseL.position.set(-18.9, 2.2, 4.6);
-  finBaseL.rotation.y = 0.16;
-  const finBaseR = finBaseL.clone();
-  finBaseR.position.z = -4.6;
-  finBaseR.rotation.y = -0.16;
+  heatRingR.position.z = -2.75;
 
   const intakeL = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.7, 1.5), darkMat);
-  intakeL.position.set(10.0, 0.25, 3.5);
+  intakeL.position.set(10.0, 0.25, 2.95);
   const intakeR = intakeL.clone();
-  intakeR.position.z = -3.5;
+  intakeR.position.z = -2.95;
 
   g.add(
     fuselage, nose, centerSpine, canopyBase, canopy,
@@ -710,7 +709,6 @@ function createFighter(color, isPlayer = false) {
     subWingL, subWingR,
     engineL, engineR, nozzleL, nozzleR, burnerL, burnerR,
     flameL, flameR, heatRingL, heatRingR,
-    finL, finR, finBaseL, finBaseR,
     intakeL, intakeR
   );
 
@@ -762,16 +760,16 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const t = performance.now() * 0.02;
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
   const pulseB = 0.96 + Math.cos(t * 1.15 + plane.mesh.id * 0.19) * 0.09;
-  const radiusGain = 1 + boostLevel * 0.72;
-  const lengthGain = 1 + boostLevel * 1.25;
+  const radiusGain = 1 + boostLevel * 1.0;
+  const lengthGain = 1 + boostLevel * 1.95;
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
     flame.scale.set(
       (0.98 + i * 0.03) * radiusGain,
       pulseA * lengthGain,
-      pulseB * (1 + boostLevel * 0.3)
+      pulseB * (1 + boostLevel * 0.5)
     );
-    flame.material.opacity = clamp(0.76 + boostLevel * 0.2, 0.45, 0.99);
+    flame.material.opacity = clamp(0.76 + boostLevel * 0.22, 0.45, 0.99);
   });
 
   plane.exhaust.burners.forEach((burner) => {
@@ -1399,9 +1397,20 @@ function updateOrientationHint() {
 
 if (!rendererReady) {
   messageEl.hidden = false;
-  messageEl.textContent = "WebGLを初期化できませんでした。タブを減らして再読み込みしてください。";
-  throw new Error("SkyAce: WebGL renderer initialization failed");
-}
+  messageEl.textContent = "3D表示を開始できませんでした。再試行してください。";
+  const retryBtn = document.createElement("button");
+  retryBtn.type = "button";
+  retryBtn.textContent = "再試行";
+  retryBtn.style.marginTop = "12px";
+  retryBtn.style.padding = "10px 16px";
+  retryBtn.style.borderRadius = "999px";
+  retryBtn.style.border = "1px solid rgba(170, 220, 255, 0.6)";
+  retryBtn.style.background = "rgba(17, 36, 62, 0.8)";
+  retryBtn.style.color = "#d8efff";
+  retryBtn.style.fontWeight = "700";
+  retryBtn.addEventListener("click", () => location.reload());
+  messageEl.insertAdjacentElement("afterend", retryBtn);
+} else {
 
 canvas.addEventListener("webglcontextlost", (e) => {
   e.preventDefault();
@@ -1514,3 +1523,4 @@ fitViewport();
 updateOrientationHint();
 resetMatch();
 requestAnimationFrame(tick);
+}
