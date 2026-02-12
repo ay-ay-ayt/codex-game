@@ -588,16 +588,17 @@ function createFighter(color, isPlayer = false) {
   canopy.scale.set(2.0, 1.0, 0.9);
   canopy.position.set(11.5, 3.08, 0);
 
-  // Main wing: triangular planform with a mostly parallel trailing edge
+  // Main wing: clearer trapezoid-like planform (less rounded)
   const mainWingPoints = [
-    [11.8, 1.8],
-    [6.2, 10.2],
-    [-2.8, 14.2],
-    [-12.6, 15.8],
-    [-20.8, 15.2],
-    [-20.1, 11.4],
-    [-19.5, 7.8],
-    [-18.9, 4.1],
+    [11.4, 2.0],
+    [6.0, 9.8],
+    [-3.6, 13.9],
+    [-15.6, 15.5],
+    [-22.2, 15.0],
+    [-21.4, 12.2],
+    [-20.6, 9.4],
+    [-19.8, 6.6],
+    [-19.0, 3.8],
   ];
   const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.5), wingMat);
   mainWingL.position.set(0.0, -2.0, 0);
@@ -606,8 +607,8 @@ function createFighter(color, isPlayer = false) {
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
-  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(16.6, 1.1, 15.6), bodyMat);
-  wingCenter.position.set(-2.4, -1.7, 0);
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.1, 15.2), bodyMat);
+  wingCenter.position.set(-2.2, -1.7, 0);
 
   // LERX / shoulder blending
   const shoulderL = new THREE.Mesh(buildSurface([
@@ -625,28 +626,28 @@ function createFighter(color, isPlayer = false) {
   ]), 0.24), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
-  // Tailplanes: reduced to about one-third area and moved forward (just behind jet nozzles)
+  // Tailplanes: compact trapezoid-like shape, with about one-tail-length gap from main wing
   const subWingL = new THREE.Mesh(buildSurface([
     [-17.2, 1.0],
-    [-19.8, 3.7],
-    [-23.5, 5.2],
-    [-26.0, 5.0],
-    [-25.7, 3.4],
-    [-25.4, 1.9],
-    [-25.1, 0.4],
-    [-22.3, 0.1],
+    [-19.6, 3.6],
+    [-23.0, 5.0],
+    [-25.3, 4.8],
+    [-25.0, 3.3],
+    [-24.7, 1.9],
+    [-24.4, 0.5],
+    [-21.9, 0.2],
   ], 0.24), wingMat);
-  subWingL.position.set(-3.8, 1.58, 0);
+  subWingL.position.set(-8.2, 1.58, 0);
   subWingL.rotation.x = 0.02;
   const subWingR = new THREE.Mesh(buildSurface(mirrorPoints([
     [-17.2, 1.0],
-    [-19.8, 3.7],
-    [-23.5, 5.2],
-    [-26.0, 5.0],
-    [-25.7, 3.4],
-    [-25.4, 1.9],
-    [-25.1, 0.4],
-    [-22.3, 0.1],
+    [-19.6, 3.6],
+    [-23.0, 5.0],
+    [-25.3, 4.8],
+    [-25.0, 3.3],
+    [-24.7, 1.9],
+    [-24.4, 0.5],
+    [-21.9, 0.2],
   ]), 0.24), wingMat);
   subWingR.position.copy(subWingL.position);
   subWingR.rotation.x = subWingL.rotation.x;
