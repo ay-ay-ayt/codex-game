@@ -590,13 +590,13 @@ function createFighter(color, isPlayer = false) {
   canopy.scale.set(2.0, 1.0, 0.9);
   canopy.position.set(11.5, 3.08, 0);
 
-  // Main wing: shorter fore-aft depth and longer span to match right-side sketch
+  // Main wing: aggressively flattened (very short chord, wide span) to match target silhouette
   const mainWingPoints = [
-    [9.8, 1.8],
-    [4.8, 12.8],
-    [-2.4, 16.8],
-    [-12.8, 17.2],
-    [-10.9, 3.1],
+    [7.0, 1.8],
+    [4.4, 13.8],
+    [0.2, 17.6],
+    [-4.8, 18.1],
+    [-6.2, 3.2],
   ];
   const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.5), wingMat);
   mainWingL.position.set(0.0, -2.0, 0);
@@ -605,23 +605,23 @@ function createFighter(color, isPlayer = false) {
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
-  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(13.8, 1.08, 14.0), bodyMat);
-  wingCenter.position.set(-0.4, -1.7, 0);
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(9.8, 1.02, 14.8), bodyMat);
+  wingCenter.position.set(1.0, -1.7, 0);
 
-  // LERX / shoulder blending (kept tighter to avoid rounded top-view silhouette)
+  // LERX / shoulder blending: further narrowed so wing root doesn't look vertically thick
   const shoulderL = new THREE.Mesh(buildSurface([
-    [12.6, 0.9],
-    [8.0, 5.0],
-    [3.4, 4.8],
-    [5.6, 1.2],
-  ], 0.22), bodyMat);
-  shoulderL.position.set(0, -0.54, 0);
+    [11.8, 0.7],
+    [8.8, 3.8],
+    [5.6, 3.5],
+    [6.8, 1.0],
+  ], 0.2), bodyMat);
+  shoulderL.position.set(0, -0.56, 0);
   const shoulderR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [12.6, 0.9],
-    [8.0, 5.0],
-    [3.4, 4.8],
-    [5.6, 1.2],
-  ]), 0.22), bodyMat);
+    [11.8, 0.7],
+    [8.8, 3.8],
+    [5.6, 3.5],
+    [6.8, 1.0],
+  ]), 0.2), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
   // Tailplanes: straight-edged trapezoids with visible gap from main wing and slight rear overhang past jets
