@@ -520,99 +520,103 @@ function createFighter(color, isPlayer = false) {
     return geo;
   };
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xa8afb8, roughness: 0.46, metalness: 0.5 });
-  const panelMat = new THREE.MeshStandardMaterial({ color: 0x9ca4ae, roughness: 0.52, metalness: 0.4 });
-  const intakeMat = new THREE.MeshStandardMaterial({ color: 0x8f98a2, roughness: 0.5, metalness: 0.34 });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x4e545d, roughness: 0.35, metalness: 0.7 });
-  const canopyFrameMat = new THREE.MeshStandardMaterial({ color: 0x8e96a0, roughness: 0.52, metalness: 0.38 });
-  const canopyGlassMat = new THREE.MeshStandardMaterial({ color: 0xa9c8d8, transparent: true, opacity: 0.55, roughness: 0.08, metalness: 0.22 });
-  const burnerMat = new THREE.MeshStandardMaterial({ color: 0x9ea5ad, emissive: 0x293341, emissiveIntensity: 0.52, roughness: 0.22, metalness: 0.68 });
-
-  // Long slim fuselage + pointed nose
-  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(1.92, 2.22, 30.5, 44, 8), bodyMat);
-  fuselage.rotation.x = Math.PI * 0.5;
-  fuselage.position.set(0, 1.35, 1.2);
-
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.04, 10.6, 44, 1), bodyMat);
-  nose.rotation.x = Math.PI * 0.5;
-  nose.position.set(0, 1.35, 21.75);
-
-  const noseBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.72, 3.2, 32), bodyMat);
-  noseBlend.rotation.x = Math.PI * 0.5;
-  noseBlend.position.set(0, 1.35, 16.6);
-
-  const spine = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 16.0), panelMat);
-  spine.position.set(0, 2.28, 3.5);
-
-  // Bubble canopy (separate canopy object) + frame
-  const canopyFrame = new THREE.Mesh(new THREE.CapsuleGeometry(1.45, 5.6, 8, 24), canopyFrameMat);
-  canopyFrame.rotation.x = Math.PI * 0.5;
-  canopyFrame.position.set(0, 2.88, 12.1);
-  canopyFrame.scale.set(1.15, 0.58, 1.34);
-
-  const canopy = new THREE.Mesh(new THREE.CapsuleGeometry(1.25, 5.2, 8, 26), canopyGlassMat);
-  canopy.rotation.x = Math.PI * 0.5;
-  canopy.position.set(0, 3.03, 12.1);
-  canopy.scale.set(1.0, 0.5, 1.2);
-
-  // Wing roots / shoulders
-  const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.7, 8.6), panelMat);
-  shoulderL.position.set(1.35, 1.7, 2.2);
-  const shoulderR = shoulderL.clone();
-  shoulderR.position.x *= -1;
-
-  // Trapezoidal wings (wide and prominent, no delta)
-  const wingShape = [
-    [1.0, 8.4],
-    [14.8, 5.6],
-    [16.6, 4.1],
-    [16.1, -7.8],
-    [12.8, -9.3],
-    [1.0, -2.4],
+  const fuselageProfile = [
+    new THREE.Vector2(0.15, -31.5),
+    new THREE.Vector2(0.45, -27.4),
+    new THREE.Vector2(1.1, -20.8),
+    new THREE.Vector2(1.95, -11.6),
+    new THREE.Vector2(2.8, -2.4),
+    new THREE.Vector2(3.02, 6.8),
+    new THREE.Vector2(2.58, 14.5),
+    new THREE.Vector2(1.5, 22.4),
+    new THREE.Vector2(0.55, 28.8),
   ];
-  const wingL = new THREE.Mesh(buildPlanarSurface(wingShape, 0.36), bodyMat);
-  wingL.position.set(0, 1.1, 1.7);
-  const wingR = wingL.clone();
-  wingR.scale.x = -1;
+  const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
+  fuselage.rotation.z = -Math.PI * 0.5;
+  fuselage.rotation.x = Math.PI;
 
-  const wingEdgeL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 12.1), panelMat);
-  wingEdgeL.position.set(15.4, 1.28, -1.0);
-  wingEdgeL.rotation.y = 0.145;
-  const wingEdgeR = wingEdgeL.clone();
-  wingEdgeR.position.x *= -1;
-  wingEdgeR.rotation.y *= -1;
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.12, 8.2, 20), wingMat);
+  nose.rotation.z = -Math.PI * 0.5;
+  nose.position.set(34.3, 0, 0);
 
-  // Rectangular side intakes with defined lips (large + readable)
-  const intakeLipL = new THREE.Mesh(new THREE.BoxGeometry(2.9, 2.45, 5.3), panelMat);
-  intakeLipL.position.set(3.85, 1.22, 4.2);
-  const intakeLipR = intakeLipL.clone();
-  intakeLipR.position.x *= -1;
+  const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.12, 2.4), bodyMat);
+  centerSpine.position.set(0.6, 2.04, 0);
 
-  const intakeInnerL = new THREE.Mesh(new THREE.BoxGeometry(2.36, 1.95, 4.55), intakeMat);
-  intakeInnerL.position.set(3.85, 1.14, 4.7);
-  const intakeInnerR = intakeInnerL.clone();
-  intakeInnerR.position.x *= -1;
+  const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.2, 2.5), bodyMat);
+  canopyBase.position.set(11.7, 1.9, 0);
+  const canopy = new THREE.Mesh(
+    new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
+    new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
+  );
+  canopy.rotation.z = Math.PI * 0.5;
+  canopy.scale.set(2.0, 1.0, 0.9);
+  canopy.position.set(11.5, 3.08, 0);
 
-  const intakeDuctL = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.75, 3.9), darkMat);
-  intakeDuctL.position.set(3.85, 1.04, 2.95);
-  const intakeDuctR = intakeDuctL.clone();
-  intakeDuctR.position.x *= -1;
+  // Main wing: aggressively flattened (very short chord, wide span) to match target silhouette
+  const mainWingPoints = [
+    [7.0, 1.8],
+    [4.4, 13.8],
+    [0.2, 17.6],
+    [-4.8, 18.1],
+    [-6.2, 3.2],
+  ];
+  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.5), wingMat);
+  mainWingL.position.set(0.0, -2.0, 0);
+  mainWingL.rotation.x = -0.028;
+  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 0.5), wingMat);
+  mainWingR.position.copy(mainWingL.position);
+  mainWingR.rotation.x = mainWingL.rotation.x;
 
-  // Twin engine nacelles + round nozzles
-  const nacelleL = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.74, 17.4, 36, 5), bodyMat);
-  nacelleL.rotation.x = Math.PI * 0.5;
-  nacelleL.position.set(2.18, 0.92, -6.2);
-  const nacelleR = nacelleL.clone();
-  nacelleR.position.x *= -1;
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(9.8, 1.02, 14.8), bodyMat);
+  wingCenter.position.set(1.0, -1.7, 0);
 
-  const nacellePanelL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.38, 10.8), panelMat);
-  nacellePanelL.position.set(2.18, 1.98, -6.0);
-  const nacellePanelR = nacellePanelL.clone();
-  nacellePanelR.position.x *= -1;
+  // LERX / shoulder blending: further narrowed so wing root doesn't look vertically thick
+  const shoulderL = new THREE.Mesh(buildSurface([
+    [11.8, 0.7],
+    [8.8, 3.8],
+    [5.6, 3.5],
+    [6.8, 1.0],
+  ], 0.2), bodyMat);
+  shoulderL.position.set(0, -0.56, 0);
+  const shoulderR = new THREE.Mesh(buildSurface(mirrorPoints([
+    [11.8, 0.7],
+    [8.8, 3.8],
+    [5.6, 3.5],
+    [6.8, 1.0],
+  ]), 0.2), bodyMat);
+  shoulderR.position.copy(shoulderL.position);
 
-  const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 1.22, 3.05, 34, 3), darkMat);
-  nozzleL.rotation.x = Math.PI * 0.5;
-  nozzleL.position.set(2.18, 0.86, -16.7);
+  // Tailplanes: straight-edged trapezoids with visible gap from main wing and slight rear overhang past jets
+  const subWingL = new THREE.Mesh(buildSurface([
+    [-14.4, 0.8],
+    [-17.2, 4.3],
+    [-22.4, 5.8],
+    [-24.2, 5.5],
+    [-24.0, 0.0],
+    [-18.0, -0.1],
+  ], 0.24), wingMat);
+  subWingL.position.set(-2.0, 1.52, 0);
+  subWingL.rotation.x = 0.018;
+  const subWingR = new THREE.Mesh(buildSurface(mirrorPoints([
+    [-14.4, 0.8],
+    [-17.2, 4.3],
+    [-22.4, 5.8],
+    [-24.2, 5.5],
+    [-24.0, 0.0],
+    [-18.0, -0.1],
+  ]), 0.24), wingMat);
+  subWingR.position.copy(subWingL.position);
+  subWingR.rotation.x = subWingL.rotation.x;
+
+  const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.86, 2.2, 18.8, 18), bodyMat);
+  engineL.rotation.z = -Math.PI * 0.5;
+  engineL.position.set(-10.6, 1.95, 3.35);
+  const engineR = engineL.clone();
+  engineR.position.z = -3.35;
+
+  const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.96, 4.8, 20), darkMat);
+  nozzleL.rotation.z = Math.PI * 0.5;
+  nozzleL.position.set(-24.9, 1.9, 3.35);
   const nozzleR = nozzleL.clone();
   nozzleR.position.x *= -1;
 
