@@ -624,8 +624,8 @@ function createFighter(color, isPlayer = false) {
   ]), 0.2), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
-  // Tailplanes: straight-edged trapezoids with visible gap from main wing and slight rear overhang past jets
-  const subWingL = new THREE.Mesh(buildSurface([
+  // Horizontal tailplanes (尾翼): keep a distinct offset from main wing and slight rear overhang past jets
+  const tailplaneL = new THREE.Mesh(buildSurface([
     [-14.4, 0.8],
     [-17.2, 4.3],
     [-22.4, 5.8],
@@ -633,9 +633,9 @@ function createFighter(color, isPlayer = false) {
     [-24.0, 0.0],
     [-18.0, -0.1],
   ], 0.24), wingMat);
-  subWingL.position.set(-2.0, 1.52, 0);
-  subWingL.rotation.x = 0.018;
-  const subWingR = new THREE.Mesh(buildSurface(mirrorPoints([
+  tailplaneL.position.set(-2.0, 1.52, 0);
+  tailplaneL.rotation.x = 0.018;
+  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints([
     [-14.4, 0.8],
     [-17.2, 4.3],
     [-22.4, 5.8],
@@ -643,8 +643,25 @@ function createFighter(color, isPlayer = false) {
     [-24.0, 0.0],
     [-18.0, -0.1],
   ]), 0.24), wingMat);
-  subWingR.position.copy(subWingL.position);
-  subWingR.rotation.x = subWingL.rotation.x;
+  tailplaneR.position.copy(tailplaneL.position);
+  tailplaneR.rotation.x = tailplaneL.rotation.x;
+
+  // Vertical stabilizers (垂直尾翼): twin outward-canted fins mounted behind the engines
+  const finShape = [
+    [-25.0, 0.0],
+    [-21.4, 0.0],
+    [-20.1, 7.6],
+    [-22.0, 10.8],
+    [-24.2, 8.8],
+  ];
+  const finL = new THREE.Mesh(buildVerticalSurface(finShape, 0.34), wingMat);
+  finL.position.set(0.3, 2.0, 2.9);
+  finL.rotation.x = 0.08;
+  finL.rotation.y = -0.19;
+  const finR = new THREE.Mesh(buildVerticalSurface(finShape, 0.34), wingMat);
+  finR.position.set(0.3, 2.0, -2.9);
+  finR.rotation.x = 0.08;
+  finR.rotation.y = 0.19;
 
   const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.86, 2.2, 18.8, 18), bodyMat);
   engineL.rotation.z = -Math.PI * 0.5;
@@ -706,7 +723,7 @@ function createFighter(color, isPlayer = false) {
     fuselage, nose, centerSpine, canopyBase, canopy,
     wingCenter, mainWingL, mainWingR,
     shoulderL, shoulderR,
-    subWingL, subWingR,
+    tailplaneL, tailplaneR, finL, finR,
     engineL, engineR, nozzleL, nozzleR, burnerL, burnerR,
     flameL, flameR, heatRingL, heatRingR,
     intakeL, intakeR
