@@ -680,21 +680,16 @@ function createFighter(color, isPlayer = false) {
   tailplaneR.position.set(-0.4, 1.72, -1.9);
   tailplaneR.rotation.x = tailplaneL.rotation.x;
 
-  const finShape = [
-    [-24.8, 0.0],
-    [-21.8, 0.0],
-    [-20.3, 8.4],
-    [-21.5, 12.4],
-    [-23.4, 11.1],
-    [-25.0, 7.4],
-  ];
-  const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.4, 2.2), bodyMat);
-  finBase.position.set(-21.8, 2.1, 0);
+  const finBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.5, 2.3), bodyMat);
+  finBase.position.set(-21.9, 2.1, 0);
 
-  const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.42), wingMat);
-  finCenter.position.set(-0.9, 2.24, 0);
-  finCenter.rotation.x = 0.04;
-  finCenter.rotation.y = 0;
+  // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
+  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.8, 10.8, 0.42), wingMat);
+  finCenter.position.set(-23.1, 7.1, 0);
+  finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
+  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.8, 12), wingMat);
+  finTip.rotation.z = Math.PI * 0.5;
+  finTip.position.set(-25.8, 11.8, 0);
 
   const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.66, 2.08, 20.6, 20), bodyMat);
   engineL.rotation.z = -Math.PI * 0.5;
@@ -762,7 +757,7 @@ function createFighter(color, isPlayer = false) {
     fuselage, nose, canopyBase, canopy,
     wingCenter, mainWingL, mainWingR,
     shoulderL, shoulderR,
-    tailRoot, tailplaneL, tailplaneR, finBase, finCenter,
+    tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
     engineL, engineR, shroudL, shroudR, nozzleL, nozzleR, burnerL, burnerR,
     flameL, flameR, heatRingL, heatRingR,
     intakeL, intakeR
