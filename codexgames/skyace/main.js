@@ -624,39 +624,54 @@ function createFighter(color, isPlayer = false) {
   ]), 0.2), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
-  // Tailplanes: straight-edged trapezoids with visible gap from main wing and slight rear overhang past jets
-  const subWingL = new THREE.Mesh(buildSurface([
-    [-14.4, 0.8],
-    [-17.2, 4.3],
-    [-22.4, 5.8],
-    [-24.2, 5.5],
-    [-24.0, 0.0],
-    [-18.0, -0.1],
-  ], 0.24), wingMat);
-  subWingL.position.set(-2.0, 1.52, 0);
-  subWingL.rotation.x = 0.018;
-  const subWingR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [-14.4, 0.8],
-    [-17.2, 4.3],
-    [-22.4, 5.8],
-    [-24.2, 5.5],
-    [-24.0, 0.0],
-    [-18.0, -0.1],
-  ]), 0.24), wingMat);
-  subWingR.position.copy(subWingL.position);
-  subWingR.rotation.x = subWingL.rotation.x;
+  // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
+  const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(7.4, 1.22, 5.2), bodyMat);
+  tailRoot.position.set(-17.2, 1.82, 0);
 
-  const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.86, 2.2, 18.8, 18), bodyMat);
+  const tailplaneShape = [
+    [-17.8, 0.4],
+    [-21.2, 4.9],
+    [-26.4, 6.2],
+    [-28.8, 5.7],
+    [-27.6, 0.8],
+    [-22.0, -0.1],
+    [-18.3, 0.0],
+  ];
+  const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.26), wingMat);
+  tailplaneL.position.set(-0.4, 1.72, 1.9);
+  tailplaneL.rotation.x = 0.02;
+  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.26), wingMat);
+  tailplaneR.position.set(-0.4, 1.72, -1.9);
+  tailplaneR.rotation.x = tailplaneL.rotation.x;
+
+  const finBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.5, 2.3), bodyMat);
+  finBase.position.set(-21.9, 2.1, 0);
+
+  // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
+  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.8, 10.8, 0.42), wingMat);
+  finCenter.position.set(-23.1, 7.1, 0);
+  finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
+  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.8, 12), wingMat);
+  finTip.rotation.z = Math.PI * 0.5;
+  finTip.position.set(-25.8, 11.8, 0);
+
+  const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.66, 2.08, 20.6, 20), bodyMat);
   engineL.rotation.z = -Math.PI * 0.5;
-  engineL.position.set(-10.6, 1.95, 2.75);
+  engineL.position.set(-13.8, 1.8, 3.25);
   const engineR = engineL.clone();
-  engineR.position.z = -2.75;
+  engineR.position.z = -3.25;
 
-  const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.96, 4.8, 20), darkMat);
+  const shroudL = new THREE.Mesh(new THREE.CylinderGeometry(1.98, 1.86, 4.2, 20), wingMat);
+  shroudL.rotation.z = -Math.PI * 0.5;
+  shroudL.position.set(-22.9, 1.8, 3.25);
+  const shroudR = shroudL.clone();
+  shroudR.position.z = -3.25;
+
+  const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.58, 6.2, 22), darkMat);
   nozzleL.rotation.z = Math.PI * 0.5;
-  nozzleL.position.set(-24.9, 1.9, 2.75);
+  nozzleL.position.set(-27.6, 1.8, 3.25);
   const nozzleR = nozzleL.clone();
-  nozzleR.position.z = -2.75;
+  nozzleR.position.z = -3.25;
 
   const burnerMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0x82e9ff : 0xffad77,
@@ -665,11 +680,11 @@ function createFighter(color, isPlayer = false) {
     roughness: 0.14,
     metalness: 0.64,
   });
-  const burnerL = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.16, 2.1, 18), burnerMat);
+  const burnerL = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 1.02, 2.8, 18), burnerMat);
   burnerL.rotation.z = Math.PI * 0.5;
-  burnerL.position.set(-27.0, 1.9, 2.75);
+  burnerL.position.set(-29.2, 1.8, 3.25);
   const burnerR = burnerL.clone();
-  burnerR.position.z = -2.75;
+  burnerR.position.z = -3.25;
 
   const flameMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0x5ad5ff : 0xffa368,
@@ -678,11 +693,11 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const flameL = new THREE.Mesh(new THREE.ConeGeometry(1.35, 6.8, 18), flameMat);
+  const flameL = new THREE.Mesh(new THREE.ConeGeometry(1.18, 7.6, 18), flameMat);
   flameL.rotation.z = Math.PI * 0.5;
-  flameL.position.set(-29.7, 1.9, 2.75);
+  flameL.position.set(-32.1, 1.8, 3.25);
   const flameR = flameL.clone();
-  flameR.position.z = -2.75;
+  flameR.position.z = -3.25;
 
   const heatRingMat = new THREE.MeshBasicMaterial({
     color: 0xff9b45,
@@ -691,11 +706,11 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const heatRingL = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.18, 10, 20), heatRingMat);
+  const heatRingL = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.16, 10, 20), heatRingMat);
   heatRingL.rotation.y = Math.PI * 0.5;
-  heatRingL.position.set(-26.1, 1.9, 2.75);
+  heatRingL.position.set(-29.4, 1.8, 3.25);
   const heatRingR = heatRingL.clone();
-  heatRingR.position.z = -2.75;
+  heatRingR.position.z = -3.25;
 
   const intakeL = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.7, 1.5), darkMat);
   intakeL.position.set(10.0, 0.25, 2.95);
@@ -706,8 +721,8 @@ function createFighter(color, isPlayer = false) {
     fuselage, nose, centerSpine, canopyBase, canopy,
     wingCenter, mainWingL, mainWingR,
     shoulderL, shoulderR,
-    subWingL, subWingR,
-    engineL, engineR, nozzleL, nozzleR, burnerL, burnerR,
+    tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
+    engineL, engineR, shroudL, shroudR, nozzleL, nozzleR, burnerL, burnerR,
     flameL, flameR, heatRingL, heatRingR,
     intakeL, intakeR
   );
@@ -1419,7 +1434,21 @@ canvas.addEventListener("webglcontextlost", (e) => {
 });
 
 setupHudHealthPanel();
-buildWorld(mapTypeEl.value);
+
+function showFatalInitError(err, scope = "init") {
+  console.error(`[skyace:${scope}]`, err);
+  messageEl.hidden = false;
+  const text = String(err?.message || err || "unknown error");
+  messageEl.textContent = `初期化エラー: ${text}`;
+}
+
+window.addEventListener("error", (event) => {
+  showFatalInitError(event.error || event.message, "window.error");
+});
+window.addEventListener("unhandledrejection", (event) => {
+  showFatalInitError(event.reason, "unhandledrejection");
+});
+
 updateMenuPanelPosition();
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
@@ -1519,8 +1548,13 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 
-fitViewport();
-updateOrientationHint();
-resetMatch();
-requestAnimationFrame(tick);
+try {
+  fitViewport();
+  updateOrientationHint();
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+  requestAnimationFrame(tick);
+} catch (err) {
+  showFatalInitError(err, "startup");
+}
 }
