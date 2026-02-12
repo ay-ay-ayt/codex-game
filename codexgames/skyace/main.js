@@ -509,114 +509,178 @@ function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
   const jet = new THREE.Group();
 
-  const buildFlatWing = (points, thickness = 0.26) => {
+  const buildPlanarSurface = (points, thickness = 0.2) => {
     const shape = new THREE.Shape();
     shape.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
     shape.closePath();
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, steps: 1, curveSegments: 8 });
     geo.rotateX(Math.PI * 0.5);
-    geo.translate(0, thickness * -0.5, 0);
+    geo.translate(0, -thickness * 0.5, 0);
     return geo;
   };
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xaeb4bb, roughness: 0.5, metalness: 0.44 });
-  const canopyFrameMat = new THREE.MeshStandardMaterial({ color: 0x8f969f, roughness: 0.56, metalness: 0.38 });
-  const canopyGlassMat = new THREE.MeshStandardMaterial({ color: 0xaec9da, transparent: true, opacity: 0.58, roughness: 0.12, metalness: 0.2 });
-  const intakeMat = new THREE.MeshStandardMaterial({ color: 0x7e858e, roughness: 0.6, metalness: 0.26 });
-  const nozzleMat = new THREE.MeshStandardMaterial({ color: 0x666b72, roughness: 0.36, metalness: 0.72 });
-  const burnerMat = new THREE.MeshStandardMaterial({ color: 0x9ea4ab, emissive: 0x28313d, emissiveIntensity: 0.55, roughness: 0.25, metalness: 0.66 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xa8afb8, roughness: 0.46, metalness: 0.5 });
+  const panelMat = new THREE.MeshStandardMaterial({ color: 0x9ca4ae, roughness: 0.52, metalness: 0.4 });
+  const intakeMat = new THREE.MeshStandardMaterial({ color: 0x8f98a2, roughness: 0.5, metalness: 0.34 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x4e545d, roughness: 0.35, metalness: 0.7 });
+  const canopyFrameMat = new THREE.MeshStandardMaterial({ color: 0x8e96a0, roughness: 0.52, metalness: 0.38 });
+  const canopyGlassMat = new THREE.MeshStandardMaterial({ color: 0xa9c8d8, transparent: true, opacity: 0.55, roughness: 0.08, metalness: 0.22 });
+  const burnerMat = new THREE.MeshStandardMaterial({ color: 0x9ea5ad, emissive: 0x293341, emissiveIntensity: 0.52, roughness: 0.22, metalness: 0.68 });
 
-  const fuselage = new THREE.Mesh(new THREE.CapsuleGeometry(2.1, 17.6, 12, 20), bodyMat);
+  // Long slim fuselage + pointed nose
+  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(1.92, 2.22, 30.5, 44, 8), bodyMat);
   fuselage.rotation.x = Math.PI * 0.5;
-  fuselage.position.set(0, 1.2, 2.2);
+  fuselage.position.set(0, 1.35, 1.2);
 
-  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(1.1, 9.2, 24), bodyMat);
-  noseCone.rotation.x = Math.PI * 0.5;
-  noseCone.position.set(0, 1.18, 15.8);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.04, 10.6, 44, 1), bodyMat);
+  nose.rotation.x = Math.PI * 0.5;
+  nose.position.set(0, 1.35, 21.75);
 
-  const dorsalSpine = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.0, 14.2), bodyMat);
-  dorsalSpine.position.set(0, 2.15, 2.1);
+  const noseBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.72, 3.2, 32), bodyMat);
+  noseBlend.rotation.x = Math.PI * 0.5;
+  noseBlend.position.set(0, 1.35, 16.6);
 
-  const canopyFrame = new THREE.Mesh(new THREE.CapsuleGeometry(1.38, 4.6, 6, 16), canopyFrameMat);
+  const spine = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 16.0), panelMat);
+  spine.position.set(0, 2.28, 3.5);
+
+  // Bubble canopy (separate canopy object) + frame
+  const canopyFrame = new THREE.Mesh(new THREE.CapsuleGeometry(1.45, 5.6, 8, 24), canopyFrameMat);
   canopyFrame.rotation.x = Math.PI * 0.5;
-  canopyFrame.position.set(0, 2.7, 9.0);
-  canopyFrame.scale.set(1.24, 0.58, 1.5);
+  canopyFrame.position.set(0, 2.88, 12.1);
+  canopyFrame.scale.set(1.15, 0.58, 1.34);
 
-  const canopy = new THREE.Mesh(new THREE.CapsuleGeometry(1.2, 4.2, 6, 18), canopyGlassMat);
+  const canopy = new THREE.Mesh(new THREE.CapsuleGeometry(1.25, 5.2, 8, 26), canopyGlassMat);
   canopy.rotation.x = Math.PI * 0.5;
-  canopy.position.set(0, 2.83, 9.0);
-  canopy.scale.set(1.1, 0.52, 1.32);
+  canopy.position.set(0, 3.03, 12.1);
+  canopy.scale.set(1.0, 0.5, 1.2);
 
+  // Wing roots / shoulders
+  const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.7, 8.6), panelMat);
+  shoulderL.position.set(1.35, 1.7, 2.2);
+  const shoulderR = shoulderL.clone();
+  shoulderR.position.x *= -1;
+
+  // Trapezoidal wings (wide and prominent, no delta)
   const wingShape = [
-    [1.0, 6.6],
-    [10.6, 4.4],
-    [12.1, 2.8],
-    [11.7, -7.1],
-    [8.4, -8.5],
-    [1.0, -1.9],
+    [1.0, 8.4],
+    [14.8, 5.6],
+    [16.6, 4.1],
+    [16.1, -7.8],
+    [12.8, -9.3],
+    [1.0, -2.4],
   ];
-  const wingL = new THREE.Mesh(buildFlatWing(wingShape, 0.34), bodyMat);
-  wingL.position.set(0, 0.55, 2.2);
+  const wingL = new THREE.Mesh(buildPlanarSurface(wingShape, 0.36), bodyMat);
+  wingL.position.set(0, 1.1, 1.7);
   const wingR = wingL.clone();
   wingR.scale.x = -1;
 
-  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(2.25, 2.15, 5.2), intakeMat);
-  intakeL.position.set(3.2, 0.95, 4.0);
-  const intakeR = intakeL.clone();
-  intakeR.position.x *= -1;
+  const wingEdgeL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 12.1), panelMat);
+  wingEdgeL.position.set(15.4, 1.28, -1.0);
+  wingEdgeL.rotation.y = 0.145;
+  const wingEdgeR = wingEdgeL.clone();
+  wingEdgeR.position.x *= -1;
+  wingEdgeR.rotation.y *= -1;
 
-  const nacelleL = new THREE.Mesh(new THREE.CylinderGeometry(1.36, 1.62, 14.0, 20), bodyMat);
+  // Rectangular side intakes with defined lips (large + readable)
+  const intakeLipL = new THREE.Mesh(new THREE.BoxGeometry(2.9, 2.45, 5.3), panelMat);
+  intakeLipL.position.set(3.85, 1.22, 4.2);
+  const intakeLipR = intakeLipL.clone();
+  intakeLipR.position.x *= -1;
+
+  const intakeInnerL = new THREE.Mesh(new THREE.BoxGeometry(2.36, 1.95, 4.55), intakeMat);
+  intakeInnerL.position.set(3.85, 1.14, 4.7);
+  const intakeInnerR = intakeInnerL.clone();
+  intakeInnerR.position.x *= -1;
+
+  const intakeDuctL = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.75, 3.9), darkMat);
+  intakeDuctL.position.set(3.85, 1.04, 2.95);
+  const intakeDuctR = intakeDuctL.clone();
+  intakeDuctR.position.x *= -1;
+
+  // Twin engine nacelles + round nozzles
+  const nacelleL = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.74, 17.4, 36, 5), bodyMat);
   nacelleL.rotation.x = Math.PI * 0.5;
-  nacelleL.position.set(1.95, 0.86, -5.0);
+  nacelleL.position.set(2.18, 0.92, -6.2);
   const nacelleR = nacelleL.clone();
   nacelleR.position.x *= -1;
 
-  const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.16, 2.2, 22), nozzleMat);
+  const nacellePanelL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.38, 10.8), panelMat);
+  nacellePanelL.position.set(2.18, 1.98, -6.0);
+  const nacellePanelR = nacellePanelL.clone();
+  nacellePanelR.position.x *= -1;
+
+  const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 1.22, 3.05, 34, 3), darkMat);
   nozzleL.rotation.x = Math.PI * 0.5;
-  nozzleL.position.set(1.95, 0.82, -12.9);
+  nozzleL.position.set(2.18, 0.86, -16.7);
   const nozzleR = nozzleL.clone();
   nozzleR.position.x *= -1;
 
-  const burnerL = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.82, 1.1, 16), burnerMat);
+  const burnerL = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.88, 1.2, 18), burnerMat);
   burnerL.rotation.x = Math.PI * 0.5;
-  burnerL.position.set(1.95, 0.82, -13.45);
+  burnerL.position.set(2.18, 0.86, -17.4);
   const burnerR = burnerL.clone();
   burnerR.position.x *= -1;
 
+  // Horizontal stabilizers
   const hTailShape = [
-    [0.4, 0.8],
-    [5.6, -0.1],
-    [6.6, -1.1],
-    [5.9, -4.6],
-    [3.8, -5.2],
-    [0.4, -1.8],
+    [0.42, 1.0],
+    [6.5, -0.1],
+    [7.8, -1.1],
+    [7.3, -4.8],
+    [4.2, -5.9],
+    [0.42, -2.2],
   ];
-  const hTailL = new THREE.Mesh(buildFlatWing(hTailShape, 0.24), bodyMat);
-  hTailL.position.set(0, 1.35, -9.6);
+  const hTailL = new THREE.Mesh(buildPlanarSurface(hTailShape, 0.26), bodyMat);
+  hTailL.position.set(0, 1.52, -12.7);
   const hTailR = hTailL.clone();
   hTailR.scale.x = -1;
 
-  const finGeo = new THREE.BoxGeometry(0.25, 4.8, 2.6);
-  const finL = new THREE.Mesh(finGeo, bodyMat);
-  finL.position.set(2.0, 3.1, -7.4);
-  finL.rotation.z = -0.14;
+  // Tall twin vertical tails on nacelles, outward cant
+  const finShape = [
+    [0.0, 0.0],
+    [2.2, 0.0],
+    [2.4, 8.2],
+    [1.1, 10.0],
+    [0.0, 8.6],
+  ];
+  const finL = new THREE.Mesh(buildPlanarSurface(finShape, 0.22), bodyMat);
+  finL.position.set(2.18, 3.05, -10.0);
+  finL.rotation.z = -0.17;
   const finR = finL.clone();
-  finR.position.x *= -1;
-  finR.rotation.z *= -1;
+  finR.scale.x = -1;
+  finR.rotation.z = 0.17;
+
+  // Additional hard-surface panel edges
+  const centerKeel = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.52, 8.8), panelMat);
+  centerKeel.position.set(0, 0.22, -10.4);
+
+  const tailBridge = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.72, 5.8), panelMat);
+  tailBridge.position.set(0, 1.62, -10.4);
 
   jet.add(
     fuselage,
-    noseCone,
-    dorsalSpine,
+    nose,
+    noseBlend,
+    spine,
     canopyFrame,
     canopy,
+    shoulderL,
+    shoulderR,
     wingL,
     wingR,
-    intakeL,
-    intakeR,
+    wingEdgeL,
+    wingEdgeR,
+    intakeLipL,
+    intakeLipR,
+    intakeInnerL,
+    intakeInnerR,
+    intakeDuctL,
+    intakeDuctR,
     nacelleL,
     nacelleR,
+    nacellePanelL,
+    nacellePanelR,
     nozzleL,
     nozzleR,
     burnerL,
@@ -625,21 +689,24 @@ function createFighter(color, isPlayer = false) {
     hTailR,
     finL,
     finR,
+    centerKeel,
+    tailBridge,
   );
 
+  // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
   g.add(jet);
   g.rotation.y = -Math.PI * 0.5;
 
   if (!isPlayer) {
-    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
-    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 6), navMat);
-    navL.position.set(8.8, 0.22, 12.8);
+    const navMat = new THREE.MeshBasicMaterial({ color: 0xe7ecf5 });
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), navMat);
+    navL.position.set(13.6, 1.26, -2.6);
     const navR = navL.clone();
-    navR.position.z = -12.8;
+    navR.position.x *= -1;
     g.add(navL, navR);
   }
 
-  g.scale.setScalar(1.26);
+  g.scale.setScalar(1.24);
   g.position.set(0, 300, 0);
   g.traverse((node) => {
     if (node.isMesh) {
