@@ -58,10 +58,7 @@ function updateHudHealthPanel() {
 function createRenderer() {
   const attempts = [
     { canvas, antialias: !isMobile, powerPreference: isMobile ? "low-power" : "high-performance" },
-    { canvas, antialias: false, powerPreference: "low-power" },
-    { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", depth: false, stencil: false },
     { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", alpha: false, depth: false, stencil: false },
-    { canvas, antialias: false },
   ];
 
   for (const options of attempts) {
@@ -72,6 +69,44 @@ function createRenderer() {
     }
   }
   return null;
+}
+
+function drawRendererFallback() {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const w = Math.max(1, window.innerWidth || 1);
+  const h = Math.max(1, window.innerHeight || 1);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#5f8fc6");
+  sky.addColorStop(0.62, "#3f6ea5");
+  sky.addColorStop(1, "#1b2f46");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "rgba(16, 36, 58, 0.58)";
+  ctx.fillRect(0, h * 0.64, w, h * 0.36);
+
+  ctx.strokeStyle = "rgba(168, 229, 255, 0.95)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(w * 0.36, h * 0.52);
+  ctx.lineTo(w * 0.62, h * 0.5);
+  ctx.lineTo(w * 0.72, h * 0.47);
+  ctx.lineTo(w * 0.79, h * 0.48);
+  ctx.lineTo(w * 0.71, h * 0.52);
+  ctx.lineTo(w * 0.62, h * 0.55);
+  ctx.lineTo(w * 0.56, h * 0.58);
+  ctx.lineTo(w * 0.48, h * 0.58);
+  ctx.closePath();
+  ctx.stroke();
 }
 
 const renderer = createRenderer();
@@ -1401,6 +1436,7 @@ function updateOrientationHint() {
 }
 
 if (!rendererReady) {
+  drawRendererFallback();
   messageEl.hidden = false;
   messageEl.textContent = "3D表示を開始できませんでした。再試行してください。";
   const retryBtn = document.createElement("button");
@@ -1415,6 +1451,7 @@ if (!rendererReady) {
   retryBtn.style.fontWeight = "700";
   retryBtn.addEventListener("click", () => location.reload());
   messageEl.insertAdjacentElement("afterend", retryBtn);
+  window.addEventListener("resize", drawRendererFallback);
 } else {
 
 canvas.addEventListener("webglcontextlost", (e) => {
