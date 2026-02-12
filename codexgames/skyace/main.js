@@ -1476,7 +1476,21 @@ canvas.addEventListener("webglcontextlost", (e) => {
 });
 
 setupHudHealthPanel();
-buildWorld(mapTypeEl.value);
+
+function showFatalInitError(err, scope = "init") {
+  console.error(`[skyace:${scope}]`, err);
+  messageEl.hidden = false;
+  const text = String(err?.message || err || "unknown error");
+  messageEl.textContent = `初期化エラー: ${text}`;
+}
+
+window.addEventListener("error", (event) => {
+  showFatalInitError(event.error || event.message, "window.error");
+});
+window.addEventListener("unhandledrejection", (event) => {
+  showFatalInitError(event.reason, "unhandledrejection");
+});
+
 updateMenuPanelPosition();
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
@@ -1576,8 +1590,13 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 
-fitViewport();
-updateOrientationHint();
-resetMatch();
-requestAnimationFrame(tick);
+try {
+  fitViewport();
+  updateOrientationHint();
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+  requestAnimationFrame(tick);
+} catch (err) {
+  showFatalInitError(err, "startup");
+}
 }
