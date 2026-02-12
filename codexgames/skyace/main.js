@@ -516,6 +516,15 @@ function createFighter(color, isPlayer = false) {
     geo.translate(0, -thickness * 0.5, 0);
     return geo;
   };
+  const buildVerticalSurface = (points, thickness = 0.24) => {
+    const shape = new THREE.Shape();
+    shape.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
+    shape.closePath();
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+    geo.translate(0, 0, -thickness * 0.5);
+    return geo;
+  };
   const mirrorPoints = (points) => points.map(([x, z]) => [x, -z]).reverse();
 
   const bodyMat = new THREE.MeshStandardMaterial({
@@ -529,13 +538,14 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.62,
   });
   const wingMat = new THREE.MeshStandardMaterial({
-    color: isPlayer ? 0xd4e1eb : 0xe7d0b1,
-    map: fighterTextures.trimColor,
-    normalMap: fighterTextures.trimNormal,
-    roughnessMap: fighterTextures.trimRoughness,
-    normalScale: new THREE.Vector2(0.2, 0.2),
-    roughness: 0.36,
-    metalness: 0.46,
+    color: isPlayer ? 0xdce7f1 : 0xddd4c2,
+    map: fighterTextures.bodyColor,
+    normalMap: fighterTextures.bodyNormal,
+    roughnessMap: fighterTextures.bodyRoughness,
+    metalnessMap: fighterTextures.bodyMetalness,
+    normalScale: new THREE.Vector2(0.28, 0.28),
+    roughness: 0.4,
+    metalness: 0.58,
   });
   const darkMat = new THREE.MeshStandardMaterial({
     color: 0x142231,
@@ -578,15 +588,13 @@ function createFighter(color, isPlayer = false) {
   canopy.scale.set(2.0, 1.0, 0.9);
   canopy.position.set(11.5, 3.08, 0);
 
-  // main wing like reference: broad, clean trapezoid/delta blend
+  // Main wing: shorter fore-aft depth and longer span to match right-side sketch
   const mainWingPoints = [
-    [10.8, 2.8],
-    [2.6, 10.9],
-    [-9.6, 16.1],
-    [-24.2, 18.4],
-    [-19.2, 9.4],
-    [-8.8, 4.5],
-    [0.0, 3.3],
+    [9.8, 1.8],
+    [4.8, 12.8],
+    [-2.4, 16.8],
+    [-12.8, 17.2],
+    [-10.9, 3.1],
   ];
   const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.5), wingMat);
   mainWingL.position.set(0.0, -2.0, 0);
@@ -595,40 +603,44 @@ function createFighter(color, isPlayer = false) {
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
-  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(17.5, 1.0, 17.4), bodyMat);
-  wingCenter.position.set(-1.0, -1.72, 0);
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(13.8, 1.08, 14.0), bodyMat);
+  wingCenter.position.set(-0.4, -1.7, 0);
 
-  // LERX / shoulder blending
+  // LERX / shoulder blending (kept tighter to avoid rounded top-view silhouette)
   const shoulderL = new THREE.Mesh(buildSurface([
-    [14.0, 1.0],
-    [8.6, 6.8],
-    [2.2, 5.8],
-    [5.2, 1.6],
-  ], 0.24), bodyMat);
-  shoulderL.position.set(0, -0.52, 0);
+    [12.6, 0.9],
+    [8.0, 5.0],
+    [3.4, 4.8],
+    [5.6, 1.2],
+  ], 0.22), bodyMat);
+  shoulderL.position.set(0, -0.54, 0);
   const shoulderR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [14.0, 1.0],
-    [8.6, 6.8],
-    [2.2, 5.8],
-    [5.2, 1.6],
-  ]), 0.24), bodyMat);
+    [12.6, 0.9],
+    [8.0, 5.0],
+    [3.4, 4.8],
+    [5.6, 1.2],
+  ]), 0.22), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
-  // smaller aft sub-wings (horizontal stabilizers)
+  // Tailplanes: straight-edged trapezoids with visible gap from main wing and slight rear overhang past jets
   const subWingL = new THREE.Mesh(buildSurface([
-    [-14.5, 1.4],
-    [-18.6, 6.2],
-    [-25.6, 8.1],
-    [-22.9, 3.6],
-  ], 0.2), wingMat);
-  subWingL.position.set(0.0, 1.1, 0);
-  subWingL.rotation.x = 0.01;
+    [-14.4, 0.8],
+    [-17.2, 4.3],
+    [-22.4, 5.8],
+    [-24.2, 5.5],
+    [-24.0, 0.0],
+    [-18.0, -0.1],
+  ], 0.24), wingMat);
+  subWingL.position.set(-2.0, 1.52, 0);
+  subWingL.rotation.x = 0.018;
   const subWingR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [-14.5, 1.4],
-    [-18.6, 6.2],
-    [-25.6, 8.1],
-    [-22.9, 3.6],
-  ]), 0.2), wingMat);
+    [-14.4, 0.8],
+    [-17.2, 4.3],
+    [-22.4, 5.8],
+    [-24.2, 5.5],
+    [-24.0, 0.0],
+    [-18.0, -0.1],
+  ]), 0.24), wingMat);
   subWingR.position.copy(subWingL.position);
   subWingR.rotation.x = subWingL.rotation.x;
 
@@ -664,7 +676,7 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const flameL = new THREE.Mesh(new THREE.ConeGeometry(1.18, 5.3, 18), flameMat);
+  const flameL = new THREE.Mesh(new THREE.ConeGeometry(1.35, 6.8, 18), flameMat);
   flameL.rotation.z = Math.PI * 0.5;
   flameL.position.set(-29.7, 1.9, 3.35);
   const flameR = flameL.clone();
@@ -683,20 +695,27 @@ function createFighter(color, isPlayer = false) {
   const heatRingR = heatRingL.clone();
   heatRingR.position.z = -3.35;
 
-  // vertical fins: beside engines, behind main wing, around sub-wing zone
-  const finL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 8.0, 1.5), bodyMat);
-  finL.position.set(-20.2, 4.95, 4.55);
-  finL.rotation.set(0.015, 0.2, -0.05);
+  // Twin vertical fins: reduced and tucked near centerline like the sketch
+  const finShape = [
+    [-1.4, 0.0],
+    [-0.4, 0.0],
+    [0.8, 4.2],
+    [0.2, 4.2],
+    [-1.0, 1.1],
+  ];
+  const finL = new THREE.Mesh(buildVerticalSurface(finShape, 0.42), bodyMat);
+  finL.position.set(-27.6, 2.05, 2.1);
+  finL.rotation.set(0.0, 0.06, 0.01);
   const finR = finL.clone();
-  finR.position.z = -4.55;
-  finR.rotation.set(-0.015, -0.2, 0.05);
+  finR.position.z = -2.1;
+  finR.rotation.set(0.0, -0.06, -0.01);
 
-  const finBaseL = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.05, 1.8), bodyMat);
-  finBaseL.position.set(-18.9, 2.2, 4.6);
-  finBaseL.rotation.y = 0.16;
+  const finBaseL = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.0, 1.5), bodyMat);
+  finBaseL.position.set(-26.6, 1.86, 2.1);
+  finBaseL.rotation.y = 0.04;
   const finBaseR = finBaseL.clone();
-  finBaseR.position.z = -4.6;
-  finBaseR.rotation.y = -0.16;
+  finBaseR.position.z = -2.1;
+  finBaseR.rotation.y = -0.04;
 
   const intakeL = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.7, 1.5), darkMat);
   intakeL.position.set(10.0, 0.25, 3.5);
@@ -762,16 +781,16 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const t = performance.now() * 0.02;
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
   const pulseB = 0.96 + Math.cos(t * 1.15 + plane.mesh.id * 0.19) * 0.09;
-  const radiusGain = 1 + boostLevel * 0.72;
-  const lengthGain = 1 + boostLevel * 1.25;
+  const radiusGain = 1 + boostLevel * 1.0;
+  const lengthGain = 1 + boostLevel * 1.95;
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
     flame.scale.set(
       (0.98 + i * 0.03) * radiusGain,
       pulseA * lengthGain,
-      pulseB * (1 + boostLevel * 0.3)
+      pulseB * (1 + boostLevel * 0.5)
     );
-    flame.material.opacity = clamp(0.76 + boostLevel * 0.2, 0.45, 0.99);
+    flame.material.opacity = clamp(0.76 + boostLevel * 0.22, 0.45, 0.99);
   });
 
   plane.exhaust.burners.forEach((burner) => {
