@@ -542,14 +542,15 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
+  const jet = new THREE.Group();
 
-  const buildSurface = (points, thickness = 0.24) => {
+  const buildPlanarSurface = (points, thickness = 0.2) => {
     const shape = new THREE.Shape();
     shape.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
     shape.closePath();
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
-    geo.rotateX(-Math.PI * 0.5);
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, steps: 1, curveSegments: 8 });
+    geo.rotateX(Math.PI * 0.5);
     geo.translate(0, -thickness * 0.5, 0);
     return geo;
   };
@@ -747,16 +748,20 @@ function createFighter(color, isPlayer = false) {
     intakeL, intakeR
   );
 
+  // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
+  g.add(jet);
+  g.rotation.y = -Math.PI * 0.5;
+
   if (!isPlayer) {
-    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
-    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 6), navMat);
-    navL.position.set(8.8, 0.22, 12.8);
+    const navMat = new THREE.MeshBasicMaterial({ color: 0xe7ecf5 });
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), navMat);
+    navL.position.set(13.6, 1.26, -2.6);
     const navR = navL.clone();
-    navR.position.z = -12.8;
+    navR.position.x *= -1;
     g.add(navL, navR);
   }
 
-  g.scale.setScalar(1.26);
+  g.scale.setScalar(1.24);
   g.position.set(0, 300, 0);
   g.traverse((node) => {
     if (node.isMesh) {
@@ -782,8 +787,8 @@ function createFighter(color, isPlayer = false) {
     hpLabel: null,
     exhaust: {
       burners: [burnerL, burnerR],
-      outerFlames: [flameL, flameR],
-      heatRings: [heatRingL, heatRingR],
+      outerFlames: [],
+      heatRings: [],
     },
   };
 
@@ -808,7 +813,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   });
 
   plane.exhaust.burners.forEach((burner) => {
-    burner.material.emissiveIntensity = 0.52 + boostLevel * 1.45;
+    burner.material.emissiveIntensity = 0.56 + boostLevel * 1.95;
   });
 
   plane.exhaust.heatRings?.forEach((ring) => {
