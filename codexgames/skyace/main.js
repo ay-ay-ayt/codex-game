@@ -588,17 +588,13 @@ function createFighter(color, isPlayer = false) {
   canopy.scale.set(2.0, 1.0, 0.9);
   canopy.position.set(11.5, 3.08, 0);
 
-  // Main wing: clearer trapezoid-like planform (less rounded)
+  // Main wing: strict straight-edge trapezoid/triangle blend (no curved outline)
   const mainWingPoints = [
     [11.4, 2.0],
-    [6.0, 9.8],
-    [-3.6, 13.9],
-    [-15.6, 15.5],
+    [5.6, 10.0],
+    [-4.8, 14.2],
     [-22.2, 15.0],
-    [-21.4, 12.2],
-    [-20.6, 9.4],
-    [-19.8, 6.6],
-    [-19.0, 3.8],
+    [-18.8, 3.8],
   ];
   const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.5), wingMat);
   mainWingL.position.set(0.0, -2.0, 0);
@@ -607,8 +603,8 @@ function createFighter(color, isPlayer = false) {
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
-  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.1, 15.2), bodyMat);
-  wingCenter.position.set(-2.2, -1.7, 0);
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(16.2, 1.1, 14.4), bodyMat);
+  wingCenter.position.set(-1.8, -1.7, 0);
 
   // LERX / shoulder blending
   const shoulderL = new THREE.Mesh(buildSurface([
@@ -626,28 +622,20 @@ function createFighter(color, isPlayer = false) {
   ]), 0.24), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
-  // Tailplanes: compact trapezoid-like shape, with about one-tail-length gap from main wing
+  // Tailplanes: strict straight-edge trapezoid, positioned so rear edge slightly exceeds jet rear
   const subWingL = new THREE.Mesh(buildSurface([
-    [-17.2, 1.0],
-    [-19.6, 3.6],
-    [-23.0, 5.0],
-    [-25.3, 4.8],
-    [-25.0, 3.3],
-    [-24.7, 1.9],
-    [-24.4, 0.5],
-    [-21.9, 0.2],
+    [-15.6, 0.9],
+    [-18.8, 4.2],
+    [-25.6, 4.8],
+    [-24.8, 0.2],
   ], 0.24), wingMat);
-  subWingL.position.set(-8.2, 1.58, 0);
+  subWingL.position.set(0.0, 1.58, 0);
   subWingL.rotation.x = 0.02;
   const subWingR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [-17.2, 1.0],
-    [-19.6, 3.6],
-    [-23.0, 5.0],
-    [-25.3, 4.8],
-    [-25.0, 3.3],
-    [-24.7, 1.9],
-    [-24.4, 0.5],
-    [-21.9, 0.2],
+    [-15.6, 0.9],
+    [-18.8, 4.2],
+    [-25.6, 4.8],
+    [-24.8, 0.2],
   ]), 0.24), wingMat);
   subWingR.position.copy(subWingL.position);
   subWingR.rotation.x = subWingL.rotation.x;
@@ -703,14 +691,13 @@ function createFighter(color, isPlayer = false) {
   const heatRingR = heatRingL.clone();
   heatRingR.position.z = -3.35;
 
-  // Twin vertical fins: forward-sliding triangular profile with a short flat top, placed far aft
+  // Twin vertical fins: straight-edge triangle/trapezoid with forward-facing slanted side
   const finShape = [
-    [-5.2, 0.0],
+    [-5.0, 0.0],
     [-1.0, 0.0],
-    [1.0, 8.8],
-    [0.2, 8.8],
-    [-1.9, 6.6],
-    [-3.9, 3.2],
+    [1.2, 8.6],
+    [0.3, 8.6],
+    [-3.6, 2.4],
   ];
   const finL = new THREE.Mesh(buildVerticalSurface(finShape, 0.58), bodyMat);
   finL.position.set(-29.0, 2.16, 5.72);
