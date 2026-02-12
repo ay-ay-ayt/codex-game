@@ -625,29 +625,29 @@ function createFighter(color, isPlayer = false) {
   ]), 0.24), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
-  // Tailplanes: triangular with mostly parallel rear edge and moved aft from main wing
+  // Tailplanes: reduced to about one-third area and moved forward (just behind jet nozzles)
   const subWingL = new THREE.Mesh(buildSurface([
-    [-14.0, 1.5],
-    [-19.6, 6.5],
-    [-27.9, 9.4],
-    [-35.0, 9.0],
-    [-34.4, 6.0],
-    [-33.9, 3.2],
-    [-33.4, 0.5],
-    [-25.8, -0.1],
-  ], 0.3), wingMat);
-  subWingL.position.set(-12.8, 1.66, 0);
+    [-17.2, 1.0],
+    [-19.8, 3.7],
+    [-23.5, 5.2],
+    [-26.0, 5.0],
+    [-25.7, 3.4],
+    [-25.4, 1.9],
+    [-25.1, 0.4],
+    [-22.3, 0.1],
+  ], 0.24), wingMat);
+  subWingL.position.set(-3.8, 1.58, 0);
   subWingL.rotation.x = 0.02;
   const subWingR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [-14.0, 1.5],
-    [-19.6, 6.5],
-    [-27.9, 9.4],
-    [-35.0, 9.0],
-    [-34.4, 6.0],
-    [-33.9, 3.2],
-    [-33.4, 0.5],
-    [-25.8, -0.1],
-  ]), 0.3), wingMat);
+    [-17.2, 1.0],
+    [-19.8, 3.7],
+    [-23.5, 5.2],
+    [-26.0, 5.0],
+    [-25.7, 3.4],
+    [-25.4, 1.9],
+    [-25.1, 0.4],
+    [-22.3, 0.1],
+  ]), 0.24), wingMat);
   subWingR.position.copy(subWingL.position);
   subWingR.rotation.x = subWingL.rotation.x;
 
