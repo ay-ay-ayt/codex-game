@@ -59,6 +59,8 @@ function createRenderer() {
   const attempts = [
     { canvas, antialias: !isMobile, powerPreference: isMobile ? "low-power" : "high-performance" },
     { canvas, antialias: false, powerPreference: "low-power" },
+    { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", depth: false, stencil: false },
+    { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", alpha: false, depth: false, stencil: false },
     { canvas, antialias: false },
   ];
 
@@ -1418,9 +1420,20 @@ function updateOrientationHint() {
 
 if (!rendererReady) {
   messageEl.hidden = false;
-  messageEl.textContent = "WebGLを初期化できませんでした。タブを減らして再読み込みしてください。";
-  throw new Error("SkyAce: WebGL renderer initialization failed");
-}
+  messageEl.textContent = "3D表示を開始できませんでした。再試行してください。";
+  const retryBtn = document.createElement("button");
+  retryBtn.type = "button";
+  retryBtn.textContent = "再試行";
+  retryBtn.style.marginTop = "12px";
+  retryBtn.style.padding = "10px 16px";
+  retryBtn.style.borderRadius = "999px";
+  retryBtn.style.border = "1px solid rgba(170, 220, 255, 0.6)";
+  retryBtn.style.background = "rgba(17, 36, 62, 0.8)";
+  retryBtn.style.color = "#d8efff";
+  retryBtn.style.fontWeight = "700";
+  retryBtn.addEventListener("click", () => location.reload());
+  messageEl.insertAdjacentElement("afterend", retryBtn);
+} else {
 
 canvas.addEventListener("webglcontextlost", (e) => {
   e.preventDefault();
@@ -1533,3 +1546,4 @@ fitViewport();
 updateOrientationHint();
 resetMatch();
 requestAnimationFrame(tick);
+}
