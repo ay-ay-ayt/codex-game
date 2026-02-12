@@ -803,7 +803,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   });
 
   plane.exhaust.burners.forEach((burner) => {
-    burner.material.emissiveIntensity = 0.52 + boostLevel * 1.45;
+    burner.material.emissiveIntensity = 0.56 + boostLevel * 1.95;
   });
 
   plane.exhaust.heatRings?.forEach((ring) => {
