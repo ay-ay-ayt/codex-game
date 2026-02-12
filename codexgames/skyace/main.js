@@ -638,10 +638,10 @@ function createFighter(color, isPlayer = false) {
     [-18.3, 0.0],
   ];
   const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.26), wingMat);
-  tailplaneL.position.set(0, 1.65, 0.18);
+  tailplaneL.position.set(-0.4, 1.72, 1.9);
   tailplaneL.rotation.x = 0.02;
   const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.26), wingMat);
-  tailplaneR.position.copy(tailplaneL.position);
+  tailplaneR.position.set(-0.4, 1.72, -1.9);
   tailplaneR.rotation.x = tailplaneL.rotation.x;
 
   const finShape = [
@@ -653,13 +653,13 @@ function createFighter(color, isPlayer = false) {
     [-25.0, 7.4],
   ];
   const finL = new THREE.Mesh(buildVerticalSurface(finShape, 0.36), wingMat);
-  finL.position.set(0.2, 2.3, 3.5);
-  finL.rotation.x = 0.06;
-  finL.rotation.y = -0.16;
+  finL.position.set(-0.7, 2.22, 4.9);
+  finL.rotation.x = 0.03;
+  finL.rotation.y = -0.08;
   const finR = new THREE.Mesh(buildVerticalSurface(finShape, 0.36), wingMat);
-  finR.position.set(0.2, 2.3, -3.5);
-  finR.rotation.x = 0.06;
-  finR.rotation.y = 0.16;
+  finR.position.set(-0.7, 2.22, -4.9);
+  finR.rotation.x = 0.03;
+  finR.rotation.y = 0.08;
 
   const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.66, 2.08, 20.6, 20), bodyMat);
   engineL.rotation.z = -Math.PI * 0.5;
