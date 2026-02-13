@@ -728,20 +728,20 @@ function createFighter(color, isPlayer = false) {
   finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
   const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.8, 12), wingMat);
   finTip.rotation.z = Math.PI * 0.5;
-  finTip.position.set(-29.0, 11.9, 0);
+  finTip.position.set(-25.8, 11.8, 0);
 
   // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
   engineCore.rotation.z = -Math.PI * 0.5;
-  engineCore.position.set(-17.0, 1.9, 0);
+  engineCore.position.set(-14.8, 1.9, 0);
 
   const shroud = new THREE.Mesh(new THREE.CylinderGeometry(3.15, 2.85, 5.6, 26), wingMat);
   shroud.rotation.z = -Math.PI * 0.5;
-  shroud.position.set(-27.0, 1.9, 0);
+  shroud.position.set(-24.6, 1.9, 0);
 
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.5, 7.6, 28), darkMat);
   nozzle.rotation.z = Math.PI * 0.5;
-  nozzle.position.set(-33.8, 1.9, 0);
+  nozzle.position.set(-31.1, 1.9, 0);
 
   const burnerMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0x82e9ff : 0xffad77,
@@ -752,7 +752,7 @@ function createFighter(color, isPlayer = false) {
   });
   const burner = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.72, 3.6, 22), burnerMat);
   burner.rotation.z = Math.PI * 0.5;
-  burner.position.set(-36.4, 1.9, 0);
+  burner.position.set(-33.5, 1.9, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0x5ad5ff : 0xffa368,
@@ -773,10 +773,8 @@ function createFighter(color, isPlayer = false) {
     depthWrite: false,
   });
   const flame = new THREE.Mesh(new THREE.ConeGeometry(2.05, 9.8, 22), flameMat);
-  flame.rotation.z = -Math.PI * 0.5;
-  flame.position.set(-40.8, 1.9, 0);
-
-  flame.userData.baseX = flame.position.x;
+  flame.rotation.z = Math.PI * 0.5;
+  flame.position.set(-37.6, 1.9, 0);
 
   const heatRingMat = new THREE.MeshBasicMaterial({
     color: 0xff9b45,
@@ -787,7 +785,7 @@ function createFighter(color, isPlayer = false) {
   });
   const heatRing = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.22, 12, 24), heatRingMat);
   heatRing.rotation.y = Math.PI * 0.5;
-  heatRing.position.set(-36.8, 1.9, 0);
+  heatRing.position.set(-33.9, 1.9, 0);
 
   const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
   intake.position.set(10.4, 0.32, 0);
@@ -798,7 +796,7 @@ function createFighter(color, isPlayer = false) {
     shoulderL, shoulderR, wingRootBlend,
     tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
     engineCore, shroud, nozzle, burner,
-    flameCore, flameGlow, flameShock, heatRing,
+    flame, heatRing,
     intake
   );
 
@@ -841,7 +839,7 @@ function createFighter(color, isPlayer = false) {
     hpLabel: null,
     exhaust: {
       burners: [burner],
-      outerFlames: [flameCore, flameGlow, flameShock],
+      outerFlames: [flame],
       heatRings: [heatRing],
     },
   };
