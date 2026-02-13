@@ -667,6 +667,7 @@ function createFighter(color, isPlayer = false) {
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
   const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(7.8, 1.62, 5.6), bodyMat);
   tailRoot.position.set(-29.4, -0.52, 0);
+  tailRoot.position.set(-29.4, -0.52, 0);
 
   const tailplaneShape = [
     [-17.8, 0.4],
@@ -718,11 +719,26 @@ function createFighter(color, isPlayer = false) {
   const burner = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.72, 3.6, 22), burnerMat);
   burner.rotation.z = Math.PI * 0.5;
   burner.position.set(-38.0, 1.15, 0);
+  burner.position.set(-38.0, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0x5ad5ff : 0xffa368,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
+    transparent: true,
+    opacity: 0.88,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const flameGlowMat = new THREE.MeshBasicMaterial({
+    color: isPlayer ? 0xa8edff : 0xffcf9b,
+    map: exhaustAlphaTex,
+    alphaMap: exhaustAlphaTex,
+    transparent: true,
+    opacity: 0.44,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
     transparent: true,
     opacity: 0.88,
     blending: THREE.AdditiveBlending,
@@ -774,6 +790,7 @@ function createFighter(color, isPlayer = false) {
   const heatRing = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.22, 12, 24), heatRingMat);
   heatRing.rotation.y = Math.PI * 0.5;
   heatRing.position.set(-38.1, 1.15, 0);
+  heatRing.position.set(-38.1, 1.15, 0);
 
   const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
   intake.position.set(10.4, 0.32, 0);
@@ -784,6 +801,7 @@ function createFighter(color, isPlayer = false) {
     shoulderL, shoulderR,
     tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
     engineCore, shroud, nozzle, burner,
+    flameCore, flameGlow, flameShock, heatRing,
     flameCore, flameGlow, flameShock, heatRing,
     intake
   );
@@ -827,6 +845,7 @@ function createFighter(color, isPlayer = false) {
     hpLabel: null,
     exhaust: {
       burners: [burner],
+      outerFlames: [flameCore, flameGlow, flameShock],
       outerFlames: [flameCore, flameGlow, flameShock],
       heatRings: [heatRing],
     },
@@ -1505,24 +1524,15 @@ canvas.addEventListener("webglcontextlost", (e) => {
 
 setupHudHealthPanel();
 
-const startupState = { phase: "boot" };
-
 function showFatalInitError(err, scope = "init") {
-  const phase = startupState.phase || "unknown";
-  console.error(`[skyace:${scope}:${phase}]`, err);
+  console.error(`[skyace:${scope}]`, err);
   messageEl.hidden = false;
   const text = String(err?.message || err || "unknown error");
-  messageEl.textContent = `初期化エラー(${scope}:${phase}): ${text}`;
-}
-
-function runStartupStep(phase, fn) {
-  startupState.phase = phase;
-  return fn();
+  messageEl.textContent = `初期化エラー: ${text}`;
 }
 
 window.addEventListener("error", (event) => {
-  const locationInfo = `${event.filename || "unknown"}:${event.lineno || 0}:${event.colno || 0}`;
-  showFatalInitError(event.error || `${event.message} @ ${locationInfo}`, "window.error");
+  showFatalInitError(event.error || event.message, "window.error");
 });
 window.addEventListener("unhandledrejection", (event) => {
   showFatalInitError(event.reason, "unhandledrejection");
@@ -1613,7 +1623,6 @@ window.addEventListener(
 let last = performance.now();
 function tick(now) {
   try {
-    startupState.phase = "tick";
     const dt = Math.min((now - last) / 1000, 0.033);
     last = now;
 
@@ -1633,11 +1642,11 @@ function tick(now) {
 }
 
 try {
-  runStartupStep("fitViewport", () => fitViewport());
-  runStartupStep("orientationHint", () => updateOrientationHint());
-  runStartupStep("buildWorld", () => buildWorld(mapTypeEl.value));
-  runStartupStep("resetMatch", () => resetMatch());
-  runStartupStep("startLoop", () => requestAnimationFrame(tick));
+  fitViewport();
+  updateOrientationHint();
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+  requestAnimationFrame(tick);
 } catch (err) {
   showFatalInitError(err, "startup");
 }
