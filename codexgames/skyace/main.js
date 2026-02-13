@@ -631,11 +631,11 @@ function createFighter(color, isPlayer = false) {
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
   fuselage.rotation.x = Math.PI;
-  fuselage.scale.set(1, 0.68, 1.12);
+  fuselage.scale.set(1, 0.54, 1.28);
 
   const nose = new THREE.Mesh(new THREE.ConeGeometry(1.12, 8.2, 20), wingMat);
   nose.rotation.z = -Math.PI * 0.5;
-  nose.scale.set(1, 0.72, 1.05);
+  nose.scale.set(1, 0.58, 1.22);
   nose.position.set(34.3, 0, 0);
 
   const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.78, 19.6, 22), bodyMat);
@@ -660,9 +660,9 @@ function createFighter(color, isPlayer = false) {
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
     [8.6, 0.7],
-    [-3.0, 18.8],
-    [-11.0, 18.8],
-    [-9.2, 0.7],
+    [-5.2, 18.8],
+    [-10.6, 18.8],
+    [-8.0, 0.7],
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
   mainWingL.position.set(-10.7, -0.95, 0);
@@ -692,13 +692,13 @@ function createFighter(color, isPlayer = false) {
   tailRoot.position.set(-29.4, -0.52, 0);
 
   const tailplaneShape = [
-    [-19.6, 0.4],
-    [-21.6, 4.4],
-    [-25.2, 5.2],
-    [-27.0, 4.9],
-    [-26.3, 0.9],
-    [-22.3, 0.1],
-    [-20.0, 0.1],
+    [-20.2, 0.4],
+    [-21.8, 3.7],
+    [-23.8, 4.3],
+    [-24.8, 4.1],
+    [-24.3, 0.9],
+    [-22.1, 0.15],
+    [-20.7, 0.1],
   ];
   const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.46), wingMat);
   tailplaneL.position.set(-12.8, -1.56, 1.9);
