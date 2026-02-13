@@ -571,6 +571,22 @@ function createFighter(color, isPlayer = false) {
   function mirrorPoints(points) {
     return points.map(([x, z]) => [x, -z]).reverse();
   }
+  function taperWingThickness(geo, minScale = 0.48, power = 1.35) {
+    geo.computeBoundingBox();
+    const box = geo.boundingBox;
+    const maxSpan = Math.max(Math.abs(box.min.z), Math.abs(box.max.z), 0.001);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const z = pos.getZ(i);
+      const y = pos.getY(i);
+      const spanT = clamp(Math.abs(z) / maxSpan, 0, 1);
+      const taper = 1 - (1 - minScale) * (spanT ** power);
+      pos.setY(i, y * taper);
+    }
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+    return geo;
+  }
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color,
@@ -615,9 +631,11 @@ function createFighter(color, isPlayer = false) {
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
   fuselage.rotation.x = Math.PI;
+  fuselage.scale.set(1, 1, 0.74);
 
   const nose = new THREE.Mesh(new THREE.ConeGeometry(1.12, 8.2, 20), wingMat);
   nose.rotation.z = -Math.PI * 0.5;
+  nose.scale.set(1, 1, 0.78);
   nose.position.set(34.3, 0, 0);
 
   const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.12, 2.4), bodyMat);
@@ -640,10 +658,10 @@ function createFighter(color, isPlayer = false) {
     [-10.1, 23.2],
     [-11.3, 1.0],
   ];
-  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 1.92), wingMat);
+  const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
   mainWingL.position.set(-10.7, -0.95, 0);
   mainWingL.rotation.x = -0.028;
-  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 1.92), wingMat);
+  const mainWingR = new THREE.Mesh(taperWingThickness(buildSurface(mirrorPoints(mainWingPoints), 1.92), 0.42, 1.45), wingMat);
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
@@ -736,16 +754,16 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 1.18, 8.2, 24), flameCoreMat);
+  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 1.12, 8.8, 24), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-41.0, 1.15, 0);
+  flameCore.position.set(-41.3, 1.15, 0);
 
-  const flameGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 1.62, 9.4, 24), flameGlowMat);
+  const flameGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 1.64, 10.6, 24), flameGlowMat);
   flameGlow.rotation.z = -Math.PI * 0.5;
-  flameGlow.position.set(-41.5, 1.15, 0);
+  flameGlow.position.set(-41.9, 1.15, 0);
 
   const flameShock = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.62, 3.8, 18),
+    new THREE.CylinderGeometry(0.16, 0.58, 4.0, 18),
     new THREE.MeshBasicMaterial({
       color: isPlayer ? 0xe8fbff : 0xffebc9,
       map: exhaustAlphaTex,
