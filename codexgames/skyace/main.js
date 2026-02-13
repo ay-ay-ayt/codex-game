@@ -244,40 +244,50 @@ function createFighter(color, isPlayer = false) {
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 36), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
   fuselage.rotation.x = Math.PI;
-  fuselage.scale.set(1, 0.68, 1.12);
+  fuselage.scale.set(1.0, 0.5, 1.22);
 
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.06, 10.2, 22), wingMat);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.98, 11.4, 22), wingMat);
   nose.rotation.z = -Math.PI * 0.5;
-  nose.scale.set(1, 0.72, 1.05);
-  nose.position.set(34.3, 0, 0);
+  nose.scale.set(1, 0.42, 1.4);
+  nose.position.set(38.1, 0.08, 0);
 
-  const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(18.2, 1.36, 3.4), bodyMat);
-  centerSpine.position.set(0.9, 1.88, 0);
+  const upperSpine = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.42, 17.2, 22), bodyMat);
+  upperSpine.rotation.z = -Math.PI * 0.5;
+  upperSpine.position.set(3.8, 1.95, 0);
+  upperSpine.scale.set(1, 0.6, 1.16);
 
-  const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(10.6, 1.38, 3.3), bodyMat);
-  canopyBase.position.set(7.1, 1.52, 0);
-  const canopy = new THREE.Mesh(
-    new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
-    new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
-  );
+  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.5, 11.8, 20), bodyMat);
+  canopyBase.rotation.z = -Math.PI * 0.5;
+  canopyBase.scale.set(1, 0.62, 1.16);
+  canopyBase.position.set(10.2, 1.78, 0);
+
+  const canopy = new THREE.Mesh(new THREE.CapsuleGeometry(1.6, 6.6, 8, 16), canopyMat);
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(2.08, 0.98, 1.08);
-  canopy.position.set(6.9, 2.34, 0);
+  canopy.position.set(10.2, 2.82, 0);
+  canopy.scale.set(1.62, 0.8, 0.9);
 
-  const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.62, 1.98, 7.8, 20), bodyMat);
-  foreBlend.rotation.z = -Math.PI * 0.5;
-  foreBlend.position.set(15.8, 1.26, 0);
+  const chin = new THREE.Mesh(new THREE.CylinderGeometry(1.06, 1.48, 9.8, 20), bodyMat);
+  chin.rotation.z = -Math.PI * 0.5;
+  chin.position.set(17.8, -1.08, 0);
+  chin.scale.set(1, 0.54, 1.22);
+
+  const intakeLip = new THREE.Mesh(new THREE.TorusGeometry(1.46, 0.24, 10, 20, Math.PI), darkMat);
+  intakeLip.rotation.x = Math.PI * 0.5;
+  intakeLip.position.set(16.5, -1.1, 0);
+  const intakeDuct = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.1, 2.7), darkMat);
+  intakeDuct.position.set(14.4, -1.14, 0);
 
   const mainWingPoints = [
-    [8.2, 0.7],
-    [-1.6, 18.2],
-    [-12.6, 18.2],
-    [-9.4, 0.7],
+    [9.4, 0.2],
+    [1.8, 12.4],
+    [-17.4, 19.6],
+    [-15.1, 6.2],
+    [-10.1, 0.26],
   ];
-  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.46), wingMat);
+  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.42), wingMat);
   mainWingL.position.set(-1.0, -1.28, 0);
   mainWingL.rotation.x = -0.026;
-  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 0.46), wingMat);
+  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 0.42), wingMat);
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
@@ -292,9 +302,9 @@ function createFighter(color, isPlayer = false) {
 
   const stabsShape = [
     [-18.0, 0.2],
-    [-23.6, 4.1],
-    [-29.2, 4.9],
-    [-31.2, 3.6],
+    [-24.6, 4.6],
+    [-30.4, 5.2],
+    [-32.6, 3.7],
     [-29.6, 0.3],
     [-23.2, -0.5],
     [-18.2, -0.1],
@@ -308,13 +318,13 @@ function createFighter(color, isPlayer = false) {
 
   const fin = new THREE.Mesh(buildVerticalSurface([
     [-19.0, 0.0],
-    [-21.4, 8.4],
-    [-24.8, 14.9],
-    [-27.4, 14.0],
-    [-25.2, 0.2],
+    [-21.6, 9.2],
+    [-25.2, 15.8],
+    [-28.0, 14.8],
+    [-25.8, 0.16],
   ], 0.34), wingMat);
   fin.position.set(0, 2.0, 0);
-  fin.rotation.x = THREE.MathUtils.degToRad(2);
+  fin.rotation.x = THREE.MathUtils.degToRad(4);
 
   const engineBody = new THREE.Mesh(new THREE.CylinderGeometry(1.88, 2.22, 16.2, 22), bodyMat);
   engineBody.rotation.z = -Math.PI * 0.5;
@@ -374,7 +384,7 @@ function createFighter(color, isPlayer = false) {
   heatRing.rotation.y = Math.PI * 0.5;
   heatRing.position.set(-29.2, 0.72, 0);
 
-  const ventL = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.66, 0.36), darkMat);
+  const ventL = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.5, 0.28), darkMat);
   ventL.position.set(3.6, -1.2, 1.46);
   const ventR = ventL.clone();
   ventR.position.z = -1.46;
@@ -382,13 +392,12 @@ function createFighter(color, isPlayer = false) {
   jet.add(flameInner, flameOuter, heatRing, burner);
 
   g.add(
-    fuselage, nose, centerSpine, canopyBase, canopy, foreBlend,
-    mainWingL, mainWingR,
-    shoulderL, shoulderR,
-    tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
-    engineCore, shroud, nozzle, burner,
-    flameCore, flameGlow, flameShock, heatRing,
-    intake
+    fuselage, nose, upperSpine, canopyBase, canopy, chin,
+    intakeLip, intakeDuct,
+    mainWingL, mainWingR, lerxL, lerxR,
+    tailRoot, stabL, stabR, fin,
+    engineBody, nozzle,
+    ventL, ventR
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -404,7 +413,7 @@ function createFighter(color, isPlayer = false) {
     g.add(navL, navR);
   }
 
-  g.scale.setScalar(1.24);
+  g.scale.setScalar(1.18);
   g.position.set(0, 300, 0);
   g.traverse((node) => {
     if (node.isMesh) {
@@ -761,8 +770,150 @@ function spawnImpactFx(position, color) {
   }
 }
 
-@media (orientation: portrait) {
-  #mobileControls {
-    opacity: 0.35;
+function updateOrientationHint() {
+  rotateHint.hidden = window.innerWidth >= window.innerHeight;
+}
+
+if (!rendererReady) {
+  drawRendererFallback();
+  messageEl.hidden = false;
+  messageEl.textContent = "3D表示を開始できませんでした。再試行してください。";
+  const retryBtn = document.createElement("button");
+  retryBtn.type = "button";
+  retryBtn.textContent = "再試行";
+  retryBtn.style.marginTop = "12px";
+  retryBtn.style.padding = "10px 16px";
+  retryBtn.style.borderRadius = "999px";
+  retryBtn.style.border = "1px solid rgba(170, 220, 255, 0.6)";
+  retryBtn.style.background = "rgba(17, 36, 62, 0.8)";
+  retryBtn.style.color = "#d8efff";
+  retryBtn.style.fontWeight = "700";
+  retryBtn.addEventListener("click", () => location.reload());
+  messageEl.insertAdjacentElement("afterend", retryBtn);
+  window.addEventListener("resize", drawRendererFallback);
+} else {
+
+canvas.addEventListener("webglcontextlost", (e) => {
+  e.preventDefault();
+  messageEl.hidden = false;
+  messageEl.textContent = "描画コンテキストが失われました。再読み込みしてください。";
+});
+
+setupHudHealthPanel();
+
+function showFatalInitError(err, scope = "init") {
+  console.error(`[skyace:${scope}]`, err);
+  messageEl.hidden = false;
+  const text = String(err?.message || err || "unknown error");
+  messageEl.textContent = `初期化エラー: ${text}`;
+}
+
+window.addEventListener("error", (event) => {
+  showFatalInitError(event.error || event.message, "window.error");
+});
+window.addEventListener("unhandledrejection", (event) => {
+  showFatalInitError(event.reason, "unhandledrejection");
+});
+
+updateMenuPanelPosition();
+setupJoystick("leftStick", (x, y) => {
+  stickInput.yaw = x;
+  stickInput.pitch = y;
+});
+bindActionButton(fireBtn);
+setupBoostLever();
+
+window.addEventListener("keydown", (e) => {
+  keys.add(e.code);
+  if (["ArrowUp", "ArrowDown", "Space"].includes(e.code)) e.preventDefault();
+});
+window.addEventListener("keyup", (e) => {
+  keys.delete(e.code);
+});
+
+const restartFromHud = (e) => {
+  e?.preventDefault?.();
+  resetMatch();
+};
+
+restartBtn.addEventListener("click", restartFromHud);
+restartBtn.addEventListener("pointerup", restartFromHud);
+
+let lastMenuToggleAt = 0;
+
+function toggleMenuPanel() {
+  updateMenuPanelPosition();
+  menuPanel.hidden = !menuPanel.hidden;
+  menuBtn.setAttribute("aria-expanded", String(!menuPanel.hidden));
+  lastMenuToggleAt = performance.now();
+}
+
+menuBtn.addEventListener("pointerup", (e) => {
+  e.preventDefault();
+  toggleMenuPanel();
+});
+
+menuBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (performance.now() - lastMenuToggleAt < 350) return;
+  toggleMenuPanel();
+});
+
+botCountEl.addEventListener("change", resetMatch);
+botCountEl.addEventListener("input", resetMatch);
+mapTypeEl.addEventListener("change", () => {
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+});
+
+window.addEventListener("contextmenu", (e) => e.preventDefault());
+window.addEventListener("selectstart", (e) => e.preventDefault());
+window.addEventListener("dragstart", (e) => e.preventDefault());
+window.addEventListener("gesturestart", (e) => e.preventDefault());
+window.addEventListener("touchstart", (e) => {
+  if (e.touches.length <= 1) return;
+  const target = e.target;
+  const menuTouch = target instanceof Element
+    && (menuBtn.contains(target) || menuPanel.contains(target));
+  if (!menuTouch) e.preventDefault();
+}, { passive: false });
+
+window.addEventListener("resize", () => {
+  fitViewport();
+  updateMenuPanelPosition();
+  updateOrientationHint();
+});
+window.visualViewport?.addEventListener("resize", () => {
+  fitViewport();
+  updateMenuPanelPosition();
+});
+
+window.addEventListener(
+  "pointerdown",
+  () => {
+    tryFullscreen();
+    lockLandscape();
+  },
+  { once: true }
+);
+
+let last = performance.now();
+function tick(now) {
+  try {
+    const dt = Math.min((now - last) / 1000, 0.033);
+    last = now;
+
+    syncInput();
+    updatePlayer(dt);
+    updateBots(dt);
+    updateBullets(dt);
+    updateEffects(dt);
+    updateCamera(dt);
+    updateState();
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  } catch (err) {
+    showFatalInitError(err, "tick");
   }
 }
