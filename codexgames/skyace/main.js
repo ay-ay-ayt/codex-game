@@ -58,10 +58,7 @@ function updateHudHealthPanel() {
 function createRenderer() {
   const attempts = [
     { canvas, antialias: !isMobile, powerPreference: isMobile ? "low-power" : "high-performance" },
-    { canvas, antialias: false, powerPreference: "low-power" },
-    { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", depth: false, stencil: false },
     { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", alpha: false, depth: false, stencil: false },
-    { canvas, antialias: false },
   ];
 
   for (const options of attempts) {
@@ -72,6 +69,44 @@ function createRenderer() {
     }
   }
   return null;
+}
+
+function drawRendererFallback() {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const w = Math.max(1, window.innerWidth || 1);
+  const h = Math.max(1, window.innerHeight || 1);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#5f8fc6");
+  sky.addColorStop(0.62, "#3f6ea5");
+  sky.addColorStop(1, "#1b2f46");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "rgba(16, 36, 58, 0.58)";
+  ctx.fillRect(0, h * 0.64, w, h * 0.36);
+
+  ctx.strokeStyle = "rgba(168, 229, 255, 0.95)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(w * 0.36, h * 0.52);
+  ctx.lineTo(w * 0.62, h * 0.5);
+  ctx.lineTo(w * 0.72, h * 0.47);
+  ctx.lineTo(w * 0.79, h * 0.48);
+  ctx.lineTo(w * 0.71, h * 0.52);
+  ctx.lineTo(w * 0.62, h * 0.55);
+  ctx.lineTo(w * 0.56, h * 0.58);
+  ctx.lineTo(w * 0.48, h * 0.58);
+  ctx.closePath();
+  ctx.stroke();
 }
 
 const renderer = createRenderer();
@@ -98,6 +133,11 @@ function loadTiledTexture(path, repeat = [1, 1], colorSpace = THREE.NoColorSpace
   tex.anisotropy = textureAnisotropy;
   return tex;
 }
+
+const exhaustAlphaTex = textureLoader.load("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough_2k.jpg");
+exhaustAlphaTex.wrapS = THREE.ClampToEdgeWrapping;
+exhaustAlphaTex.wrapT = THREE.ClampToEdgeWrapping;
+exhaustAlphaTex.anisotropy = textureAnisotropy;
 
 const fighterTextures = {
   bodyColor: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_diff_2k.jpg", [3.2, 1.1], THREE.SRGBColorSpace),
@@ -507,18 +547,19 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
+  const jet = new THREE.Group();
 
-  const buildSurface = (points, thickness = 0.24) => {
+  function buildSurface(points, thickness = 0.24) {
     const shape = new THREE.Shape();
     shape.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
     shape.closePath();
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
-    geo.rotateX(-Math.PI * 0.5);
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, steps: 1, curveSegments: 8 });
+    geo.rotateX(Math.PI * 0.5);
     geo.translate(0, -thickness * 0.5, 0);
     return geo;
-  };
-  const buildVerticalSurface = (points, thickness = 0.24) => {
+  }
+  function buildVerticalSurface(points, thickness = 0.24) {
     const shape = new THREE.Shape();
     shape.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
@@ -526,8 +567,10 @@ function createFighter(color, isPlayer = false) {
     const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
     geo.translate(0, 0, -thickness * 0.5);
     return geo;
-  };
-  const mirrorPoints = (points) => points.map(([x, z]) => [x, -z]).reverse();
+  }
+  function mirrorPoints(points) {
+    return points.map(([x, z]) => [x, -z]).reverse();
+  }
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color,
@@ -572,56 +615,66 @@ function createFighter(color, isPlayer = false) {
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
   fuselage.rotation.x = Math.PI;
+  fuselage.scale.set(1, 0.46, 1.46);
 
   const nose = new THREE.Mesh(new THREE.ConeGeometry(1.12, 8.2, 20), wingMat);
   nose.rotation.z = -Math.PI * 0.5;
+  nose.scale.set(1, 0.5, 1.36);
   nose.position.set(34.3, 0, 0);
 
-  const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.12, 2.4), bodyMat);
-  centerSpine.position.set(0.6, 2.04, 0);
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.78, 19.6, 22), bodyMat);
+  centerSpine.rotation.z = -Math.PI * 0.5;
+  centerSpine.position.set(1.2, 1.68, 0);
+  centerSpine.scale.set(1, 0.66, 1.58);
 
-  const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.2, 2.5), bodyMat);
-  canopyBase.position.set(11.7, 1.9, 0);
+  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.46, 1.86, 10.8, 20), bodyMat);
+  canopyBase.rotation.z = -Math.PI * 0.5;
+  canopyBase.position.set(5.9, 1.5, 0);
+  canopyBase.scale.set(1, 0.72, 1.42);
   const canopy = new THREE.Mesh(
     new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(2.0, 1.0, 0.9);
-  canopy.position.set(11.5, 3.08, 0);
+  canopy.scale.set(2.05, 0.98, 1.12);
+  canopy.position.set(5.7, 2.26, 0);
+
+  const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.36, 1.9, 10.2, 22), bodyMat);
+  foreBlend.rotation.z = -Math.PI * 0.5;
+  foreBlend.position.set(14.1, 1.24, 0);
+  foreBlend.scale.set(1, 0.68, 1.5);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
-    [6.2, 1.8],
-    [4.2, 14.4],
-    [1.0, 18.0],
-    [-2.8, 18.3],
-    [-3.9, 3.5],
+    [8.6, 0.7],
+    [-5.2, 18.8],
+    [-10.6, 18.8],
+    [-8.0, 0.7],
   ];
-  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.5), wingMat);
-  mainWingL.position.set(-2.2, -2.0, 0);
+  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.66), wingMat);
+  mainWingL.position.set(-3.4, -2.0, 0);
   mainWingL.rotation.x = -0.028;
-  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 0.5), wingMat);
+  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 0.66), wingMat);
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
-  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.98, 14.8), bodyMat);
-  wingCenter.position.set(-0.8, -1.7, 0);
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.2, 13.8), bodyMat);
+  wingCenter.position.set(-2.6, -1.64, 0);
 
   // LERX / shoulder blending: further narrowed so wing root doesn't look vertically thick
   const shoulderL = new THREE.Mesh(buildSurface([
-    [11.8, 0.7],
-    [8.8, 3.8],
-    [5.6, 3.5],
-    [6.8, 1.0],
-  ], 0.2), bodyMat);
-  shoulderL.position.set(0, -0.56, 0);
+    [13.2, 0.66],
+    [9.6, 5.2],
+    [4.2, 5.0],
+    [5.8, 0.82],
+  ], 0.34), bodyMat);
+  shoulderL.position.set(0.3, -0.5, 0);
   const shoulderR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [11.8, 0.7],
-    [8.8, 3.8],
-    [5.6, 3.5],
-    [6.8, 1.0],
-  ]), 0.2), bodyMat);
+    [13.2, 0.66],
+    [9.6, 5.2],
+    [4.2, 5.0],
+    [5.8, 0.82],
+  ]), 0.34), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
@@ -686,10 +739,21 @@ function createFighter(color, isPlayer = false) {
   const burnerR = burnerL.clone();
   burnerR.position.z = -3.25;
 
-  const flameMat = new THREE.MeshBasicMaterial({
+  const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0x5ad5ff : 0xffa368,
+    map: exhaustAlphaTex,
+    alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.8,
+    opacity: 0.88,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const flameGlowMat = new THREE.MeshBasicMaterial({
+    color: isPlayer ? 0xa8edff : 0xffcf9b,
+    map: exhaustAlphaTex,
+    alphaMap: exhaustAlphaTex,
+    transparent: true,
+    opacity: 0.44,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -712,10 +776,8 @@ function createFighter(color, isPlayer = false) {
   const heatRingR = heatRingL.clone();
   heatRingR.position.z = -3.25;
 
-  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.7, 1.5), darkMat);
-  intakeL.position.set(10.0, 0.25, 2.95);
-  const intakeR = intakeL.clone();
-  intakeR.position.z = -2.95;
+  const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
+  intake.position.set(10.4, 0.32, 0);
 
   g.add(
     fuselage, nose, centerSpine, canopyBase, canopy,
@@ -727,16 +789,20 @@ function createFighter(color, isPlayer = false) {
     intakeL, intakeR
   );
 
+  // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
+  g.add(jet);
+  g.rotation.y = -Math.PI * 0.5;
+
   if (!isPlayer) {
-    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
-    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 6), navMat);
-    navL.position.set(8.8, 0.22, 12.8);
+    const navMat = new THREE.MeshBasicMaterial({ color: 0xe7ecf5 });
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), navMat);
+    navL.position.set(13.6, 1.26, -2.6);
     const navR = navL.clone();
-    navR.position.z = -12.8;
+    navR.position.x *= -1;
     g.add(navL, navR);
   }
 
-  g.scale.setScalar(1.26);
+  g.scale.setScalar(1.24);
   g.position.set(0, 300, 0);
   g.traverse((node) => {
     if (node.isMesh) {
@@ -761,9 +827,9 @@ function createFighter(color, isPlayer = false) {
     roll: 0,
     hpLabel: null,
     exhaust: {
-      burners: [burnerL, burnerR],
-      outerFlames: [flameL, flameR],
-      heatRings: [heatRingL, heatRingR],
+      burners: [burner],
+      outerFlames: [flame],
+      heatRings: [heatRing],
     },
   };
 
@@ -774,16 +840,21 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   if (!plane?.exhaust) return;
   const t = performance.now() * 0.02;
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
-  const pulseB = 0.96 + Math.cos(t * 1.15 + plane.mesh.id * 0.19) * 0.09;
-  const radiusGain = 1 + boostLevel * 1.0;
-  const lengthGain = 1 + boostLevel * 1.95;
+  const radiusGain = 1 + boostLevel * 0.5;
+  const lengthGain = 1 + boostLevel * 1.9;
+  const radiusByLayer = [1, 0.84, 0.62];
+  const depthByLayer = [1, 0.9, 0.72];
+  const opacityByLayer = [0.9, 0.46, 0.68];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
+    const flameLengthScale = pulseA * lengthGain;
     flame.scale.set(
       (0.98 + i * 0.03) * radiusGain,
-      pulseA * lengthGain,
+      flameLengthScale,
       pulseB * (1 + boostLevel * 0.5)
     );
+    const baseX = flame.userData.baseX ?? flame.position.x;
+    flame.position.x = baseX - (flameLengthScale - 1) * 3.8;
     flame.material.opacity = clamp(0.76 + boostLevel * 0.22, 0.45, 0.99);
   });
 
@@ -1411,6 +1482,7 @@ function updateOrientationHint() {
 }
 
 if (!rendererReady) {
+  drawRendererFallback();
   messageEl.hidden = false;
   messageEl.textContent = "3D表示を開始できませんでした。再試行してください。";
   const retryBtn = document.createElement("button");
@@ -1425,6 +1497,7 @@ if (!rendererReady) {
   retryBtn.style.fontWeight = "700";
   retryBtn.addEventListener("click", () => location.reload());
   messageEl.insertAdjacentElement("afterend", retryBtn);
+  window.addEventListener("resize", drawRendererFallback);
 } else {
 
 canvas.addEventListener("webglcontextlost", (e) => {
@@ -1533,19 +1606,24 @@ window.addEventListener(
 
 let last = performance.now();
 function tick(now) {
-  const dt = Math.min((now - last) / 1000, 0.033);
-  last = now;
+  try {
+    startupState.phase = "tick";
+    const dt = Math.min((now - last) / 1000, 0.033);
+    last = now;
 
-  syncInput();
-  updatePlayer(dt);
-  updateBots(dt);
-  updateBullets(dt);
-  updateEffects(dt);
-  updateCamera(dt);
-  updateState();
+    syncInput();
+    updatePlayer(dt);
+    updateBots(dt);
+    updateBullets(dt);
+    updateEffects(dt);
+    updateCamera(dt);
+    updateState();
 
-  renderer.render(scene, camera);
-  requestAnimationFrame(tick);
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  } catch (err) {
+    showFatalInitError(err, "tick");
+  }
 }
 
 try {
