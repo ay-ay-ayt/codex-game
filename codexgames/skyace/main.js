@@ -624,17 +624,27 @@ function createFighter(color, isPlayer = false) {
   centerSpine.position.set(0.6, 2.04, 0);
 
   const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.2, 2.5), bodyMat);
-  canopyBase.position.set(11.7, 1.9, 0);
+  canopyBase.position.set(9.9, 1.45, 0);
   const canopy = new THREE.Mesh(
     new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(2.0, 1.0, 0.9);
-  canopy.position.set(11.5, 3.08, 0);
+  canopy.scale.set(1.9, 0.92, 0.86);
+  canopy.position.set(9.7, 2.42, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+    [7.8, 0.7],
+    [1.3, 17.8],
+    [-3.8, 22.2],
+    [-10.1, 23.2],
+    [-11.3, 1.0],
+  ];
+  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 1.92), wingMat);
+  mainWingL.position.set(-10.7, -0.95, 0);
+=======
     [5.8, 0.8],
     [3.0, 21.5],
     [-0.6, 28.8],
@@ -643,6 +653,7 @@ function createFighter(color, isPlayer = false) {
   ];
   const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 1.92), wingMat);
   mainWingL.position.set(-8.6, -1.0, 0);
+>>>>>>> main
   mainWingL.rotation.x = -0.028;
   const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 1.92), wingMat);
   mainWingR.position.copy(mainWingL.position);
@@ -666,7 +677,11 @@ function createFighter(color, isPlayer = false) {
 
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
   const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(7.8, 1.62, 5.6), bodyMat);
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+  tailRoot.position.set(-29.4, -0.52, 0);
+=======
   tailRoot.position.set(-27.0, -0.52, 0);
+>>>>>>> main
 
   const tailplaneShape = [
     [-17.8, 0.4],
@@ -678,6 +693,24 @@ function createFighter(color, isPlayer = false) {
     [-18.3, 0.0],
   ];
   const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.46), wingMat);
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+  tailplaneL.position.set(-12.8, -1.56, 1.9);
+  tailplaneL.rotation.x = 0.02;
+  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.46), wingMat);
+  tailplaneR.position.set(-12.8, -1.56, -1.9);
+  tailplaneR.rotation.x = tailplaneL.rotation.x;
+
+  const finBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.5, 2.3), bodyMat);
+  finBase.position.set(-34.6, -1.1, 0);
+
+  // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
+  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.8, 14.04, 0.42), wingMat);
+  finCenter.position.set(-36.2, 5.35, 0);
+  finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
+  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.8, 12), wingMat);
+  finTip.rotation.z = Math.PI * 0.5;
+  finTip.position.set(-39.2, 11.45, 0);
+=======
   tailplaneL.position.set(-10.2, -1.56, 1.9);
   tailplaneL.rotation.x = 0.02;
   const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.46), wingMat);
@@ -694,10 +727,22 @@ function createFighter(color, isPlayer = false) {
   const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.8, 12), wingMat);
   finTip.rotation.z = Math.PI * 0.5;
   finTip.position.set(-36.8, 11.45, 0);
+>>>>>>> main
 
   // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
   engineCore.rotation.z = -Math.PI * 0.5;
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+  engineCore.position.set(-24.6, 1.15, 0);
+
+  const shroud = new THREE.Mesh(new THREE.CylinderGeometry(3.15, 2.85, 5.6, 26), wingMat);
+  shroud.rotation.z = -Math.PI * 0.5;
+  shroud.position.set(-36.5, 1.15, 0);
+
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.5, 7.6, 28), darkMat);
+  nozzle.rotation.z = Math.PI * 0.5;
+  nozzle.position.set(-36.9, 1.15, 0);
+=======
   engineCore.position.set(-22.8, 1.15, 0);
 
   const shroud = new THREE.Mesh(new THREE.CylinderGeometry(3.15, 2.85, 5.6, 26), wingMat);
@@ -707,6 +752,7 @@ function createFighter(color, isPlayer = false) {
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.5, 7.6, 28), darkMat);
   nozzle.rotation.z = Math.PI * 0.5;
   nozzle.position.set(-34.8, 1.15, 0);
+>>>>>>> main
 
   const burnerMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0x82e9ff : 0xffad77,
@@ -717,12 +763,58 @@ function createFighter(color, isPlayer = false) {
   });
   const burner = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.72, 3.6, 22), burnerMat);
   burner.rotation.z = Math.PI * 0.5;
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+  burner.position.set(-38.0, 1.15, 0);
+=======
   burner.position.set(-35.9, 1.15, 0);
+>>>>>>> main
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0x5ad5ff : 0xffa368,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+    transparent: true,
+    opacity: 0.88,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const flameGlowMat = new THREE.MeshBasicMaterial({
+    color: isPlayer ? 0xa8edff : 0xffcf9b,
+    map: exhaustAlphaTex,
+    alphaMap: exhaustAlphaTex,
+    transparent: true,
+    opacity: 0.44,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const flameCore = new THREE.Mesh(new THREE.ConeGeometry(1.34, 8.6, 24), flameCoreMat);
+  flameCore.rotation.z = -Math.PI * 0.5;
+  flameCore.position.set(-41.4, 1.15, 0);
+
+  const flameGlow = new THREE.Mesh(new THREE.ConeGeometry(2.2, 10.8, 24), flameGlowMat);
+  flameGlow.rotation.z = -Math.PI * 0.5;
+  flameGlow.position.set(-42.2, 1.15, 0);
+
+  const flameShock = new THREE.Mesh(
+    new THREE.ConeGeometry(0.74, 4.6, 18),
+    new THREE.MeshBasicMaterial({
+      color: isPlayer ? 0xe8fbff : 0xffebc9,
+      map: exhaustAlphaTex,
+      alphaMap: exhaustAlphaTex,
+      transparent: true,
+      opacity: 0.62,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+  );
+  flameShock.rotation.z = -Math.PI * 0.5;
+  flameShock.position.set(-39.2, 1.15, 0);
+
+  flameCore.userData.baseX = flameCore.position.x;
+  flameGlow.userData.baseX = flameGlow.position.x;
+  flameShock.userData.baseX = flameShock.position.x;
+=======
     transparent: true,
     opacity: 0.88,
     blending: THREE.AdditiveBlending,
@@ -747,6 +839,7 @@ function createFighter(color, isPlayer = false) {
 
   flameCore.userData.baseX = flameCore.position.x;
   flameGlow.userData.baseX = flameGlow.position.x;
+>>>>>>> main
 
   const heatRingMat = new THREE.MeshBasicMaterial({
     color: 0xff9b45,
@@ -757,7 +850,11 @@ function createFighter(color, isPlayer = false) {
   });
   const heatRing = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.22, 12, 24), heatRingMat);
   heatRing.rotation.y = Math.PI * 0.5;
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+  heatRing.position.set(-38.1, 1.15, 0);
+=======
   heatRing.position.set(-36.0, 1.15, 0);
+>>>>>>> main
 
   const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
   intake.position.set(10.4, 0.32, 0);
@@ -768,7 +865,11 @@ function createFighter(color, isPlayer = false) {
     shoulderL, shoulderR,
     tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
     engineCore, shroud, nozzle, burner,
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+    flameCore, flameGlow, flameShock, heatRing,
+=======
     flameCore, flameGlow, heatRing,
+>>>>>>> main
     intake
   );
 
@@ -811,7 +912,11 @@ function createFighter(color, isPlayer = false) {
     hpLabel: null,
     exhaust: {
       burners: [burner],
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+      outerFlames: [flameCore, flameGlow, flameShock],
+=======
       outerFlames: [flameCore, flameGlow],
+>>>>>>> main
       heatRings: [heatRing],
     },
   };
@@ -824,6 +929,21 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const t = performance.now() * 0.02;
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
   const pulseB = 0.96 + Math.cos(t * 1.15 + plane.mesh.id * 0.19) * 0.09;
+<<<<<<< codex/2026-02-13-11-40-08-add-tail-and-vertical-stabilizer-to-skyace
+  const radiusGain = 1 + boostLevel * 0.62;
+  const lengthGain = 1 + boostLevel * 1.9;
+
+  plane.exhaust.outerFlames.forEach((flame, i) => {
+    const flameLengthScale = pulseA * lengthGain * (1 + i * 0.12);
+    flame.scale.set(
+      (0.9 + i * 0.26) * radiusGain,
+      flameLengthScale,
+      (0.88 + i * 0.22) * radiusGain
+    );
+    const baseX = flame.userData.baseX ?? flame.position.x;
+    flame.position.x = baseX - (flameLengthScale - 1) * (1.35 + i * 0.45);
+    flame.material.opacity = clamp((i === 0 ? 0.9 : i === 1 ? 0.52 : 0.7) + boostLevel * (i === 0 ? 0.08 : 0.2), 0.28, 0.99);
+=======
   const radiusGain = 1 + boostLevel * 0.32;
   const lengthGain = 1 + boostLevel * 1.2;
 
@@ -837,6 +957,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const baseX = flame.userData.baseX ?? flame.position.x;
     flame.position.x = baseX - (flameLengthScale - 1) * (1.0 + i * 0.35);
     flame.material.opacity = clamp((i === 0 ? 0.88 : 0.5) + boostLevel * (i === 0 ? 0.1 : 0.16), 0.3, 0.98);
+>>>>>>> main
   });
 
   plane.exhaust.burners.forEach((burner) => {
