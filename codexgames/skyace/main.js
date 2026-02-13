@@ -624,19 +624,18 @@ function createFighter(color, isPlayer = false) {
   centerSpine.position.set(0.6, 2.04, 0);
 
   const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.2, 2.5), bodyMat);
-  canopyBase.position.set(9.9, 1.45, 0);
+  canopyBase.position.set(6.9, 1.45, 0);
   const canopy = new THREE.Mesh(
     new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
   canopy.scale.set(1.9, 0.92, 0.86);
-  canopy.position.set(9.7, 2.42, 0);
+  canopy.position.set(6.7, 2.42, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
     [7.8, 0.7],
-    [1.3, 17.8],
     [-3.8, 22.2],
     [-10.1, 23.2],
     [-11.3, 1.0],
@@ -737,16 +736,16 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const flameCore = new THREE.Mesh(new THREE.ConeGeometry(1.34, 8.6, 24), flameCoreMat);
+  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 1.18, 8.2, 24), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-41.4, 1.15, 0);
+  flameCore.position.set(-41.0, 1.15, 0);
 
-  const flameGlow = new THREE.Mesh(new THREE.ConeGeometry(2.2, 10.8, 24), flameGlowMat);
+  const flameGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 1.62, 9.4, 24), flameGlowMat);
   flameGlow.rotation.z = -Math.PI * 0.5;
-  flameGlow.position.set(-42.2, 1.15, 0);
+  flameGlow.position.set(-41.5, 1.15, 0);
 
   const flameShock = new THREE.Mesh(
-    new THREE.ConeGeometry(0.74, 4.6, 18),
+    new THREE.CylinderGeometry(0.24, 0.62, 3.8, 18),
     new THREE.MeshBasicMaterial({
       color: isPlayer ? 0xe8fbff : 0xffebc9,
       map: exhaustAlphaTex,
@@ -758,7 +757,7 @@ function createFighter(color, isPlayer = false) {
     })
   );
   flameShock.rotation.z = -Math.PI * 0.5;
-  flameShock.position.set(-39.2, 1.15, 0);
+  flameShock.position.set(-39.5, 1.15, 0);
 
   flameCore.userData.baseX = flameCore.position.x;
   flameGlow.userData.baseX = flameGlow.position.x;
@@ -839,20 +838,23 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   if (!plane?.exhaust) return;
   const t = performance.now() * 0.02;
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
-  const pulseB = 0.96 + Math.cos(t * 1.15 + plane.mesh.id * 0.19) * 0.09;
-  const radiusGain = 1 + boostLevel * 0.62;
+  const radiusGain = 1 + boostLevel * 0.5;
   const lengthGain = 1 + boostLevel * 1.9;
+  const radiusByLayer = [1, 0.84, 0.62];
+  const depthByLayer = [1, 0.9, 0.72];
+  const opacityByLayer = [0.9, 0.46, 0.68];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
-    const flameLengthScale = pulseA * lengthGain * (1 + i * 0.12);
+    const flameLengthScale = pulseA * lengthGain * depthByLayer[i];
+    const radiusLayer = (radiusByLayer[i] ?? 0.7) * radiusGain;
     flame.scale.set(
-      (0.9 + i * 0.26) * radiusGain,
+      radiusLayer,
       flameLengthScale,
-      (0.88 + i * 0.22) * radiusGain
+      radiusLayer
     );
     const baseX = flame.userData.baseX ?? flame.position.x;
-    flame.position.x = baseX - (flameLengthScale - 1) * (1.35 + i * 0.45);
-    flame.material.opacity = clamp((i === 0 ? 0.9 : i === 1 ? 0.52 : 0.7) + boostLevel * (i === 0 ? 0.08 : 0.2), 0.28, 0.99);
+    flame.position.x = baseX - (flameLengthScale - 1) * (1.1 + i * 0.28);
+    flame.material.opacity = clamp((opacityByLayer[i] ?? 0.56) + boostLevel * (i === 0 ? 0.1 : 0.16), 0.28, 0.99);
   });
 
   plane.exhaust.burners.forEach((burner) => {
