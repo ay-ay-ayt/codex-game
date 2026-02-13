@@ -693,23 +693,18 @@ function createFighter(color, isPlayer = false) {
   finTip.rotation.z = Math.PI * 0.5;
   finTip.position.set(-25.8, 11.8, 0);
 
-  const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.66, 2.08, 20.6, 20), bodyMat);
-  engineL.rotation.z = -Math.PI * 0.5;
-  engineL.position.set(-13.8, 1.8, 3.25);
-  const engineR = engineL.clone();
-  engineR.position.z = -3.25;
+  // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
+  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
+  engineCore.rotation.z = -Math.PI * 0.5;
+  engineCore.position.set(-14.8, 1.9, 0);
 
-  const shroudL = new THREE.Mesh(new THREE.CylinderGeometry(1.98, 1.86, 4.2, 20), wingMat);
-  shroudL.rotation.z = -Math.PI * 0.5;
-  shroudL.position.set(-22.9, 1.8, 3.25);
-  const shroudR = shroudL.clone();
-  shroudR.position.z = -3.25;
+  const shroud = new THREE.Mesh(new THREE.CylinderGeometry(3.15, 2.85, 5.6, 26), wingMat);
+  shroud.rotation.z = -Math.PI * 0.5;
+  shroud.position.set(-24.6, 1.9, 0);
 
-  const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.58, 6.2, 22), darkMat);
-  nozzleL.rotation.z = Math.PI * 0.5;
-  nozzleL.position.set(-27.6, 1.8, 3.25);
-  const nozzleR = nozzleL.clone();
-  nozzleR.position.z = -3.25;
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.5, 7.6, 28), darkMat);
+  nozzle.rotation.z = Math.PI * 0.5;
+  nozzle.position.set(-31.1, 1.9, 0);
 
   const burnerMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0x82e9ff : 0xffad77,
@@ -718,11 +713,9 @@ function createFighter(color, isPlayer = false) {
     roughness: 0.14,
     metalness: 0.64,
   });
-  const burnerL = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 1.02, 2.8, 18), burnerMat);
-  burnerL.rotation.z = Math.PI * 0.5;
-  burnerL.position.set(-29.2, 1.8, 3.25);
-  const burnerR = burnerL.clone();
-  burnerR.position.z = -3.25;
+  const burner = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.72, 3.6, 22), burnerMat);
+  burner.rotation.z = Math.PI * 0.5;
+  burner.position.set(-33.5, 1.9, 0);
 
   const flameMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0x5ad5ff : 0xffa368,
@@ -731,11 +724,9 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const flameL = new THREE.Mesh(new THREE.ConeGeometry(1.18, 7.6, 18), flameMat);
-  flameL.rotation.z = Math.PI * 0.5;
-  flameL.position.set(-32.1, 1.8, 3.25);
-  const flameR = flameL.clone();
-  flameR.position.z = -3.25;
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(2.05, 9.8, 22), flameMat);
+  flame.rotation.z = Math.PI * 0.5;
+  flame.position.set(-37.6, 1.9, 0);
 
   const heatRingMat = new THREE.MeshBasicMaterial({
     color: 0xff9b45,
@@ -744,25 +735,21 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const heatRingL = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.16, 10, 20), heatRingMat);
-  heatRingL.rotation.y = Math.PI * 0.5;
-  heatRingL.position.set(-29.4, 1.8, 3.25);
-  const heatRingR = heatRingL.clone();
-  heatRingR.position.z = -3.25;
+  const heatRing = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.22, 12, 24), heatRingMat);
+  heatRing.rotation.y = Math.PI * 0.5;
+  heatRing.position.set(-33.9, 1.9, 0);
 
-  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.7, 1.5), darkMat);
-  intakeL.position.set(10.0, 0.25, 2.35);
-  const intakeR = intakeL.clone();
-  intakeR.position.z = -2.35;
+  const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
+  intake.position.set(10.4, 0.32, 0);
 
   g.add(
     fuselage, nose, canopyBase, canopy,
     wingCenter, mainWingL, mainWingR,
     shoulderL, shoulderR,
     tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
-    engineL, engineR, shroudL, shroudR, nozzleL, nozzleR, burnerL, burnerR,
-    flameL, flameR, heatRingL, heatRingR,
-    intakeL, intakeR
+    engineCore, shroud, nozzle, burner,
+    flame, heatRing,
+    intake
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -803,9 +790,9 @@ function createFighter(color, isPlayer = false) {
     roll: 0,
     hpLabel: null,
     exhaust: {
-      burners: [burnerL, burnerR],
-      outerFlames: [],
-      heatRings: [],
+      burners: [burner],
+      outerFlames: [flame],
+      heatRings: [heatRing],
     },
   };
 
