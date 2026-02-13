@@ -58,10 +58,7 @@ function updateHudHealthPanel() {
 function createRenderer() {
   const attempts = [
     { canvas, antialias: !isMobile, powerPreference: isMobile ? "low-power" : "high-performance" },
-    { canvas, antialias: false, powerPreference: "low-power" },
-    { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", depth: false, stencil: false },
     { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", alpha: false, depth: false, stencil: false },
-    { canvas, antialias: false },
   ];
 
   for (const options of attempts) {
@@ -72,6 +69,44 @@ function createRenderer() {
     }
   }
   return null;
+}
+
+function drawRendererFallback() {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const w = Math.max(1, window.innerWidth || 1);
+  const h = Math.max(1, window.innerHeight || 1);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#5f8fc6");
+  sky.addColorStop(0.62, "#3f6ea5");
+  sky.addColorStop(1, "#1b2f46");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "rgba(16, 36, 58, 0.58)";
+  ctx.fillRect(0, h * 0.64, w, h * 0.36);
+
+  ctx.strokeStyle = "rgba(168, 229, 255, 0.95)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(w * 0.36, h * 0.52);
+  ctx.lineTo(w * 0.62, h * 0.5);
+  ctx.lineTo(w * 0.72, h * 0.47);
+  ctx.lineTo(w * 0.79, h * 0.48);
+  ctx.lineTo(w * 0.71, h * 0.52);
+  ctx.lineTo(w * 0.62, h * 0.55);
+  ctx.lineTo(w * 0.56, h * 0.58);
+  ctx.lineTo(w * 0.48, h * 0.58);
+  ctx.closePath();
+  ctx.stroke();
 }
 
 const renderer = createRenderer();
@@ -512,14 +547,15 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
+  const jet = new THREE.Group();
 
   function buildSurface(points, thickness = 0.24) {
     const shape = new THREE.Shape();
     shape.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
     shape.closePath();
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
-    geo.rotateX(-Math.PI * 0.5);
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, steps: 1, curveSegments: 8 });
+    geo.rotateX(Math.PI * 0.5);
     geo.translate(0, -thickness * 0.5, 0);
     return geo;
   }
@@ -631,6 +667,7 @@ function createFighter(color, isPlayer = false) {
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
   const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(7.8, 1.62, 5.6), bodyMat);
   tailRoot.position.set(-29.4, -0.52, 0);
+  tailRoot.position.set(-29.4, -0.52, 0);
 
   const tailplaneShape = [
     [-17.8, 0.4],
@@ -682,11 +719,26 @@ function createFighter(color, isPlayer = false) {
   const burner = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.72, 3.6, 22), burnerMat);
   burner.rotation.z = Math.PI * 0.5;
   burner.position.set(-38.0, 1.15, 0);
+  burner.position.set(-38.0, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0x5ad5ff : 0xffa368,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
+    transparent: true,
+    opacity: 0.88,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const flameGlowMat = new THREE.MeshBasicMaterial({
+    color: isPlayer ? 0xa8edff : 0xffcf9b,
+    map: exhaustAlphaTex,
+    alphaMap: exhaustAlphaTex,
+    transparent: true,
+    opacity: 0.44,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
     transparent: true,
     opacity: 0.88,
     blending: THREE.AdditiveBlending,
@@ -738,6 +790,7 @@ function createFighter(color, isPlayer = false) {
   const heatRing = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.22, 12, 24), heatRingMat);
   heatRing.rotation.y = Math.PI * 0.5;
   heatRing.position.set(-38.1, 1.15, 0);
+  heatRing.position.set(-38.1, 1.15, 0);
 
   const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
   intake.position.set(10.4, 0.32, 0);
@@ -749,19 +802,24 @@ function createFighter(color, isPlayer = false) {
     tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
     engineCore, shroud, nozzle, burner,
     flameCore, flameGlow, flameShock, heatRing,
+    flameCore, flameGlow, flameShock, heatRing,
     intake
   );
 
+  // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
+  g.add(jet);
+  g.rotation.y = -Math.PI * 0.5;
+
   if (!isPlayer) {
-    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
-    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 6), navMat);
-    navL.position.set(8.8, 0.22, 12.8);
+    const navMat = new THREE.MeshBasicMaterial({ color: 0xe7ecf5 });
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), navMat);
+    navL.position.set(13.6, 1.26, -2.6);
     const navR = navL.clone();
-    navR.position.z = -12.8;
+    navR.position.x *= -1;
     g.add(navL, navR);
   }
 
-  g.scale.setScalar(1.26);
+  g.scale.setScalar(1.24);
   g.position.set(0, 300, 0);
   g.traverse((node) => {
     if (node.isMesh) {
@@ -787,6 +845,7 @@ function createFighter(color, isPlayer = false) {
     hpLabel: null,
     exhaust: {
       burners: [burner],
+      outerFlames: [flameCore, flameGlow, flameShock],
       outerFlames: [flameCore, flameGlow, flameShock],
       heatRings: [heatRing],
     },
@@ -1439,6 +1498,7 @@ function updateOrientationHint() {
 }
 
 if (!rendererReady) {
+  drawRendererFallback();
   messageEl.hidden = false;
   messageEl.textContent = "3D表示を開始できませんでした。再試行してください。";
   const retryBtn = document.createElement("button");
@@ -1453,6 +1513,7 @@ if (!rendererReady) {
   retryBtn.style.fontWeight = "700";
   retryBtn.addEventListener("click", () => location.reload());
   messageEl.insertAdjacentElement("afterend", retryBtn);
+  window.addEventListener("resize", drawRendererFallback);
 } else {
 
 canvas.addEventListener("webglcontextlost", (e) => {
