@@ -631,32 +631,36 @@ function createFighter(color, isPlayer = false) {
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
   fuselage.rotation.x = Math.PI;
-  fuselage.scale.set(1, 1, 0.5);
+  fuselage.scale.set(1, 0.68, 1.12);
 
   const nose = new THREE.Mesh(new THREE.ConeGeometry(1.12, 8.2, 20), wingMat);
   nose.rotation.z = -Math.PI * 0.5;
-  nose.scale.set(1, 1, 0.56);
+  nose.scale.set(1, 0.72, 1.05);
   nose.position.set(34.3, 0, 0);
 
-  const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.12, 2.4), bodyMat);
-  centerSpine.position.set(0.6, 2.04, 0);
+  const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(18.2, 1.36, 3.4), bodyMat);
+  centerSpine.position.set(0.9, 1.88, 0);
 
-  const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.2, 2.5), bodyMat);
-  canopyBase.position.set(6.9, 1.45, 0);
+  const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(10.6, 1.38, 3.3), bodyMat);
+  canopyBase.position.set(7.1, 1.52, 0);
   const canopy = new THREE.Mesh(
     new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(1.9, 0.92, 0.86);
-  canopy.position.set(6.7, 2.42, 0);
+  canopy.scale.set(2.08, 0.98, 1.08);
+  canopy.position.set(6.9, 2.34, 0);
+
+  const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.62, 1.98, 7.8, 20), bodyMat);
+  foreBlend.rotation.z = -Math.PI * 0.5;
+  foreBlend.position.set(15.8, 1.26, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
-    [7.8, 0.7],
-    [-2.2, 18.4],
-    [-10.8, 18.4],
-    [-10.8, 0.7],
+    [8.2, 0.7],
+    [-1.6, 18.2],
+    [-12.6, 18.2],
+    [-9.4, 0.7],
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
   mainWingL.position.set(-10.7, -0.95, 0);
@@ -796,7 +800,7 @@ function createFighter(color, isPlayer = false) {
   intake.position.set(10.4, 0.32, 0);
 
   g.add(
-    fuselage, nose, centerSpine, canopyBase, canopy,
+    fuselage, nose, centerSpine, canopyBase, canopy, foreBlend,
     mainWingL, mainWingR,
     shoulderL, shoulderR,
     tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
