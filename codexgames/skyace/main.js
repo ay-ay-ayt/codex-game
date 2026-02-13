@@ -644,18 +644,18 @@ function createFighter(color, isPlayer = false) {
 
   const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.46, 1.86, 10.8, 20), bodyMat);
   canopyBase.rotation.z = -Math.PI * 0.5;
-  canopyBase.position.set(7.4, 1.58, 0);
+  canopyBase.position.set(5.9, 1.56, 0);
   const canopy = new THREE.Mesh(
     new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
   canopy.scale.set(2.05, 0.98, 1.12);
-  canopy.position.set(7.2, 2.3, 0);
+  canopy.position.set(5.7, 2.26, 0);
 
   const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.36, 1.9, 10.2, 22), bodyMat);
   foreBlend.rotation.z = -Math.PI * 0.5;
-  foreBlend.position.set(15.2, 1.34, 0);
+  foreBlend.position.set(14.1, 1.3, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -673,38 +673,43 @@ function createFighter(color, isPlayer = false) {
 
   // LERX / shoulder blending: further narrowed so wing root doesn't look vertically thick
   const shoulderL = new THREE.Mesh(buildSurface([
-    [11.8, 0.7],
-    [8.8, 3.8],
-    [5.6, 3.5],
-    [6.8, 1.0],
-  ], 0.2), bodyMat);
-  shoulderL.position.set(0, -0.56, 0);
+    [13.2, 0.66],
+    [9.6, 5.2],
+    [4.2, 5.0],
+    [5.8, 0.82],
+  ], 0.34), bodyMat);
+  shoulderL.position.set(0.3, -0.5, 0);
   const shoulderR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [11.8, 0.7],
-    [8.8, 3.8],
-    [5.6, 3.5],
-    [6.8, 1.0],
-  ]), 0.2), bodyMat);
+    [13.2, 0.66],
+    [9.6, 5.2],
+    [4.2, 5.0],
+    [5.8, 0.82],
+  ]), 0.34), bodyMat);
   shoulderR.position.copy(shoulderL.position);
+
+  const wingRootBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.24, 1.62, 8.2, 18), bodyMat);
+  wingRootBlend.rotation.z = -Math.PI * 0.5;
+  wingRootBlend.position.set(2.2, 0.52, 0);
+  wingRootBlend.scale.set(1, 0.72, 1.38);
 
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
   const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(7.8, 1.62, 5.6), bodyMat);
   tailRoot.position.set(-29.4, -0.52, 0);
 
   const tailplaneShape = [
-    [-20.2, 0.4],
-    [-21.8, 3.7],
-    [-23.8, 4.3],
-    [-24.8, 4.1],
-    [-24.3, 0.9],
-    [-22.1, 0.15],
-    [-20.7, 0.1],
+    [-20.4, 0.44],
+    [-21.8, 5.1],
+    [-23.4, 5.8],
+    [-24.3, 5.4],
+    [-24.0, 2.9],
+    [-22.3, 0.34],
+    [-20.8, 0.16],
   ];
   const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.46), wingMat);
-  tailplaneL.position.set(-12.8, -1.56, 1.9);
+  tailplaneL.position.set(-10.9, -1.56, 2.35);
   tailplaneL.rotation.x = 0.02;
   const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.46), wingMat);
-  tailplaneR.position.set(-12.8, -1.56, -1.9);
+  tailplaneR.position.set(-10.9, -1.56, -2.35);
   tailplaneR.rotation.x = tailplaneL.rotation.x;
 
   const finBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.5, 2.3), bodyMat);
@@ -804,7 +809,7 @@ function createFighter(color, isPlayer = false) {
   g.add(
     fuselage, nose, centerSpine, canopyBase, canopy, foreBlend,
     mainWingL, mainWingR,
-    shoulderL, shoulderR,
+    shoulderL, shoulderR, wingRootBlend,
     tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
     engineCore, shroud, nozzle, burner,
     flameCore, flameGlow, flameShock, heatRing,
