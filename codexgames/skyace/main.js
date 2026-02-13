@@ -571,22 +571,6 @@ function createFighter(color, isPlayer = false) {
   function mirrorPoints(points) {
     return points.map(([x, z]) => [x, -z]).reverse();
   }
-  function taperWingThickness(geo, minScale = 0.48, power = 1.35) {
-    geo.computeBoundingBox();
-    const box = geo.boundingBox;
-    const maxSpan = Math.max(Math.abs(box.min.z), Math.abs(box.max.z), 0.001);
-    const pos = geo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      const z = pos.getZ(i);
-      const y = pos.getY(i);
-      const spanT = clamp(Math.abs(z) / maxSpan, 0, 1);
-      const taper = 1 - (1 - minScale) * (spanT ** power);
-      pos.setY(i, y * taper);
-    }
-    pos.needsUpdate = true;
-    geo.computeVertexNormals();
-    return geo;
-  }
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color,
