@@ -1596,7 +1596,6 @@ window.addEventListener(
 let last = performance.now();
 function tick(now) {
   try {
-    startupState.phase = "tick";
     const dt = Math.min((now - last) / 1000, 0.033);
     last = now;
 
