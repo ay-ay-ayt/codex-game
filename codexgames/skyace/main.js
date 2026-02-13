@@ -638,29 +638,31 @@ function createFighter(color, isPlayer = false) {
   nose.scale.set(1, 0.72, 1.05);
   nose.position.set(34.3, 0, 0);
 
-  const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(18.2, 1.36, 3.4), bodyMat);
-  centerSpine.position.set(0.9, 1.88, 0);
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.78, 19.6, 22), bodyMat);
+  centerSpine.rotation.z = -Math.PI * 0.5;
+  centerSpine.position.set(1.2, 1.78, 0);
 
-  const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(10.6, 1.38, 3.3), bodyMat);
-  canopyBase.position.set(7.1, 1.52, 0);
+  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.46, 1.86, 10.8, 20), bodyMat);
+  canopyBase.rotation.z = -Math.PI * 0.5;
+  canopyBase.position.set(7.4, 1.58, 0);
   const canopy = new THREE.Mesh(
     new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(2.08, 0.98, 1.08);
-  canopy.position.set(6.9, 2.34, 0);
+  canopy.scale.set(2.05, 0.98, 1.12);
+  canopy.position.set(7.2, 2.3, 0);
 
-  const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.62, 1.98, 7.8, 20), bodyMat);
+  const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.36, 1.9, 10.2, 22), bodyMat);
   foreBlend.rotation.z = -Math.PI * 0.5;
-  foreBlend.position.set(15.8, 1.26, 0);
+  foreBlend.position.set(15.2, 1.34, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
-    [8.2, 0.7],
-    [-1.6, 18.2],
-    [-12.6, 18.2],
-    [-9.4, 0.7],
+    [8.6, 0.7],
+    [-3.0, 18.8],
+    [-11.0, 18.8],
+    [-9.2, 0.7],
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
   mainWingL.position.set(-10.7, -0.95, 0);
@@ -690,13 +692,13 @@ function createFighter(color, isPlayer = false) {
   tailRoot.position.set(-29.4, -0.52, 0);
 
   const tailplaneShape = [
-    [-17.8, 0.4],
-    [-21.2, 4.9],
-    [-26.4, 6.2],
-    [-28.8, 5.7],
-    [-27.6, 0.8],
-    [-22.0, -0.1],
-    [-18.3, 0.0],
+    [-19.6, 0.4],
+    [-21.6, 4.4],
+    [-25.2, 5.2],
+    [-27.0, 4.9],
+    [-26.3, 0.9],
+    [-22.3, 0.1],
+    [-20.0, 0.1],
   ];
   const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.46), wingMat);
   tailplaneL.position.set(-12.8, -1.56, 1.9);
