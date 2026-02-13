@@ -244,45 +244,35 @@ function createFighter(color, isPlayer = false) {
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 36), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
   fuselage.rotation.x = Math.PI;
-  fuselage.scale.set(1.0, 0.5, 1.22);
+  fuselage.scale.set(1, 0.68, 1.12);
 
   const nose = new THREE.Mesh(new THREE.ConeGeometry(1.06, 10.2, 22), wingMat);
   nose.rotation.z = -Math.PI * 0.5;
-  nose.scale.set(1, 0.44, 1.36);
-  nose.position.set(37.3, 0.12, 0);
+  nose.scale.set(1, 0.72, 1.05);
+  nose.position.set(34.3, 0, 0);
 
-  const upperSpine = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.42, 17.2, 22), bodyMat);
-  upperSpine.rotation.z = -Math.PI * 0.5;
-  upperSpine.position.set(3.8, 1.95, 0);
-  upperSpine.scale.set(1, 0.6, 1.16);
+  const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(18.2, 1.36, 3.4), bodyMat);
+  centerSpine.position.set(0.9, 1.88, 0);
 
-  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.5, 11.8, 20), bodyMat);
-  canopyBase.rotation.z = -Math.PI * 0.5;
-  canopyBase.scale.set(1, 0.62, 1.16);
-  canopyBase.position.set(10.2, 1.78, 0);
-
-  const canopy = new THREE.Mesh(new THREE.CapsuleGeometry(1.6, 6.6, 8, 16), canopyMat);
+  const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(10.6, 1.38, 3.3), bodyMat);
+  canopyBase.position.set(7.1, 1.52, 0);
+  const canopy = new THREE.Mesh(
+    new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
+    new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
+  );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.position.set(10.2, 2.82, 0);
-  canopy.scale.set(1.72, 0.84, 0.94);
+  canopy.scale.set(2.08, 0.98, 1.08);
+  canopy.position.set(6.9, 2.34, 0);
 
-  const chin = new THREE.Mesh(new THREE.CylinderGeometry(1.06, 1.48, 9.8, 20), bodyMat);
-  chin.rotation.z = -Math.PI * 0.5;
-  chin.position.set(17.8, -1.08, 0);
-  chin.scale.set(1, 0.54, 1.22);
-
-  const intakeLip = new THREE.Mesh(new THREE.TorusGeometry(1.46, 0.24, 10, 20, Math.PI), darkMat);
-  intakeLip.rotation.x = Math.PI * 0.5;
-  intakeLip.position.set(16.5, -1.1, 0);
-  const intakeDuct = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.1, 2.7), darkMat);
-  intakeDuct.position.set(14.4, -1.14, 0);
+  const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.62, 1.98, 7.8, 20), bodyMat);
+  foreBlend.rotation.z = -Math.PI * 0.5;
+  foreBlend.position.set(15.8, 1.26, 0);
 
   const mainWingPoints = [
-    [8.8, 0.25],
-    [1.6, 11.8],
-    [-15.8, 18.8],
-    [-14.1, 6.2],
-    [-9.8, 0.28],
+    [8.2, 0.7],
+    [-1.6, 18.2],
+    [-12.6, 18.2],
+    [-9.4, 0.7],
   ];
   const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.46), wingMat);
   mainWingL.position.set(-1.0, -1.28, 0);
@@ -392,12 +382,13 @@ function createFighter(color, isPlayer = false) {
   jet.add(flameInner, flameOuter, heatRing, burner);
 
   g.add(
-    fuselage, nose, upperSpine, canopyBase, canopy, chin,
-    intakeLip, intakeDuct,
-    mainWingL, mainWingR, lerxL, lerxR,
-    tailRoot, stabL, stabR, fin,
-    engineBody, nozzle,
-    ventL, ventR
+    fuselage, nose, centerSpine, canopyBase, canopy, foreBlend,
+    mainWingL, mainWingR,
+    shoulderL, shoulderR,
+    tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
+    engineCore, shroud, nozzle, burner,
+    flameCore, flameGlow, flameShock, heatRing,
+    intake
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
