@@ -667,12 +667,15 @@ function createFighter(color, isPlayer = false) {
     [-10.6, 18.8],
     [-8.0, 0.7],
   ];
-  const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
-  mainWingL.position.set(-10.7, -0.95, 0);
+  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.66), wingMat);
+  mainWingL.position.set(-3.4, -2.0, 0);
   mainWingL.rotation.x = -0.028;
-  const mainWingR = new THREE.Mesh(taperWingThickness(buildSurface(mirrorPoints(mainWingPoints), 1.92), 0.42, 1.45), wingMat);
+  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 0.66), wingMat);
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
+
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.2, 13.8), bodyMat);
+  wingCenter.position.set(-2.6, -1.64, 0);
 
   // LERX / shoulder blending: further narrowed so wing root doesn't look vertically thick
   const shoulderL = new THREE.Mesh(buildSurface([
@@ -696,8 +699,8 @@ function createFighter(color, isPlayer = false) {
   wingRootBlend.scale.set(1, 0.72, 1.38);
 
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
-  const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(7.8, 1.62, 5.6), bodyMat);
-  tailRoot.position.set(-29.4, -0.52, 0);
+  const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(7.8, 1.5, 5.6), bodyMat);
+  tailRoot.position.set(-20.6, 1.92, 0);
 
   const tailplaneShape = [
     [-20.4, 0.44],
@@ -708,38 +711,37 @@ function createFighter(color, isPlayer = false) {
     [-22.3, 0.34],
     [-20.8, 0.16],
   ];
-  const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.62), wingMat);
-  tailplaneL.position.set(-11.1, -1.5, 3.3);
-  tailplaneL.rotation.x = 0.018;
-  tailplaneL.scale.set(2.0, 2.0, 2.0);
-  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.62), wingMat);
-  tailplaneR.position.set(-11.1, -1.5, -3.3);
+  const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.36), wingMat);
+  tailplaneL.position.set(-3.2, 1.78, 1.9);
+  tailplaneL.rotation.x = 0.02;
+  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.36), wingMat);
+  tailplaneR.position.set(-3.2, 1.78, -1.9);
   tailplaneR.rotation.x = tailplaneL.rotation.x;
   tailplaneR.scale.copy(tailplaneL.scale);
 
   const finBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.5, 2.3), bodyMat);
-  finBase.position.set(-34.6, -1.1, 0);
+  finBase.position.set(-24.8, 2.18, 0);
 
   // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
-  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.8, 14.04, 0.42), wingMat);
-  finCenter.position.set(-36.2, 5.35, 0);
+  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.8, 10.8, 0.42), wingMat);
+  finCenter.position.set(-26.4, 7.2, 0);
   finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
   const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.8, 12), wingMat);
   finTip.rotation.z = Math.PI * 0.5;
-  finTip.position.set(-39.2, 11.45, 0);
+  finTip.position.set(-29.0, 11.9, 0);
 
   // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
   engineCore.rotation.z = -Math.PI * 0.5;
-  engineCore.position.set(-24.6, 1.15, 0);
+  engineCore.position.set(-17.0, 1.9, 0);
 
   const shroud = new THREE.Mesh(new THREE.CylinderGeometry(3.15, 2.85, 5.6, 26), wingMat);
   shroud.rotation.z = -Math.PI * 0.5;
-  shroud.position.set(-36.5, 1.15, 0);
+  shroud.position.set(-27.0, 1.9, 0);
 
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.5, 7.6, 28), darkMat);
   nozzle.rotation.z = Math.PI * 0.5;
-  nozzle.position.set(-36.9, 1.15, 0);
+  nozzle.position.set(-33.8, 1.9, 0);
 
   const burnerMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0x82e9ff : 0xffad77,
@@ -750,7 +752,7 @@ function createFighter(color, isPlayer = false) {
   });
   const burner = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.72, 3.6, 22), burnerMat);
   burner.rotation.z = Math.PI * 0.5;
-  burner.position.set(-38.0, 1.15, 0);
+  burner.position.set(-36.4, 1.9, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0x5ad5ff : 0xffa368,
@@ -770,32 +772,11 @@ function createFighter(color, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 1.12, 8.8, 24), flameCoreMat);
-  flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-41.3, 1.15, 0);
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(2.05, 9.8, 22), flameMat);
+  flame.rotation.z = -Math.PI * 0.5;
+  flame.position.set(-40.8, 1.9, 0);
 
-  const flameGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 1.64, 10.6, 24), flameGlowMat);
-  flameGlow.rotation.z = -Math.PI * 0.5;
-  flameGlow.position.set(-41.9, 1.15, 0);
-
-  const flameShock = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.16, 0.58, 4.0, 18),
-    new THREE.MeshBasicMaterial({
-      color: isPlayer ? 0xe8fbff : 0xffebc9,
-      map: exhaustAlphaTex,
-      alphaMap: exhaustAlphaTex,
-      transparent: true,
-      opacity: 0.62,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    })
-  );
-  flameShock.rotation.z = -Math.PI * 0.5;
-  flameShock.position.set(-39.5, 1.15, 0);
-
-  flameCore.userData.baseX = flameCore.position.x;
-  flameGlow.userData.baseX = flameGlow.position.x;
-  flameShock.userData.baseX = flameShock.position.x;
+  flame.userData.baseX = flame.position.x;
 
   const heatRingMat = new THREE.MeshBasicMaterial({
     color: 0xff9b45,
@@ -806,7 +787,7 @@ function createFighter(color, isPlayer = false) {
   });
   const heatRing = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.22, 12, 24), heatRingMat);
   heatRing.rotation.y = Math.PI * 0.5;
-  heatRing.position.set(-38.1, 1.15, 0);
+  heatRing.position.set(-36.8, 1.9, 0);
 
   const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
   intake.position.set(10.4, 0.32, 0);
@@ -879,16 +860,15 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const opacityByLayer = [0.9, 0.46, 0.68];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
-    const flameLengthScale = pulseA * lengthGain * depthByLayer[i];
-    const radiusLayer = (radiusByLayer[i] ?? 0.7) * radiusGain;
+    const flameLengthScale = pulseA * lengthGain;
     flame.scale.set(
-      radiusLayer,
+      (0.98 + i * 0.03) * radiusGain,
       flameLengthScale,
-      radiusLayer
+      pulseB * (1 + boostLevel * 0.5)
     );
     const baseX = flame.userData.baseX ?? flame.position.x;
-    flame.position.x = baseX - (flameLengthScale - 1) * (1.1 + i * 0.28);
-    flame.material.opacity = clamp((opacityByLayer[i] ?? 0.56) + boostLevel * (i === 0 ? 0.1 : 0.16), 0.28, 0.99);
+    flame.position.x = baseX - (flameLengthScale - 1) * 3.8;
+    flame.material.opacity = clamp(0.76 + boostLevel * 0.22, 0.45, 0.99);
   });
 
   plane.exhaust.burners.forEach((burner) => {
