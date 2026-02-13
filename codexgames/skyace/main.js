@@ -615,53 +615,66 @@ function createFighter(color, isPlayer = false) {
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
   fuselage.rotation.x = Math.PI;
+  fuselage.scale.set(1, 0.46, 1.46);
 
   const nose = new THREE.Mesh(new THREE.ConeGeometry(1.12, 8.2, 20), wingMat);
   nose.rotation.z = -Math.PI * 0.5;
+  nose.scale.set(1, 0.5, 1.36);
   nose.position.set(34.3, 0, 0);
 
-  const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.12, 2.4), bodyMat);
-  centerSpine.position.set(0.6, 2.04, 0);
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.78, 19.6, 22), bodyMat);
+  centerSpine.rotation.z = -Math.PI * 0.5;
+  centerSpine.position.set(1.2, 1.68, 0);
+  centerSpine.scale.set(1, 0.66, 1.58);
 
-  const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.2, 2.5), bodyMat);
-  canopyBase.position.set(9.9, 1.45, 0);
+  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.46, 1.86, 10.8, 20), bodyMat);
+  canopyBase.rotation.z = -Math.PI * 0.5;
+  canopyBase.position.set(5.9, 1.5, 0);
+  canopyBase.scale.set(1, 0.72, 1.42);
   const canopy = new THREE.Mesh(
     new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(1.9, 0.92, 0.86);
-  canopy.position.set(9.7, 2.42, 0);
+  canopy.scale.set(2.05, 0.98, 1.12);
+  canopy.position.set(5.7, 2.26, 0);
+
+  const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.36, 1.9, 10.2, 22), bodyMat);
+  foreBlend.rotation.z = -Math.PI * 0.5;
+  foreBlend.position.set(14.1, 1.24, 0);
+  foreBlend.scale.set(1, 0.68, 1.5);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
-    [7.8, 0.7],
-    [1.3, 17.8],
-    [-3.8, 22.2],
-    [-10.1, 23.2],
-    [-11.3, 1.0],
+    [8.6, 0.7],
+    [-5.2, 18.8],
+    [-10.6, 18.8],
+    [-8.0, 0.7],
   ];
-  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 1.92), wingMat);
-  mainWingL.position.set(-10.7, -0.95, 0);
+  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.66), wingMat);
+  mainWingL.position.set(-3.4, -2.0, 0);
   mainWingL.rotation.x = -0.028;
-  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 1.92), wingMat);
+  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 0.66), wingMat);
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.2, 13.8), bodyMat);
+  wingCenter.position.set(-2.6, -1.64, 0);
+
   // LERX / shoulder blending: further narrowed so wing root doesn't look vertically thick
   const shoulderL = new THREE.Mesh(buildSurface([
-    [11.8, 0.7],
-    [8.8, 3.8],
-    [5.6, 3.5],
-    [6.8, 1.0],
-  ], 0.2), bodyMat);
-  shoulderL.position.set(0, -0.56, 0);
+    [13.2, 0.66],
+    [9.6, 5.2],
+    [4.2, 5.0],
+    [5.8, 0.82],
+  ], 0.34), bodyMat);
+  shoulderL.position.set(0.3, -0.5, 0);
   const shoulderR = new THREE.Mesh(buildSurface(mirrorPoints([
-    [11.8, 0.7],
-    [8.8, 3.8],
-    [5.6, 3.5],
-    [6.8, 1.0],
-  ]), 0.2), bodyMat);
+    [13.2, 0.66],
+    [9.6, 5.2],
+    [4.2, 5.0],
+    [5.8, 0.82],
+  ]), 0.34), bodyMat);
   shoulderR.position.copy(shoulderL.position);
 
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
@@ -678,36 +691,41 @@ function createFighter(color, isPlayer = false) {
     [-22.0, -0.1],
     [-18.3, 0.0],
   ];
-  const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.46), wingMat);
-  tailplaneL.position.set(-12.8, -1.56, 1.9);
+  const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.26), wingMat);
+  tailplaneL.position.set(-0.4, 1.72, 1.9);
   tailplaneL.rotation.x = 0.02;
-  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.46), wingMat);
-  tailplaneR.position.set(-12.8, -1.56, -1.9);
+  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.26), wingMat);
+  tailplaneR.position.set(-0.4, 1.72, -1.9);
   tailplaneR.rotation.x = tailplaneL.rotation.x;
 
   const finBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.5, 2.3), bodyMat);
-  finBase.position.set(-34.6, -1.1, 0);
+  finBase.position.set(-21.9, 2.1, 0);
 
   // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
-  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.8, 14.04, 0.42), wingMat);
-  finCenter.position.set(-36.2, 5.35, 0);
+  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.8, 10.8, 0.42), wingMat);
+  finCenter.position.set(-23.1, 7.1, 0);
   finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
   const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.8, 12), wingMat);
   finTip.rotation.z = Math.PI * 0.5;
-  finTip.position.set(-39.2, 11.45, 0);
+  finTip.position.set(-25.8, 11.8, 0);
 
-  // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
-  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
-  engineCore.rotation.z = -Math.PI * 0.5;
-  engineCore.position.set(-24.6, 1.15, 0);
+  const engineL = new THREE.Mesh(new THREE.CylinderGeometry(1.66, 2.08, 20.6, 20), bodyMat);
+  engineL.rotation.z = -Math.PI * 0.5;
+  engineL.position.set(-13.8, 1.8, 3.25);
+  const engineR = engineL.clone();
+  engineR.position.z = -3.25;
 
-  const shroud = new THREE.Mesh(new THREE.CylinderGeometry(3.15, 2.85, 5.6, 26), wingMat);
-  shroud.rotation.z = -Math.PI * 0.5;
-  shroud.position.set(-36.5, 1.15, 0);
+  const shroudL = new THREE.Mesh(new THREE.CylinderGeometry(1.98, 1.86, 4.2, 20), wingMat);
+  shroudL.rotation.z = -Math.PI * 0.5;
+  shroudL.position.set(-22.9, 1.8, 3.25);
+  const shroudR = shroudL.clone();
+  shroudR.position.z = -3.25;
 
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.5, 7.6, 28), darkMat);
-  nozzle.rotation.z = Math.PI * 0.5;
-  nozzle.position.set(-36.9, 1.15, 0);
+  const nozzleL = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.58, 6.2, 22), darkMat);
+  nozzleL.rotation.z = Math.PI * 0.5;
+  nozzleL.position.set(-27.6, 1.8, 3.25);
+  const nozzleR = nozzleL.clone();
+  nozzleR.position.z = -3.25;
 
   const burnerMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0x82e9ff : 0xffad77,
@@ -797,7 +815,7 @@ function createFighter(color, isPlayer = false) {
 
   g.add(
     fuselage, nose, centerSpine, canopyBase, canopy,
-    mainWingL, mainWingR,
+    wingCenter, mainWingL, mainWingR,
     shoulderL, shoulderR,
     tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
     engineCore, shroud, nozzle, burner,
@@ -858,20 +876,22 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   if (!plane?.exhaust) return;
   const t = performance.now() * 0.02;
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
-  const pulseB = 0.96 + Math.cos(t * 1.15 + plane.mesh.id * 0.19) * 0.09;
-  const radiusGain = 1 + boostLevel * 0.62;
+  const radiusGain = 1 + boostLevel * 0.5;
   const lengthGain = 1 + boostLevel * 1.9;
+  const radiusByLayer = [1, 0.84, 0.62];
+  const depthByLayer = [1, 0.9, 0.72];
+  const opacityByLayer = [0.9, 0.46, 0.68];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
-    const flameLengthScale = pulseA * lengthGain * (1 + i * 0.12);
+    const flameLengthScale = pulseA * lengthGain;
     flame.scale.set(
-      (0.9 + i * 0.26) * radiusGain,
+      (0.98 + i * 0.03) * radiusGain,
       flameLengthScale,
-      (0.88 + i * 0.22) * radiusGain
+      pulseB * (1 + boostLevel * 0.5)
     );
     const baseX = flame.userData.baseX ?? flame.position.x;
-    flame.position.x = baseX - (flameLengthScale - 1) * (1.35 + i * 0.45);
-    flame.material.opacity = clamp((i === 0 ? 0.9 : i === 1 ? 0.52 : 0.7) + boostLevel * (i === 0 ? 0.08 : 0.2), 0.28, 0.99);
+    flame.position.x = baseX - (flameLengthScale - 1) * 3.8;
+    flame.material.opacity = clamp(0.76 + boostLevel * 0.22, 0.45, 0.99);
   });
 
   plane.exhaust.burners.forEach((burner) => {
