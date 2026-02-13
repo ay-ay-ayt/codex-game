@@ -58,8 +58,7 @@ function updateHudHealthPanel() {
 function createRenderer() {
   const attempts = [
     { canvas, antialias: !isMobile, powerPreference: isMobile ? "low-power" : "high-performance" },
-    { canvas, antialias: false, powerPreference: "low-power" },
-    { canvas, antialias: false },
+    { canvas, antialias: false, powerPreference: "low-power", precision: "lowp", alpha: false, depth: false, stencil: false },
   ];
 
   for (const options of attempts) {
@@ -70,6 +69,44 @@ function createRenderer() {
     }
   }
   return null;
+}
+
+function drawRendererFallback() {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const w = Math.max(1, window.innerWidth || 1);
+  const h = Math.max(1, window.innerHeight || 1);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#5f8fc6");
+  sky.addColorStop(0.62, "#3f6ea5");
+  sky.addColorStop(1, "#1b2f46");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "rgba(16, 36, 58, 0.58)";
+  ctx.fillRect(0, h * 0.64, w, h * 0.36);
+
+  ctx.strokeStyle = "rgba(168, 229, 255, 0.95)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(w * 0.36, h * 0.52);
+  ctx.lineTo(w * 0.62, h * 0.5);
+  ctx.lineTo(w * 0.72, h * 0.47);
+  ctx.lineTo(w * 0.79, h * 0.48);
+  ctx.lineTo(w * 0.71, h * 0.52);
+  ctx.lineTo(w * 0.62, h * 0.55);
+  ctx.lineTo(w * 0.56, h * 0.58);
+  ctx.lineTo(w * 0.48, h * 0.58);
+  ctx.closePath();
+  ctx.stroke();
 }
 
 const renderer = createRenderer();
@@ -83,6 +120,29 @@ if (rendererReady) {
 }
 
 const scene = new THREE.Scene();
+
+const textureLoader = new THREE.TextureLoader();
+const textureAnisotropy = rendererReady ? Math.min(8, renderer.capabilities.getMaxAnisotropy()) : 1;
+
+function loadTiledTexture(path, repeat = [1, 1], colorSpace = THREE.NoColorSpace) {
+  const tex = textureLoader.load(path);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeat[0], repeat[1]);
+  tex.colorSpace = colorSpace;
+  tex.anisotropy = textureAnisotropy;
+  return tex;
+}
+
+const fighterTextures = {
+  bodyColor: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_diff_2k.jpg", [3.2, 1.1], THREE.SRGBColorSpace),
+  bodyNormal: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_nor_gl_2k.jpg", [3.2, 1.1]),
+  bodyRoughness: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_rough_2k.jpg", [3.2, 1.1]),
+  bodyMetalness: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_metal_2k.jpg", [3.2, 1.1]),
+  trimColor: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_diff_2k.jpg", [1.8, 1], THREE.SRGBColorSpace),
+  trimNormal: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_nor_gl_2k.jpg", [1.8, 1]),
+  trimRoughness: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough_2k.jpg", [1.8, 1]),
+};
 
 const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
@@ -179,6 +239,7 @@ const game = {
   effects: [],
   playerHitTimer: 0,
   hitConfirmTimer: 0,
+  boostAutoDropAt: null,
 };
 
 let lastHitVibeAt = 0;
@@ -481,124 +542,230 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.28,
-    metalness: 0.68,
-    emissive: isPlayer ? 0x000000 : color,
-    emissiveIntensity: isPlayer ? 0 : 0.2,
-  });
-  const trimMat = new THREE.MeshStandardMaterial({
-    color: isPlayer ? 0xdce6ef : 0xfff1c6,
-    roughness: 0.24,
-    metalness: 0.56,
-    emissive: isPlayer ? 0x000000 : 0x7a5e1f,
-    emissiveIntensity: isPlayer ? 0 : 0.22,
-  });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2d3b, roughness: 0.58, metalness: 0.26 });
+  const jet = new THREE.Group();
 
-  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.9, 34, 18), bodyMat);
-  fuselage.rotation.z = -Math.PI * 0.5;
-
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.95, 12.8, 18), trimMat);
-  nose.rotation.z = -Math.PI * 0.5;
-  nose.position.x = 23.3;
-
-  const tailCone = new THREE.Mesh(new THREE.ConeGeometry(1.8, 8.2, 14), darkMat);
-  tailCone.rotation.z = Math.PI * 0.5;
-  tailCone.position.x = -21.2;
-
-  const cockpit = new THREE.Mesh(
-    new THREE.SphereGeometry(2.65, 16, 14),
-    new THREE.MeshStandardMaterial({ color: 0xa8eeff, transparent: true, opacity: 0.72, roughness: 0.12, metalness: 0.38 })
-  );
-  cockpit.scale.set(2.0, 0.78, 0.82);
-  cockpit.position.set(7.9, 2.7, 0);
-
-  const enginePodL = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.95, 14.5, 14), bodyMat);
-  enginePodL.rotation.z = -Math.PI * 0.5;
-  enginePodL.position.set(-8.5, 2.6, 2.95);
-  const enginePodR = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.95, 14.5, 14), bodyMat);
-  enginePodR.rotation.z = -Math.PI * 0.5;
-  enginePodR.position.set(-8.5, 2.6, -2.95);
-
-  const addPaired = (factory, z, rotY = 0, yOffset = 0, xOffset = 0) => {
-    const left = factory();
-    left.position.set(xOffset, yOffset, z);
-    left.rotation.y = rotY;
-    const right = factory();
-    right.position.set(xOffset, yOffset, -z);
-    right.rotation.y = -rotY;
-    g.add(left, right);
-  };
-
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(19.5, 0.58, 5.6), trimMat), 7.2, 0.24, -1.08, -0.9);
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.4, 2.2), trimMat), 12.6, 0.6, -1.2, 7.0);
-  addPaired(() => new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.28, 1.45), trimMat), 4.4, 0.5, 0.5, 11.8);
-
-  const finL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 8, 1.8), bodyMat);
-  finL.position.set(-13.1, 7.0, 2.45);
-  finL.rotation.x = 0;
-  const finR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 8, 1.8), bodyMat);
-  finR.position.set(-13.1, 7.0, -2.45);
-  finR.rotation.x = 0;
-
-  const intakeL = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.7, 1.4), darkMat);
-  intakeL.position.set(9.0, 0.2, 3.3);
-  const intakeR = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.7, 1.4), darkMat);
-  intakeR.position.set(9.0, 0.2, -3.3);
-
-  const exhaustL = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.35, 3.2, 12), darkMat);
-  exhaustL.rotation.z = Math.PI * 0.5;
-  exhaustL.position.set(-20.9, 1.8, 2.9);
-  const exhaustR = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.35, 3.2, 12), darkMat);
-  exhaustR.rotation.z = Math.PI * 0.5;
-  exhaustR.position.set(-20.9, 1.8, -2.9);
-
-  const missileMat = new THREE.MeshStandardMaterial({ color: 0xf3f3f3, roughness: 0.22, metalness: 0.2 });
-  const missileL = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 9.4, 8), missileMat);
-  missileL.rotation.z = Math.PI * 0.5;
-  missileL.position.set(1.0, -2.15, 10.2);
-  const missileR = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 9.4, 8), missileMat);
-  missileR.rotation.z = Math.PI * 0.5;
-  missileR.position.set(1.0, -2.15, -10.2);
-
-  const glow = new THREE.Mesh(
-    new THREE.SphereGeometry(isPlayer ? 1.55 : 1.8, 12, 10),
-    new THREE.MeshBasicMaterial({ color: isPlayer ? 0x67eaff : 0xff9b5a })
-  );
-  glow.position.x = -21.4;
-
-  if (!isPlayer) {
-    const navMat = new THREE.MeshBasicMaterial({ color: 0xfff08a });
-    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.72, 8, 6), navMat);
-    navL.position.set(9.2, 0.05, 13.0);
-    const navR = navL.clone();
-    navR.position.z = -13.0;
-    const topBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.64, 8, 6), navMat);
-    topBeacon.position.set(-2.4, 5.9, 0);
-    g.add(navL, navR, topBeacon);
+  function buildSurface(points, thickness = 0.24) {
+    const shape = new THREE.Shape();
+    shape.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
+    shape.closePath();
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, steps: 1, curveSegments: 8 });
+    geo.rotateX(Math.PI * 0.5);
+    geo.translate(0, -thickness * 0.5, 0);
+    return geo;
+  }
+  function buildVerticalSurface(points, thickness = 0.24) {
+    const shape = new THREE.Shape();
+    shape.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
+    shape.closePath();
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+    geo.translate(0, 0, -thickness * 0.5);
+    return geo;
+  }
+  function mirrorPoints(points) {
+    return points.map(([x, z]) => [x, -z]).reverse();
   }
 
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color,
+    map: fighterTextures.bodyColor,
+    normalMap: fighterTextures.bodyNormal,
+    roughnessMap: fighterTextures.bodyRoughness,
+    metalnessMap: fighterTextures.bodyMetalness,
+    normalScale: new THREE.Vector2(0.34, 0.34),
+    roughness: 0.42,
+    metalness: 0.62,
+  });
+  const wingMat = new THREE.MeshStandardMaterial({
+    color: isPlayer ? 0xdce7f1 : 0xddd4c2,
+    map: fighterTextures.bodyColor,
+    normalMap: fighterTextures.bodyNormal,
+    roughnessMap: fighterTextures.bodyRoughness,
+    metalnessMap: fighterTextures.bodyMetalness,
+    normalScale: new THREE.Vector2(0.28, 0.28),
+    roughness: 0.4,
+    metalness: 0.58,
+  });
+  const darkMat = new THREE.MeshStandardMaterial({
+    color: 0x142231,
+    roughnessMap: fighterTextures.bodyRoughness,
+    normalMap: fighterTextures.bodyNormal,
+    normalScale: new THREE.Vector2(0.14, 0.14),
+    roughness: 0.55,
+    metalness: 0.24,
+  });
+
+  const fuselageProfile = [
+    new THREE.Vector2(0.15, -31.5),
+    new THREE.Vector2(0.45, -27.4),
+    new THREE.Vector2(1.1, -20.8),
+    new THREE.Vector2(1.95, -11.6),
+    new THREE.Vector2(2.8, -2.4),
+    new THREE.Vector2(3.02, 6.8),
+    new THREE.Vector2(2.58, 14.5),
+    new THREE.Vector2(1.5, 22.4),
+    new THREE.Vector2(0.55, 28.8),
+  ];
+  const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
+  fuselage.rotation.z = -Math.PI * 0.5;
+  fuselage.rotation.x = Math.PI;
+
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(1.12, 8.2, 20), wingMat);
+  nose.rotation.z = -Math.PI * 0.5;
+  nose.position.set(34.3, 0, 0);
+
+  const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.12, 2.4), bodyMat);
+  centerSpine.position.set(0.6, 2.04, 0);
+
+  const canopyBase = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.2, 2.5), bodyMat);
+  canopyBase.position.set(11.7, 1.9, 0);
+  const canopy = new THREE.Mesh(
+    new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
+    new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
+  );
+  canopy.rotation.z = Math.PI * 0.5;
+  canopy.scale.set(2.0, 1.0, 0.9);
+  canopy.position.set(11.5, 3.08, 0);
+
+  // Main wing: even shorter fore-aft depth and moved further aft
+  const mainWingPoints = [
+    [6.2, 1.8],
+    [4.2, 14.4],
+    [1.0, 18.0],
+    [-2.8, 18.3],
+    [-3.9, 3.5],
+  ];
+  const mainWingL = new THREE.Mesh(buildSurface(mainWingPoints, 0.5), wingMat);
+  mainWingL.position.set(-2.2, -2.0, 0);
+  mainWingL.rotation.x = -0.028;
+  const mainWingR = new THREE.Mesh(buildSurface(mirrorPoints(mainWingPoints), 0.5), wingMat);
+  mainWingR.position.copy(mainWingL.position);
+  mainWingR.rotation.x = mainWingL.rotation.x;
+
+  const wingCenter = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.98, 14.8), bodyMat);
+  wingCenter.position.set(-0.8, -1.7, 0);
+
+  // LERX / shoulder blending: further narrowed so wing root doesn't look vertically thick
+  const shoulderL = new THREE.Mesh(buildSurface([
+    [11.8, 0.7],
+    [8.8, 3.8],
+    [5.6, 3.5],
+    [6.8, 1.0],
+  ], 0.2), bodyMat);
+  shoulderL.position.set(0, -0.56, 0);
+  const shoulderR = new THREE.Mesh(buildSurface(mirrorPoints([
+    [11.8, 0.7],
+    [8.8, 3.8],
+    [5.6, 3.5],
+    [6.8, 1.0],
+  ]), 0.2), bodyMat);
+  shoulderR.position.copy(shoulderL.position);
+
+  // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
+  const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(7.4, 1.22, 5.2), bodyMat);
+  tailRoot.position.set(-17.2, 1.82, 0);
+
+  const tailplaneShape = [
+    [-17.8, 0.4],
+    [-21.2, 4.9],
+    [-26.4, 6.2],
+    [-28.8, 5.7],
+    [-27.6, 0.8],
+    [-22.0, -0.1],
+    [-18.3, 0.0],
+  ];
+  const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.26), wingMat);
+  tailplaneL.position.set(-0.4, 1.72, 1.9);
+  tailplaneL.rotation.x = 0.02;
+  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.26), wingMat);
+  tailplaneR.position.set(-0.4, 1.72, -1.9);
+  tailplaneR.rotation.x = tailplaneL.rotation.x;
+
+  const finBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.5, 2.3), bodyMat);
+  finBase.position.set(-21.9, 2.1, 0);
+
+  // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
+  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.8, 10.8, 0.42), wingMat);
+  finCenter.position.set(-23.1, 7.1, 0);
+  finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
+  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.8, 12), wingMat);
+  finTip.rotation.z = Math.PI * 0.5;
+  finTip.position.set(-25.8, 11.8, 0);
+
+  // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
+  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
+  engineCore.rotation.z = -Math.PI * 0.5;
+  engineCore.position.set(-14.8, 1.9, 0);
+
+  const shroud = new THREE.Mesh(new THREE.CylinderGeometry(3.15, 2.85, 5.6, 26), wingMat);
+  shroud.rotation.z = -Math.PI * 0.5;
+  shroud.position.set(-24.6, 1.9, 0);
+
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.5, 7.6, 28), darkMat);
+  nozzle.rotation.z = Math.PI * 0.5;
+  nozzle.position.set(-31.1, 1.9, 0);
+
+  const burnerMat = new THREE.MeshStandardMaterial({
+    color: isPlayer ? 0x82e9ff : 0xffad77,
+    emissive: isPlayer ? 0x59ddff : 0xff864b,
+    emissiveIntensity: 0.64,
+    roughness: 0.14,
+    metalness: 0.64,
+  });
+  const burner = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.72, 3.6, 22), burnerMat);
+  burner.rotation.z = Math.PI * 0.5;
+  burner.position.set(-33.5, 1.9, 0);
+
+  const flameMat = new THREE.MeshBasicMaterial({
+    color: isPlayer ? 0x5ad5ff : 0xffa368,
+    transparent: true,
+    opacity: 0.8,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(2.05, 9.8, 22), flameMat);
+  flame.rotation.z = Math.PI * 0.5;
+  flame.position.set(-37.6, 1.9, 0);
+
+  const heatRingMat = new THREE.MeshBasicMaterial({
+    color: 0xff9b45,
+    transparent: true,
+    opacity: 0.36,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const heatRing = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.22, 12, 24), heatRingMat);
+  heatRing.rotation.y = Math.PI * 0.5;
+  heatRing.position.set(-33.9, 1.9, 0);
+
+  const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
+  intake.position.set(10.4, 0.32, 0);
+
   g.add(
-    fuselage,
-    nose,
-    tailCone,
-    cockpit,
-    enginePodL,
-    enginePodR,
-    finL,
-    finR,
-    intakeL,
-    intakeR,
-    exhaustL,
-    exhaustR,
-    missileL,
-    missileR,
-    glow
+    fuselage, nose, canopyBase, canopy,
+    wingCenter, mainWingL, mainWingR,
+    shoulderL, shoulderR,
+    tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
+    engineCore, shroud, nozzle, burner,
+    flame, heatRing,
+    intake
   );
 
-  g.scale.setScalar(1.14);
+  // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
+  g.add(jet);
+  g.rotation.y = -Math.PI * 0.5;
+
+  if (!isPlayer) {
+    const navMat = new THREE.MeshBasicMaterial({ color: 0xe7ecf5 });
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), navMat);
+    navL.position.set(13.6, 1.26, -2.6);
+    const navR = navL.clone();
+    navR.position.x *= -1;
+    g.add(navL, navR);
+  }
+
+  g.scale.setScalar(1.24);
   g.position.set(0, 300, 0);
   g.traverse((node) => {
     if (node.isMesh) {
@@ -622,9 +789,41 @@ function createFighter(color, isPlayer = false) {
     pitch: 0,
     roll: 0,
     hpLabel: null,
+    exhaust: {
+      burners: [burner],
+      outerFlames: [flame],
+      heatRings: [heatRing],
+    },
   };
 
   return plane;
+}
+
+function updatePlaneExhaust(plane, boostLevel = 0) {
+  if (!plane?.exhaust) return;
+  const t = performance.now() * 0.02;
+  const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
+  const pulseB = 0.96 + Math.cos(t * 1.15 + plane.mesh.id * 0.19) * 0.09;
+  const radiusGain = 1 + boostLevel * 1.0;
+  const lengthGain = 1 + boostLevel * 1.95;
+
+  plane.exhaust.outerFlames.forEach((flame, i) => {
+    flame.scale.set(
+      (0.98 + i * 0.03) * radiusGain,
+      pulseA * lengthGain,
+      pulseB * (1 + boostLevel * 0.5)
+    );
+    flame.material.opacity = clamp(0.76 + boostLevel * 0.22, 0.45, 0.99);
+  });
+
+  plane.exhaust.burners.forEach((burner) => {
+    burner.material.emissiveIntensity = 0.56 + boostLevel * 1.95;
+  });
+
+  plane.exhaust.heatRings?.forEach((ring) => {
+    ring.scale.set(1 + boostLevel * 0.26, 1 + boostLevel * 0.26, 1 + boostLevel * 0.26);
+    ring.material.opacity = clamp(0.32 + boostLevel * 0.34, 0.18, 0.9);
+  });
 }
 
 function spawnBullet(owner, color) {
@@ -765,14 +964,33 @@ function updatePlayer(dt) {
   p.mesh.quaternion.copy(qVisual);
 
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(qMove).normalize();
-  const boostLevel = input.boostLevel > 0 ? Math.min(input.boostLevel, game.boostFuel / 20) : 0;
+
+  if (
+    game.boostAutoDropAt != null
+    && performance.now() >= game.boostAutoDropAt
+  ) {
+    boostLeverState.applyLevel?.(0);
+    game.boostAutoDropAt = null;
+  }
+
+  const boostAllowed = game.boostAutoDropAt == null && game.boostFuel > 0.01;
+  const boostLevel = input.boostLevel > 0 && boostAllowed ? input.boostLevel : 0;
   if (boostLevel > 0) {
     game.boostFuel = Math.max(0, game.boostFuel - 22 * boostLevel * dt);
-  } else {
+    if (game.boostFuel <= 0.01) {
+      game.boostFuel = 0;
+      if (boostLeverState.level > 0 && game.boostAutoDropAt == null) {
+        game.boostAutoDropAt = performance.now() + 1000;
+      }
+    }
+  } else if (game.boostAutoDropAt == null) {
     game.boostFuel = Math.min(100, game.boostFuel + 12 * dt);
+  } else {
+    game.boostFuel = 0;
   }
 
   const targetSpeed = p.speed + boostLevel * 220;
+  updatePlaneExhaust(p, boostLevel);
   const desiredVel = forward.multiplyScalar(targetSpeed);
   p.velocity.lerp(desiredVel, 0.08);
   const prevPos = p.mesh.position.clone();
@@ -851,6 +1069,8 @@ function updateBots(dt) {
 
     const throttleTargetBase = dist > 650 ? 0.9 : dist > 360 ? 0.45 : 0.1;
     const throttleTarget = throttleTargetBase * (1 - threat * 0.65);
+    const pseudoBoost = clamp((throttleTarget - 0.25) / 0.65, 0, 0.55);
+    updatePlaneExhaust(b, pseudoBoost);
     b.speed = clamp(b.speed + throttleTarget * dt * 170, botMinSpeed, botMaxSpeed);
 
     const desiredVel = newForward.multiplyScalar(b.speed);
@@ -980,6 +1200,7 @@ function resetMatch() {
   game.boostFuel = 100;
   game.playerHitTimer = 0;
   game.hitConfirmTimer = 0;
+  game.boostAutoDropAt = null;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -1144,6 +1365,10 @@ function setupBoostLever() {
   boostLeverState.applyLevel = applyLevel;
 
   function moveFromClient(clientY) {
+    if (game.boostFuel <= 0.01 || game.boostAutoDropAt != null) {
+      applyLevel(0);
+      return;
+    }
     const rect = boostLeverEl.getBoundingClientRect();
     const top = rect.top + 8;
     const bottom = rect.bottom - 8;
@@ -1215,10 +1440,23 @@ function updateOrientationHint() {
 }
 
 if (!rendererReady) {
+  drawRendererFallback();
   messageEl.hidden = false;
-  messageEl.textContent = "WebGLを初期化できませんでした。タブを減らして再読み込みしてください。";
-  throw new Error("SkyAce: WebGL renderer initialization failed");
-}
+  messageEl.textContent = "3D表示を開始できませんでした。再試行してください。";
+  const retryBtn = document.createElement("button");
+  retryBtn.type = "button";
+  retryBtn.textContent = "再試行";
+  retryBtn.style.marginTop = "12px";
+  retryBtn.style.padding = "10px 16px";
+  retryBtn.style.borderRadius = "999px";
+  retryBtn.style.border = "1px solid rgba(170, 220, 255, 0.6)";
+  retryBtn.style.background = "rgba(17, 36, 62, 0.8)";
+  retryBtn.style.color = "#d8efff";
+  retryBtn.style.fontWeight = "700";
+  retryBtn.addEventListener("click", () => location.reload());
+  messageEl.insertAdjacentElement("afterend", retryBtn);
+  window.addEventListener("resize", drawRendererFallback);
+} else {
 
 canvas.addEventListener("webglcontextlost", (e) => {
   e.preventDefault();
@@ -1227,7 +1465,21 @@ canvas.addEventListener("webglcontextlost", (e) => {
 });
 
 setupHudHealthPanel();
-buildWorld(mapTypeEl.value);
+
+function showFatalInitError(err, scope = "init") {
+  console.error(`[skyace:${scope}]`, err);
+  messageEl.hidden = false;
+  const text = String(err?.message || err || "unknown error");
+  messageEl.textContent = `初期化エラー: ${text}`;
+}
+
+window.addEventListener("error", (event) => {
+  showFatalInitError(event.error || event.message, "window.error");
+});
+window.addEventListener("unhandledrejection", (event) => {
+  showFatalInitError(event.reason, "unhandledrejection");
+});
+
 updateMenuPanelPosition();
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
@@ -1252,11 +1504,24 @@ const restartFromHud = (e) => {
 restartBtn.addEventListener("click", restartFromHud);
 restartBtn.addEventListener("pointerup", restartFromHud);
 
-menuBtn.addEventListener("click", (e) => {
-  e.preventDefault();
+let lastMenuToggleAt = 0;
+
+function toggleMenuPanel() {
   updateMenuPanelPosition();
   menuPanel.hidden = !menuPanel.hidden;
   menuBtn.setAttribute("aria-expanded", String(!menuPanel.hidden));
+  lastMenuToggleAt = performance.now();
+}
+
+menuBtn.addEventListener("pointerup", (e) => {
+  e.preventDefault();
+  toggleMenuPanel();
+});
+
+menuBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (performance.now() - lastMenuToggleAt < 350) return;
+  toggleMenuPanel();
 });
 
 botCountEl.addEventListener("change", resetMatch);
@@ -1314,7 +1579,13 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 
-fitViewport();
-updateOrientationHint();
-resetMatch();
-requestAnimationFrame(tick);
+try {
+  fitViewport();
+  updateOrientationHint();
+  buildWorld(mapTypeEl.value);
+  resetMatch();
+  requestAnimationFrame(tick);
+} catch (err) {
+  showFatalInitError(err, "startup");
+}
+}
