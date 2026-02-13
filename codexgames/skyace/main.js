@@ -544,7 +544,7 @@ function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
   const jet = new THREE.Group();
 
-  const buildPlanarSurface = (points, thickness = 0.2) => {
+  function buildSurface(points, thickness = 0.24) {
     const shape = new THREE.Shape();
     shape.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
@@ -553,8 +553,8 @@ function createFighter(color, isPlayer = false) {
     geo.rotateX(Math.PI * 0.5);
     geo.translate(0, -thickness * 0.5, 0);
     return geo;
-  };
-  const buildVerticalSurface = (points, thickness = 0.24) => {
+  }
+  function buildVerticalSurface(points, thickness = 0.24) {
     const shape = new THREE.Shape();
     shape.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
@@ -562,8 +562,10 @@ function createFighter(color, isPlayer = false) {
     const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
     geo.translate(0, 0, -thickness * 0.5);
     return geo;
-  };
-  const mirrorPoints = (points) => points.map(([x, z]) => [x, -z]).reverse();
+  }
+  function mirrorPoints(points) {
+    return points.map(([x, z]) => [x, -z]).reverse();
+  }
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color,
