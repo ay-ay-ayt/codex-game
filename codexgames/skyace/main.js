@@ -635,31 +635,11 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.94,
   });
 
-  const fuselageProfile = [
-    new THREE.Vector2(0.16, -33.2),
-    new THREE.Vector2(0.46, -29.6),
-    new THREE.Vector2(0.82, -23.8),
-    new THREE.Vector2(1.28, -17.1),
-    new THREE.Vector2(1.78, -9.2),
-    new THREE.Vector2(1.86, -2.4),
-    new THREE.Vector2(1.44, 5.4),
-    new THREE.Vector2(1.08, 13.2),
-    new THREE.Vector2(0.74, 19.8),
-    new THREE.Vector2(0.22, 26.0),
-  ];
-  const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
-  fuselage.rotation.z = -Math.PI * 0.5;
-  fuselage.rotation.x = Math.PI;
-  fuselage.scale.set(1, 0.42, 1.46);
-
-  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.08, 21.8, 24), bodyMat);
+  // Replace the old rotating fuselage body with a single elongated main spine.
+  // RadiusTop faces +X (front) after rotation; RadiusBottom faces -X (rear).
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 2.22, 56.0, 30), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
-  centerSpine.position.set(1.4, 0.7, 0);
-
-  // Blend collar to fill the dent at the fuselage <-> center spine seam.
-  const fuselageJoinCollar = new THREE.Mesh(new THREE.CylinderGeometry(1.16, 1.42, 4.8, 24), bodyMat);
-  fuselageJoinCollar.rotation.z = -Math.PI * 0.5;
-  fuselageJoinCollar.position.set(-0.4, 0.72, 0);
+  centerSpine.position.set(-11.0, 0.72, 0);
 
   // Rebuild cockpit/top/nose area from scratch with a slimmer silhouette.
   const cockpitBody = new THREE.Mesh(
@@ -854,7 +834,7 @@ function createFighter(color, isPlayer = false) {
   intake.position.set(10.4, 0.32, 0);
 
   g.add(
-    fuselage, centerSpine, fuselageJoinCollar, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
+    centerSpine, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, shroud, nozzle, nozzleLip, burner,
