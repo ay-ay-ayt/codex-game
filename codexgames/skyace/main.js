@@ -642,16 +642,16 @@ function createFighter(color, isPlayer = false) {
   centerSpine.rotation.z = -Math.PI * 0.5;
   centerSpine.position.set(1.2, 1.78, 0);
 
-  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.46, 1.86, 10.8, 20), bodyMat);
+  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.42, 10.8, 20), bodyMat);
   canopyBase.rotation.z = -Math.PI * 0.5;
-  canopyBase.position.set(5.9, 1.56, 0);
+  canopyBase.position.set(5.9, 1.22, 0);
   const canopy = new THREE.Mesh(
-    new THREE.CapsuleGeometry(1.88, 5.9, 7, 16),
+    new THREE.CapsuleGeometry(1.42, 6.2, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(2.05, 0.98, 1.12);
-  canopy.position.set(5.7, 2.26, 0);
+  canopy.scale.set(1.76, 0.72, 0.86);
+  canopy.position.set(5.7, 1.58, 0);
 
   const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.36, 1.9, 10.2, 22), bodyMat);
   foreBlend.rotation.z = -Math.PI * 0.5;
