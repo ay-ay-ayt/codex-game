@@ -589,24 +589,24 @@ function createFighter(color, isPlayer = false) {
   }
 
   const bodyMat = new THREE.MeshStandardMaterial({
-    color: 0x6f7680,
-    map: fighterTextures.bodyColor,
+    color: 0xa7afb8,
+    map: null,
     normalMap: fighterTextures.bodyNormal,
     roughnessMap: fighterTextures.bodyRoughness,
     metalnessMap: fighterTextures.bodyMetalness,
     normalScale: new THREE.Vector2(0.34, 0.34),
-    roughness: 0.42,
-    metalness: 0.62,
+    roughness: 0.34,
+    metalness: 0.7,
   });
   const wingMat = new THREE.MeshStandardMaterial({
-    color: isPlayer ? 0x8a919a : 0x7e848d,
-    map: fighterTextures.bodyColor,
+    color: isPlayer ? 0xc0c8d1 : 0xaeb6c0,
+    map: null,
     normalMap: fighterTextures.bodyNormal,
     roughnessMap: fighterTextures.bodyRoughness,
     metalnessMap: fighterTextures.bodyMetalness,
     normalScale: new THREE.Vector2(0.28, 0.28),
-    roughness: 0.4,
-    metalness: 0.58,
+    roughness: 0.32,
+    metalness: 0.66,
   });
   const darkMat = new THREE.MeshStandardMaterial({
     color: 0x142231,
@@ -642,16 +642,16 @@ function createFighter(color, isPlayer = false) {
   centerSpine.rotation.z = -Math.PI * 0.5;
   centerSpine.position.set(1.2, 1.78, 0);
 
-  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.86, 10.8, 20), bodyMat);
+  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.6, 10.8, 20), bodyMat);
   canopyBase.rotation.z = -Math.PI * 0.5;
-  canopyBase.position.set(5.9, 0.9, 0);
+  canopyBase.position.set(5.9, 0.72, 0);
   const canopy = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.88, 6.0, 7, 16),
+    new THREE.CapsuleGeometry(0.58, 6.0, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(1.24, 0.42, 0.5);
-  canopy.position.set(5.7, 1.04, 0);
+  canopy.scale.set(0.96, 0.3, 0.34);
+  canopy.position.set(5.7, 0.78, 0);
 
   const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.36, 1.9, 10.2, 22), bodyMat);
   foreBlend.rotation.z = -Math.PI * 0.5;
@@ -665,7 +665,7 @@ function createFighter(color, isPlayer = false) {
     [-8.0, 0.7],
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
-  mainWingL.position.set(-10.7, -0.95, 0);
+  mainWingL.position.set(-10.7, -0.28, 0);
   mainWingL.rotation.x = -0.028;
   const mainWingR = new THREE.Mesh(taperWingThickness(buildSurface(mirrorPoints(mainWingPoints), 1.92), 0.42, 1.45), wingMat);
   mainWingR.position.copy(mainWingL.position);
@@ -711,10 +711,10 @@ function createFighter(color, isPlayer = false) {
   const tailplaneX = jetBodyRearX - tailplaneLocalMinX + tailJetProtrusion;
 
   const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.34), wingMat);
-  tailplaneL.position.set(tailplaneX, -1.7, 2.2);
+  tailplaneL.position.set(tailplaneX, 1.15, 2.2);
   tailplaneL.rotation.x = 0.04;
   const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.34), wingMat);
-  tailplaneR.position.set(tailplaneX, -1.7, -2.2);
+  tailplaneR.position.set(tailplaneX, 1.15, -2.2);
   tailplaneR.rotation.x = tailplaneL.rotation.x;
 
   const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.2, 1.9), bodyMat);
