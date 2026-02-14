@@ -642,10 +642,10 @@ function createFighter(color, isPlayer = false) {
     new THREE.Vector2(1.28, -17.1),
     new THREE.Vector2(1.78, -9.2),
     new THREE.Vector2(1.86, -2.4),
-    new THREE.Vector2(1.52, 5.4),
-    new THREE.Vector2(1.42, 13.2),
-    new THREE.Vector2(1.32, 19.8),
-    new THREE.Vector2(1.2, 26.0),
+    new THREE.Vector2(1.44, 5.4),
+    new THREE.Vector2(1.08, 13.2),
+    new THREE.Vector2(0.74, 19.8),
+    new THREE.Vector2(0.22, 26.0),
   ];
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
