@@ -635,11 +635,20 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.94,
   });
 
-  // Replace the old rotating fuselage body with a single elongated main spine.
-  // RadiusTop faces +X (front) after rotation; RadiusBottom faces -X (rear).
-  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 2.22, 56.0, 30), bodyMat);
+  // Main axis body: keep the thick section running forward to the wing-front area.
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.28, 46.0, 30), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
-  centerSpine.position.set(-11.0, 0.72, 0);
+  centerSpine.position.set(-20.0, 0.72, 0);
+
+  // After the thick section, taper it down toward the nose.
+  const forwardSpineTaper = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 2.08, 18.0, 28), bodyMat);
+  forwardSpineTaper.rotation.z = -Math.PI * 0.5;
+  forwardSpineTaper.position.set(12.0, 0.72, 0);
+
+  // Add a slightly raised, streamlined dorsal hump like the reference silhouette.
+  const dorsalFlowHump = new THREE.Mesh(new THREE.SphereGeometry(1.18, 22, 16), bodyMat);
+  dorsalFlowHump.scale.set(4.3, 0.72, 1.22);
+  dorsalFlowHump.position.set(7.2, 1.64, 0);
 
   // Rebuild cockpit/top/nose area from scratch with a slimmer silhouette.
   const cockpitBody = new THREE.Mesh(
@@ -834,7 +843,7 @@ function createFighter(color, isPlayer = false) {
   intake.position.set(10.4, 0.32, 0);
 
   g.add(
-    centerSpine, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
+    centerSpine, forwardSpineTaper, dorsalFlowHump, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, shroud, nozzle, nozzleLip, burner,
