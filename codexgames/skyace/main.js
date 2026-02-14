@@ -737,13 +737,19 @@ function createFighter(color, isPlayer = false) {
   const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.2, 1.9), bodyMat);
   finBase.position.set(-34.3, -1.2, 0);
 
-  // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
-  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.1, 12.2, 0.8), wingMat);
-  finCenter.position.set(-35.9, 4.7, 0);
+  // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
+  const finShape = [
+    [-37.2, -1.2], // rear-lower
+    [-34.9, -1.2], // front-lower
+    [-33.2, 10.9], // front-upper (swept forward)
+    [-35.5, 10.9], // rear-upper
+  ];
+  const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
+  finCenter.position.set(0, 0, 0);
   finCenter.rotation.z = 0;
-  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.7, 16), wingMat);
+  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.34, 1.25, 16), wingMat);
   finTip.rotation.z = Math.PI * 0.5;
-  finTip.position.set(-38.25, 10.35, 0);
+  finTip.position.set(-34.35, 11.2, 0);
 
   // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
