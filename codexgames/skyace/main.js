@@ -587,6 +587,15 @@ function createFighter(color, isPlayer = false) {
     geo.computeVertexNormals();
     return geo;
   }
+  function squashMeshWidthByGeometry(mesh, widthScale = 1 / 3) {
+    mesh.geometry = mesh.geometry.clone();
+    const pos = mesh.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      pos.setZ(i, pos.getZ(i) * widthScale);
+    }
+    pos.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+  }
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color: 0xa7afb8,
@@ -649,7 +658,7 @@ function createFighter(color, isPlayer = false) {
 
   // Rebuild cockpit/top/nose area from scratch with a slimmer silhouette.
   const cockpitBody = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.213, 7.54, 10, 20),
+    new THREE.CapsuleGeometry(0.64, 7.54, 10, 20),
     new THREE.MeshStandardMaterial({
       color: 0x98a7b8,
       roughnessMap: fighterTextures.bodyRoughness,
@@ -660,20 +669,26 @@ function createFighter(color, isPlayer = false) {
     })
   );
   cockpitBody.rotation.z = Math.PI * 0.5;
-  cockpitBody.scale.set(0.09, 0.12, 0.14);
+  cockpitBody.scale.set(0.272, 0.12, 0.14);
   cockpitBody.position.set(3.4, 1.36, 0);
 
-  const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.225, 0.375, 6.8, 22), bodyMat);
+  const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 6.8, 22), bodyMat);
   cockpitFairing.rotation.z = -Math.PI * 0.5;
   cockpitFairing.position.set(5.7, 1.18, 0);
 
-  const cockpitBlend = new THREE.Mesh(new THREE.CylinderGeometry(0.51, 0.675, 5.4, 24), bodyMat);
+  const cockpitBlend = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.9, 5.4, 24), bodyMat);
   cockpitBlend.rotation.z = -Math.PI * 0.5;
   cockpitBlend.position.set(1.9, 1.05, 0);
 
-  const dorsalDeck = new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.465, 5.6, 20), bodyMat);
+  const dorsalDeck = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 5.6, 20), bodyMat);
   dorsalDeck.rotation.z = -Math.PI * 0.5;
   dorsalDeck.position.set(3.8, 1.34, 0);
+
+  // Different approach: width reduction is applied directly to geometry vertices.
+  squashMeshWidthByGeometry(cockpitBody, 1 / 3);
+  squashMeshWidthByGeometry(cockpitFairing, 1 / 3);
+  squashMeshWidthByGeometry(cockpitBlend, 1 / 3);
+  squashMeshWidthByGeometry(dorsalDeck, 1 / 3);
 
   const canopyGlassMat = new THREE.MeshStandardMaterial({
     color: 0xd6f6ff,
