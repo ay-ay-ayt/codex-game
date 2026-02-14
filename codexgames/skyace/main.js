@@ -672,20 +672,19 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.12,
   });
   const cockpitGlass = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.62, 6.6, 10, 24),
+    new THREE.SphereGeometry(1.46, 24, 20),
     canopyGlassMat
   );
-  cockpitGlass.rotation.z = Math.PI * 0.5;
-  cockpitGlass.scale.set(0.92, 0.19, 0.24);
-  cockpitGlass.position.set(8.95, 0.92, 0);
+  cockpitGlass.scale.set(1.78, 0.74, 0.98);
+  cockpitGlass.position.set(10.15, 1.26, 0);
 
-  const windscreen = new THREE.Mesh(
-    new THREE.SphereGeometry(0.78, 18, 14, 0, Math.PI * 0.95, 0, Math.PI * 0.5),
-    canopyGlassMat.clone()
+  const canopyFrame = new THREE.Mesh(
+    new THREE.TorusGeometry(1.18, 0.08, 12, 24),
+    darkMat
   );
-  windscreen.rotation.set(0, Math.PI * 1.5, Math.PI * 0.5);
-  windscreen.scale.set(1.05, 0.58, 0.62);
-  windscreen.position.set(13.25, 0.83, 0);
+  canopyFrame.rotation.y = Math.PI * 0.5;
+  canopyFrame.scale.set(1.3, 0.88, 1.0);
+  canopyFrame.position.set(10.6, 0.9, 0);
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.86, 9.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
@@ -739,17 +738,14 @@ function createFighter(color, isPlayer = false) {
 
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
-    [-37.2, -1.2], // rear-lower
-    [-34.9, -1.2], // front-lower
-    [-33.2, 10.9], // front-upper (swept forward)
-    [-35.5, 10.9], // rear-upper
+    [-37.5, -1.2], // rear-lower
+    [-35.8, -1.2], // front-lower
+    [-31.8, 11.1], // front-upper (moves forward toward cockpit side)
+    [-35.0, 11.1], // rear-upper
   ];
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
   finCenter.rotation.z = 0;
-  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.34, 1.25, 16), wingMat);
-  finTip.rotation.z = Math.PI * 0.5;
-  finTip.position.set(-34.35, 11.2, 0);
 
   // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
@@ -841,9 +837,9 @@ function createFighter(color, isPlayer = false) {
   intake.position.set(10.4, 0.32, 0);
 
   g.add(
-    fuselage, centerSpine, cockpitBody, cockpitGlass, windscreen, noseSection, noseCone,
+    fuselage, centerSpine, cockpitBody, cockpitGlass, canopyFrame, noseSection, noseCone,
     mainWingL, mainWingR,
-    tailplaneL, tailplaneR, finBase, finCenter, finTip,
+    tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, shroud, nozzle, nozzleLip, burner,
     flameCore, flamePlume, flameTrail, flameNeedle,
     intake
