@@ -587,6 +587,15 @@ function createFighter(color, isPlayer = false) {
     geo.computeVertexNormals();
     return geo;
   }
+  function squashMeshWidthByGeometry(mesh, widthScale = 1 / 3) {
+    mesh.geometry = mesh.geometry.clone();
+    const pos = mesh.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      pos.setZ(i, pos.getZ(i) * widthScale);
+    }
+    pos.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+  }
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color: 0xa7afb8,
