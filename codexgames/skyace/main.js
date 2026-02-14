@@ -643,6 +643,8 @@ function createFighter(color, isPlayer = false) {
   // Rebuild the front section from the wing-leading-edge area onward with a shorter reach.
   const forwardSpineTaper = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 2.04, 12.2, 28), bodyMat);
   forwardSpineTaper.rotation.z = -Math.PI * 0.5;
+  // Make the front taper cross-section a vertically stretched ellipse.
+  forwardSpineTaper.scale.set(1, 1.24, 0.78);
   forwardSpineTaper.position.set(4.0, 0.72, 0);
 
   // Slightly raised streamlined top profile near the cockpit shoulder.
