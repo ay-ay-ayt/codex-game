@@ -636,11 +636,12 @@ function createFighter(color, isPlayer = false) {
   });
 
   const fuselageProfile = [
-    new THREE.Vector2(0.16, -33.2),
-    new THREE.Vector2(0.46, -29.6),
-    new THREE.Vector2(0.82, -23.8),
-    new THREE.Vector2(1.28, -17.1),
-    new THREE.Vector2(1.78, -9.2),
+    new THREE.Vector2(2.86, -43.6),
+    new THREE.Vector2(2.62, -39.8),
+    new THREE.Vector2(2.34, -34.0),
+    new THREE.Vector2(2.08, -27.6),
+    new THREE.Vector2(1.84, -20.2),
+    new THREE.Vector2(1.72, -12.0),
     new THREE.Vector2(1.86, -2.4),
     new THREE.Vector2(1.44, 5.4),
     new THREE.Vector2(1.08, 13.2),
@@ -655,6 +656,10 @@ function createFighter(color, isPlayer = false) {
   const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.08, 21.8, 24), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
   centerSpine.position.set(1.4, 0.7, 0);
+
+  const rearSpineBridge = new THREE.Mesh(new THREE.CylinderGeometry(2.66, 2.08, 10.6, 28), bodyMat);
+  rearSpineBridge.rotation.z = -Math.PI * 0.5;
+  rearSpineBridge.position.set(-30.2, 0.72, 0);
 
   // Blend collar to fill the dent at the fuselage <-> center spine seam.
   const fuselageJoinCollar = new THREE.Mesh(new THREE.CylinderGeometry(1.16, 1.42, 4.8, 24), bodyMat);
@@ -854,7 +859,7 @@ function createFighter(color, isPlayer = false) {
   intake.position.set(10.4, 0.32, 0);
 
   g.add(
-    fuselage, centerSpine, fuselageJoinCollar, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
+    fuselage, centerSpine, rearSpineBridge, fuselageJoinCollar, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, shroud, nozzle, nozzleLip, burner,
