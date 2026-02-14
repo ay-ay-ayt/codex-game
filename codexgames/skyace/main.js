@@ -643,29 +643,58 @@ function createFighter(color, isPlayer = false) {
   fuselage.rotation.x = Math.PI;
   fuselage.scale.set(1, 0.42, 1.46);
 
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.76, 11.0, 24), wingMat);
-  nose.rotation.z = -Math.PI * 0.5;
-  nose.scale.set(1, 0.44, 0.96);
-  nose.position.set(35.8, -0.04, 0);
-
-  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 0.88, 18.2, 24), bodyMat);
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.96, 19.2, 24), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
-  centerSpine.position.set(2.8, 0.76, 0);
+  centerSpine.position.set(3.0, 0.74, 0);
 
-  const cockpitSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 7.6, 20), bodyMat);
-  cockpitSpine.rotation.z = -Math.PI * 0.5;
-  cockpitSpine.position.set(8.0, 0.34, 0);
-  const canopy = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.54, 5.6, 8, 18),
-    new THREE.MeshStandardMaterial({ color: 0xcff3ff, emissive: 0x163347, emissiveIntensity: 0.35, transparent: true, opacity: 0.82, roughness: 0.04, metalness: 0.16 })
+  const cockpitBody = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.92, 8.8, 10, 22),
+    new THREE.MeshStandardMaterial({
+      color: 0x97a5b6,
+      roughnessMap: fighterTextures.bodyRoughness,
+      normalMap: fighterTextures.bodyNormal,
+      normalScale: new THREE.Vector2(0.2, 0.2),
+      roughness: 0.4,
+      metalness: 0.56,
+    })
   );
-  canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(0.9, 0.22, 0.24);
-  canopy.position.set(8.6, 0.66, 0);
+  cockpitBody.rotation.z = Math.PI * 0.5;
+  cockpitBody.scale.set(1.08, 0.24, 0.36);
+  cockpitBody.position.set(8.6, 0.62, 0);
 
-  const noseBlend = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.72, 8.4, 22), bodyMat);
-  noseBlend.rotation.z = -Math.PI * 0.5;
-  noseBlend.position.set(17.0, 0.48, 0);
+  const canopyGlassMat = new THREE.MeshStandardMaterial({
+    color: 0xd6f6ff,
+    emissive: 0x1c3a4f,
+    emissiveIntensity: 0.38,
+    transparent: true,
+    opacity: 0.84,
+    roughness: 0.03,
+    metalness: 0.12,
+  });
+  const cockpitGlass = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.62, 6.6, 10, 24),
+    canopyGlassMat
+  );
+  cockpitGlass.rotation.z = Math.PI * 0.5;
+  cockpitGlass.scale.set(0.92, 0.19, 0.24);
+  cockpitGlass.position.set(8.95, 0.92, 0);
+
+  const windscreen = new THREE.Mesh(
+    new THREE.SphereGeometry(0.78, 18, 14, 0, Math.PI * 0.95, 0, Math.PI * 0.5),
+    canopyGlassMat.clone()
+  );
+  windscreen.rotation.set(0, Math.PI * 1.5, Math.PI * 0.5);
+  windscreen.scale.set(1.05, 0.58, 0.62);
+  windscreen.position.set(13.25, 0.83, 0);
+
+  const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.86, 9.8, 24), bodyMat);
+  noseSection.rotation.z = -Math.PI * 0.5;
+  noseSection.position.set(18.0, 0.3, 0);
+
+  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.72, 12.2, 24), wingMat);
+  noseCone.rotation.z = -Math.PI * 0.5;
+  noseCone.scale.set(1, 0.42, 0.9);
+  noseCone.position.set(36.4, -0.05, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -676,15 +705,12 @@ function createFighter(color, isPlayer = false) {
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
   mainWingL.position.set(-10.7, -0.28, 0);
-  mainWingL.rotation.x = -0.028;
+  mainWingL.rotation.x = 0;
   const mainWingR = new THREE.Mesh(taperWingThickness(buildSurface(mirrorPoints(mainWingPoints), 1.92), 0.42, 1.45), wingMat);
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
-  const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(11.2, 2.1, 8.6), bodyMat);
-  tailRoot.position.set(-29.8, -0.35, 0);
-
   // Horizontal tail is defined independently, but keeps exactly the same shape as the main wing (uniform scale only).
   const tailplaneBaseShape = [
     [8.6, 0.7],
@@ -700,23 +726,30 @@ function createFighter(color, isPlayer = false) {
   const tailplaneX = jetBodyRearX - tailplaneLocalMinX + tailJetProtrusion;
 
   const tailplaneGeo = buildSurface(tailplaneShape, 0.34);
+  const tailplaneGeoMirror = buildSurface(mirrorPoints(tailplaneShape), 0.34);
   const tailplaneL = new THREE.Mesh(tailplaneGeo, wingMat);
   tailplaneL.position.set(tailplaneX, 1.15, 2.2);
   tailplaneL.rotation.set(0, 0, 0);
-  const tailplaneR = new THREE.Mesh(tailplaneGeo.clone(), wingMat);
+  const tailplaneR = new THREE.Mesh(tailplaneGeoMirror, wingMat);
   tailplaneR.position.set(tailplaneX, 1.15, -2.2);
-  tailplaneR.rotation.set(0, Math.PI, 0);
+  tailplaneR.rotation.set(0, 0, 0);
 
   const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.2, 1.9), bodyMat);
   finBase.position.set(-34.3, -1.2, 0);
 
-  // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
-  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.1, 12.2, 1.2), wingMat);
-  finCenter.position.set(-35.9, 4.7, 0);
+  // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
+  const finShape = [
+    [-37.2, -1.2], // rear-lower
+    [-34.9, -1.2], // front-lower
+    [-33.2, 10.9], // front-upper (swept forward)
+    [-35.5, 10.9], // rear-upper
+  ];
+  const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
+  finCenter.position.set(0, 0, 0);
   finCenter.rotation.z = 0;
-  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.7, 16), wingMat);
+  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.34, 1.25, 16), wingMat);
   finTip.rotation.z = Math.PI * 0.5;
-  finTip.position.set(-38.25, 10.35, 0);
+  finTip.position.set(-34.35, 11.2, 0);
 
   // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
@@ -808,9 +841,9 @@ function createFighter(color, isPlayer = false) {
   intake.position.set(10.4, 0.32, 0);
 
   g.add(
-    fuselage, nose, centerSpine, cockpitSpine, canopy, noseBlend,
+    fuselage, centerSpine, cockpitBody, cockpitGlass, windscreen, noseSection, noseCone,
     mainWingL, mainWingR,
-    tailRoot, tailplaneL, tailplaneR, finBase, finCenter, finTip,
+    tailplaneL, tailplaneR, finBase, finCenter, finTip,
     engineCore, shroud, nozzle, nozzleLip, burner,
     flameCore, flamePlume, flameTrail, flameNeedle,
     intake
