@@ -696,16 +696,19 @@ function createFighter(color, isPlayer = false) {
   const tailRoot = new THREE.Mesh(new THREE.BoxGeometry(11.2, 2.1, 8.6), bodyMat);
   tailRoot.position.set(-29.8, -0.35, 0);
 
-  // Horizontal tail keeps the same planform as the main wing, but is defined independently for later edits.
-  const tailplaneShape = [
-    [4.816, 0.385],
-    [-2.912, 10.34],
-    [-5.936, 10.34],
-    [-4.48, 0.385],
+  // Horizontal tail is defined independently, but keeps exactly the same shape as the main wing (uniform scale only).
+  const tailplaneBaseShape = [
+    [8.6, 0.7],
+    [-5.2, 18.8],
+    [-10.6, 18.8],
+    [-8.0, 0.7],
   ];
+  const tailplaneScale = 0.48;
+  const tailplaneShape = tailplaneBaseShape.map(([x, z]) => [x * tailplaneScale, z * tailplaneScale]);
   const tailplaneLocalMinX = Math.min(...tailplaneShape.map(([x]) => x));
-  const jetRearX = -41.9; // match the farthest aft jet edge (flame glow base)
-  const tailplaneX = jetRearX - tailplaneLocalMinX;
+  const jetBodyRearX = -40.7; // rear edge of the physical jet body (nozzle), excluding flame
+  const tailJetProtrusion = 0.9; // let jet body extend slightly behind the tail trailing edge
+  const tailplaneX = jetBodyRearX - tailplaneLocalMinX + tailJetProtrusion;
 
   const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.62), wingMat);
   tailplaneL.position.set(tailplaneX, -1.7, 3.4);
