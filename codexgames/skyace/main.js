@@ -704,23 +704,23 @@ function createFighter(color, isPlayer = false) {
   const tailJetProtrusion = 3.8; // move horizontal tail further forward while keeping jet-body protrusion
   const tailplaneX = jetBodyRearX - tailplaneLocalMinX + tailJetProtrusion;
 
-  const tailplaneL = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.18, 2.1), wingMat);
-  tailplaneL.position.set(tailplaneX - 0.35, 1.15, 2.35);
+  const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.34), wingMat);
+  tailplaneL.position.set(tailplaneX, 1.15, 2.2);
   tailplaneL.rotation.set(0, 0, 0);
-  const tailplaneR = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.18, 2.1), wingMat);
-  tailplaneR.position.set(tailplaneX - 0.35, 1.15, -2.35);
+  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.34), wingMat);
+  tailplaneR.position.set(tailplaneX, 1.15, -2.2);
   tailplaneR.rotation.set(0, 0, 0);
 
   const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.2, 1.9), bodyMat);
   finBase.position.set(-34.3, -1.2, 0);
 
   // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
-  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(3.9, 11.6, 0.34), wingMat);
-  finCenter.position.set(-35.7, 4.35, 0);
-  finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
-  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.27, 1.35, 12), wingMat);
+  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(4.1, 12.2, 1.2), wingMat);
+  finCenter.position.set(-35.9, 4.7, 0);
+  finCenter.rotation.z = 0;
+  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.7, 16), wingMat);
   finTip.rotation.z = Math.PI * 0.5;
-  finTip.position.set(-38.0, 9.1, 0);
+  finTip.position.set(-38.25, 10.35, 0);
 
   // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
