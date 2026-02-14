@@ -635,20 +635,20 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.94,
   });
 
-  // Main axis body: keep the thick section running forward to the wing-front area.
-  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.28, 46.0, 30), bodyMat);
+  // Main axis body: keep the thick section running forward to around the main-wing leading edge.
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.28, 41.0, 30), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
-  centerSpine.position.set(-20.0, 0.72, 0);
+  centerSpine.position.set(-22.7, 0.72, 0);
 
-  // After the thick section, taper it down toward the nose.
-  const forwardSpineTaper = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 2.08, 18.0, 28), bodyMat);
+  // Rebuild the front section from the wing-leading-edge area onward with a shorter reach.
+  const forwardSpineTaper = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 2.04, 12.2, 28), bodyMat);
   forwardSpineTaper.rotation.z = -Math.PI * 0.5;
-  forwardSpineTaper.position.set(12.0, 0.72, 0);
+  forwardSpineTaper.position.set(4.0, 0.72, 0);
 
-  // Add a slightly raised, streamlined dorsal hump like the reference silhouette.
-  const dorsalFlowHump = new THREE.Mesh(new THREE.SphereGeometry(1.18, 22, 16), bodyMat);
-  dorsalFlowHump.scale.set(4.3, 0.72, 1.22);
-  dorsalFlowHump.position.set(7.2, 1.64, 0);
+  // Slightly raised streamlined top profile near the cockpit shoulder.
+  const dorsalFlowHump = new THREE.Mesh(new THREE.SphereGeometry(1.14, 22, 16), bodyMat);
+  dorsalFlowHump.scale.set(3.5, 0.66, 1.16);
+  dorsalFlowHump.position.set(5.4, 1.56, 0);
 
   // Rebuild cockpit/top/nose area from scratch with a slimmer silhouette.
   const cockpitBody = new THREE.Mesh(
@@ -668,7 +668,7 @@ function createFighter(color, isPlayer = false) {
 
   const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.2, 6.8, 20), bodyMat);
   cockpitFairing.rotation.z = -Math.PI * 0.5;
-  cockpitFairing.position.set(5.7, 1.18, 0);
+  cockpitFairing.position.set(4.6, 1.18, 0);
 
   const cockpitBlend = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.3, 5.4, 20), bodyMat);
   cockpitBlend.rotation.z = -Math.PI * 0.5;
@@ -676,7 +676,7 @@ function createFighter(color, isPlayer = false) {
 
   const dorsalDeck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 5.6, 18), bodyMat);
   dorsalDeck.rotation.z = -Math.PI * 0.5;
-  dorsalDeck.position.set(3.8, 1.34, 0);
+  dorsalDeck.position.set(3.2, 1.3, 0);
 
 
   const canopyGlassMat = new THREE.MeshStandardMaterial({
@@ -692,14 +692,14 @@ function createFighter(color, isPlayer = false) {
   cockpitGlass.scale.set(3.81, 1.67, 1.2);
   cockpitGlass.position.set(2.9, 2.18, 0);
 
-  const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.54, 8.4, 24), bodyMat);
+  const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 5.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
-  noseSection.position.set(16.8, 0.24, 0);
+  noseSection.position.set(12.8, 0.24, 0);
 
-  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.42, 7.2, 24), wingMat);
+  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4.6, 24), wingMat);
   noseCone.rotation.z = -Math.PI * 0.5;
   noseCone.scale.set(1, 0.34, 0.72);
-  noseCone.position.set(24.8, 0.08, 0);
+  noseCone.position.set(16.9, 0.08, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
