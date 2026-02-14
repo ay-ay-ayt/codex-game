@@ -589,7 +589,7 @@ function createFighter(color, isPlayer = false) {
   }
 
   const bodyMat = new THREE.MeshStandardMaterial({
-    color,
+    color: 0x6f7680,
     map: fighterTextures.bodyColor,
     normalMap: fighterTextures.bodyNormal,
     roughnessMap: fighterTextures.bodyRoughness,
@@ -599,7 +599,7 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.62,
   });
   const wingMat = new THREE.MeshStandardMaterial({
-    color: isPlayer ? 0xdce7f1 : 0xddd4c2,
+    color: isPlayer ? 0x8a919a : 0x7e848d,
     map: fighterTextures.bodyColor,
     normalMap: fighterTextures.bodyNormal,
     roughnessMap: fighterTextures.bodyRoughness,
@@ -642,16 +642,16 @@ function createFighter(color, isPlayer = false) {
   centerSpine.rotation.z = -Math.PI * 0.5;
   centerSpine.position.set(1.2, 1.78, 0);
 
-  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.42, 10.8, 20), bodyMat);
+  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.86, 10.8, 20), bodyMat);
   canopyBase.rotation.z = -Math.PI * 0.5;
-  canopyBase.position.set(5.9, 1.22, 0);
+  canopyBase.position.set(5.9, 0.9, 0);
   const canopy = new THREE.Mesh(
-    new THREE.CapsuleGeometry(1.42, 6.2, 7, 16),
+    new THREE.CapsuleGeometry(0.88, 6.0, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(1.76, 0.72, 0.86);
-  canopy.position.set(5.7, 1.58, 0);
+  canopy.scale.set(1.24, 0.42, 0.5);
+  canopy.position.set(5.7, 1.04, 0);
 
   const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(1.36, 1.9, 10.2, 22), bodyMat);
   foreBlend.rotation.z = -Math.PI * 0.5;
@@ -707,26 +707,26 @@ function createFighter(color, isPlayer = false) {
   const tailplaneShape = tailplaneBaseShape.map(([x, z]) => [x * tailplaneScale, z * tailplaneScale]);
   const tailplaneLocalMinX = Math.min(...tailplaneShape.map(([x]) => x));
   const jetBodyRearX = -40.7; // rear edge of the physical jet body (nozzle), excluding flame
-  const tailJetProtrusion = 3.0; // move horizontal tail further forward while keeping jet-body protrusion
+  const tailJetProtrusion = 3.8; // move horizontal tail further forward while keeping jet-body protrusion
   const tailplaneX = jetBodyRearX - tailplaneLocalMinX + tailJetProtrusion;
 
-  const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.62), wingMat);
-  tailplaneL.position.set(tailplaneX, -1.7, 2.7);
+  const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.34), wingMat);
+  tailplaneL.position.set(tailplaneX, -1.7, 2.2);
   tailplaneL.rotation.x = 0.04;
-  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.62), wingMat);
-  tailplaneR.position.set(tailplaneX, -1.7, -2.7);
+  const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.34), wingMat);
+  tailplaneR.position.set(tailplaneX, -1.7, -2.2);
   tailplaneR.rotation.x = tailplaneL.rotation.x;
 
-  const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.1, 1.7), bodyMat);
-  finBase.position.set(-34.2, -1.24, 0);
+  const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.2, 1.9), bodyMat);
+  finBase.position.set(-34.3, -1.2, 0);
 
   // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
-  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(3.4, 10.2, 0.3), wingMat);
-  finCenter.position.set(-35.4, 3.8, 0);
+  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(3.9, 11.6, 0.34), wingMat);
+  finCenter.position.set(-35.7, 4.35, 0);
   finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
-  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.2, 12), wingMat);
+  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.27, 1.35, 12), wingMat);
   finTip.rotation.z = Math.PI * 0.5;
-  finTip.position.set(-37.5, 8.1, 0);
+  finTip.position.set(-38.0, 9.1, 0);
 
   // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
