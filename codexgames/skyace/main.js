@@ -617,14 +617,6 @@ function createFighter(color, isPlayer = false) {
     roughness: 0.32,
     metalness: 0.66,
   });
-  const darkMat = new THREE.MeshStandardMaterial({
-    color: 0x142231,
-    roughnessMap: fighterTextures.bodyRoughness,
-    normalMap: fighterTextures.bodyNormal,
-    normalScale: new THREE.Vector2(0.14, 0.14),
-    roughness: 0.55,
-    metalness: 0.24,
-  });
   const nozzleMetalMat = new THREE.MeshStandardMaterial({
     color: 0xd8e1ea,
     roughnessMap: fighterTextures.bodyRoughness,
@@ -711,7 +703,7 @@ function createFighter(color, isPlayer = false) {
     [-8.0, 0.7],
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
-  mainWingL.position.set(-10.7, -0.28, 0);
+  mainWingL.position.set(-10.7, 0.1, 0);
   mainWingL.rotation.x = 0;
   const mainWingR = new THREE.Mesh(taperWingThickness(buildSurface(mirrorPoints(mainWingPoints), 1.92), 0.42, 1.45), wingMat);
   mainWingR.position.copy(mainWingL.position);
@@ -767,10 +759,6 @@ function createFighter(color, isPlayer = false) {
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 3.25, 6.2, 30), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
   nozzle.position.set(-37.6, 1.15, 0);
-
-  const nozzleLip = new THREE.Mesh(new THREE.TorusGeometry(3.18, 0.16, 14, 32), nozzleMetalMat);
-  nozzleLip.rotation.y = Math.PI * 0.5;
-  nozzleLip.position.set(-40.1, 1.15, 0);
 
   const burnerMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0x82e9ff : 0xffad77,
@@ -841,16 +829,12 @@ function createFighter(color, isPlayer = false) {
   flameTrail.userData.baseX = flameTrail.position.x;
   flameNeedle.userData.baseX = flameNeedle.position.x;
 
-  const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
-  intake.position.set(10.4, 0.32, 0);
-
   g.add(
     centerSpine, forwardSpineTaper, dorsalFlowHump, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
-    engineCore, shroud, nozzle, nozzleLip, burner,
-    flameCore, flamePlume, flameTrail, flameNeedle,
-    intake
+    engineCore, shroud, nozzle, burner,
+    flameCore, flamePlume, flameTrail, flameNeedle
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
