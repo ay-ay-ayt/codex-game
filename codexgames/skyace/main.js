@@ -641,13 +641,17 @@ function createFighter(color, isPlayer = false) {
 
   // Add a little extra bulge on top of the forward taper.
   const forwardTaperTopBulge = new THREE.Mesh(new THREE.SphereGeometry(0.84, 20, 16), bodyMat);
-  forwardTaperTopBulge.scale.set(2.7, 0.76, 0.98);
-  forwardTaperTopBulge.position.set(6.2, 1.46, 0);
+  forwardTaperTopBulge.scale.set(3.05, 0.92, 1.04);
+  forwardTaperTopBulge.position.set(5.8, 1.66, 0);
 
   // Slightly raised streamlined top profile near the cockpit shoulder.
   const dorsalFlowHump = new THREE.Mesh(new THREE.SphereGeometry(1.14, 22, 16), bodyMat);
-  dorsalFlowHump.scale.set(3.5, 0.66, 1.16);
-  dorsalFlowHump.position.set(5.4, 1.56, 0);
+  dorsalFlowHump.scale.set(3.8, 0.8, 1.2);
+  dorsalFlowHump.position.set(4.7, 1.78, 0);
+
+  const cockpitShoulderBulge = new THREE.Mesh(new THREE.SphereGeometry(0.96, 22, 16), bodyMat);
+  cockpitShoulderBulge.scale.set(2.6, 0.92, 1.08);
+  cockpitShoulderBulge.position.set(2.8, 1.94, 0);
 
   // Rebuild cockpit/top/nose area from scratch with a slimmer silhouette.
   const cockpitBody = new THREE.Mesh(
@@ -752,29 +756,25 @@ function createFighter(color, isPlayer = false) {
   finCenter.position.set(0, 0, 0);
   finCenter.rotation.z = 0;
 
-  // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
-  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
+  // Rebuilt single center jet: wider exhaust opening with a clear large hole for flame.
+  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 3.6, 24.0, 28), bodyMat);
   engineCore.rotation.z = -Math.PI * 0.5;
-  engineCore.position.set(-24.6, 1.15, 0);
+  engineCore.position.set(-24.8, 1.15, 0);
 
-  const shroud = new THREE.Mesh(new THREE.CylinderGeometry(3.9, 1.55, 8.4, 30), nozzleMetalMat);
+  const shroud = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 2.3, 10.0, 32), nozzleMetalMat);
   shroud.rotation.z = -Math.PI * 0.5;
-  shroud.position.set(-36.8, 1.15, 0);
+  shroud.position.set(-36.2, 1.15, 0);
 
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 3.25, 6.2, 30), nozzleMetalMat);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.65, 7.2, 34), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
-  nozzle.position.set(-37.6, 1.15, 0);
+  nozzle.position.set(-38.9, 1.15, 0);
 
-  const burnerMat = new THREE.MeshStandardMaterial({
-    color: isPlayer ? 0x82e9ff : 0xffad77,
-    emissive: isPlayer ? 0x59ddff : 0xff864b,
-    emissiveIntensity: 0.64,
-    roughness: 0.14,
-    metalness: 0.64,
-  });
-  const burner = new THREE.Mesh(new THREE.CylinderGeometry(2.55, 2.86, 4.8, 28), burnerMat);
-  burner.rotation.z = Math.PI * 0.5;
-  burner.position.set(-39.0, 1.15, 0);
+  const nozzleInnerHole = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.36, 3.06, 4.8, 30),
+    new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.36, metalness: 0.72 })
+  );
+  nozzleInnerHole.rotation.z = Math.PI * 0.5;
+  nozzleInnerHole.position.set(-40.5, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0xbef3ff : 0xffd8bb,
@@ -806,15 +806,15 @@ function createFighter(color, isPlayer = false) {
 
   const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 0.56, 8.6, 26, 1, true), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-42.1, 1.15, 0);
+  flameCore.position.set(-44.4, 1.15, 0);
 
   const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.38, 0.28, 13.8, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
-  flamePlume.position.set(-45.8, 1.15, 0);
+  flamePlume.position.set(-48.2, 1.15, 0);
 
   const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.08, 20.0, 24, 1, true), flameTrailMat);
   flameTrail.rotation.z = -Math.PI * 0.5;
-  flameTrail.position.set(-50.7, 1.15, 0);
+  flameTrail.position.set(-53.4, 1.15, 0);
 
   const flameNeedle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
@@ -827,7 +827,7 @@ function createFighter(color, isPlayer = false) {
     })
   );
   flameNeedle.rotation.z = -Math.PI * 0.5;
-  flameNeedle.position.set(-40.7, 1.15, 0);
+  flameNeedle.position.set(-42.8, 1.15, 0);
 
   flameCore.userData.baseX = flameCore.position.x;
   flamePlume.userData.baseX = flamePlume.position.x;
@@ -835,10 +835,10 @@ function createFighter(color, isPlayer = false) {
   flameNeedle.userData.baseX = flameNeedle.position.x;
 
   g.add(
-    centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
+    centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
-    engineCore, shroud, nozzle, burner,
+    engineCore, shroud, nozzle, nozzleInnerHole,
     flameCore, flamePlume, flameTrail, flameNeedle
   );
 
@@ -880,7 +880,7 @@ function createFighter(color, isPlayer = false) {
     roll: 0,
     hpLabel: null,
     exhaust: {
-      burners: [burner],
+      burners: [],
       outerFlames: [flameCore, flamePlume, flameTrail, flameNeedle],
       heatRings: [],
     },
