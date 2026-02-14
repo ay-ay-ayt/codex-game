@@ -659,12 +659,12 @@ function createFighter(color, isPlayer = false) {
     })
   );
   cockpitBody.rotation.z = Math.PI * 0.5;
-  cockpitBody.scale.set(1.06, 0.2, 0.24);
-  cockpitBody.position.set(7.0, 0.48, 0);
+  cockpitBody.scale.set(0.98, 0.17, 0.2);
+  cockpitBody.position.set(6.0, 0.62, 0);
 
-  const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.74, 8.8, 24), bodyMat);
+  const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.66, 8.8, 24), bodyMat);
   cockpitFairing.rotation.z = -Math.PI * 0.5;
-  cockpitFairing.position.set(10.6, 0.44, 0);
+  cockpitFairing.position.set(9.6, 0.56, 0);
 
   const canopyGlassMat = new THREE.MeshStandardMaterial({
     color: 0xd6f6ff,
@@ -679,8 +679,8 @@ function createFighter(color, isPlayer = false) {
     new THREE.SphereGeometry(1.42, 24, 20),
     canopyGlassMat
   );
-  cockpitGlass.scale.set(1.32, 0.92, 0.7);
-  cockpitGlass.position.set(8.0, 1.62, 0);
+  cockpitGlass.scale.set(1.2, 0.86, 0.6);
+  cockpitGlass.position.set(7.0, 1.76, 0);
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.86, 9.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
