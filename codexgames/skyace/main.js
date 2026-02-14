@@ -617,14 +617,6 @@ function createFighter(color, isPlayer = false) {
     roughness: 0.32,
     metalness: 0.66,
   });
-  const darkMat = new THREE.MeshStandardMaterial({
-    color: 0x142231,
-    roughnessMap: fighterTextures.bodyRoughness,
-    normalMap: fighterTextures.bodyNormal,
-    normalScale: new THREE.Vector2(0.14, 0.14),
-    roughness: 0.55,
-    metalness: 0.24,
-  });
   const nozzleMetalMat = new THREE.MeshStandardMaterial({
     color: 0xd8e1ea,
     roughnessMap: fighterTextures.bodyRoughness,
@@ -635,31 +627,22 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.94,
   });
 
-  const fuselageProfile = [
-    new THREE.Vector2(0.16, -33.2),
-    new THREE.Vector2(0.46, -29.6),
-    new THREE.Vector2(0.82, -23.8),
-    new THREE.Vector2(1.28, -17.1),
-    new THREE.Vector2(1.78, -9.2),
-    new THREE.Vector2(1.86, -2.4),
-    new THREE.Vector2(1.44, 5.4),
-    new THREE.Vector2(1.08, 13.2),
-    new THREE.Vector2(0.74, 19.8),
-    new THREE.Vector2(0.22, 26.0),
-  ];
-  const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
-  fuselage.rotation.z = -Math.PI * 0.5;
-  fuselage.rotation.x = Math.PI;
-  fuselage.scale.set(1, 0.42, 1.46);
-
-  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.08, 21.8, 24), bodyMat);
+  // Main axis body: keep the thick section running forward to around the main-wing leading edge.
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.28, 41.0, 30), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
-  centerSpine.position.set(1.4, 0.7, 0);
+  centerSpine.position.set(-22.7, 0.72, 0);
 
-  // Blend collar to fill the dent at the fuselage <-> center spine seam.
-  const fuselageJoinCollar = new THREE.Mesh(new THREE.CylinderGeometry(1.16, 1.42, 4.8, 24), bodyMat);
-  fuselageJoinCollar.rotation.z = -Math.PI * 0.5;
-  fuselageJoinCollar.position.set(-0.4, 0.72, 0);
+  // Rebuild the front section from the wing-leading-edge area onward with a shorter reach.
+  const forwardSpineTaper = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 2.04, 12.2, 28), bodyMat);
+  forwardSpineTaper.rotation.z = -Math.PI * 0.5;
+  // Make the front taper cross-section a vertically stretched ellipse.
+  forwardSpineTaper.scale.set(1, 1.24, 0.78);
+  forwardSpineTaper.position.set(4.0, 0.72, 0);
+
+  // Slightly raised streamlined top profile near the cockpit shoulder.
+  const dorsalFlowHump = new THREE.Mesh(new THREE.SphereGeometry(1.14, 22, 16), bodyMat);
+  dorsalFlowHump.scale.set(3.5, 0.66, 1.16);
+  dorsalFlowHump.position.set(5.4, 1.56, 0);
 
   // Rebuild cockpit/top/nose area from scratch with a slimmer silhouette.
   const cockpitBody = new THREE.Mesh(
@@ -679,7 +662,7 @@ function createFighter(color, isPlayer = false) {
 
   const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.2, 6.8, 20), bodyMat);
   cockpitFairing.rotation.z = -Math.PI * 0.5;
-  cockpitFairing.position.set(5.7, 1.18, 0);
+  cockpitFairing.position.set(4.6, 1.18, 0);
 
   const cockpitBlend = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.3, 5.4, 20), bodyMat);
   cockpitBlend.rotation.z = -Math.PI * 0.5;
@@ -687,7 +670,7 @@ function createFighter(color, isPlayer = false) {
 
   const dorsalDeck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 5.6, 18), bodyMat);
   dorsalDeck.rotation.z = -Math.PI * 0.5;
-  dorsalDeck.position.set(3.8, 1.34, 0);
+  dorsalDeck.position.set(3.2, 1.3, 0);
 
 
   const canopyGlassMat = new THREE.MeshStandardMaterial({
@@ -703,14 +686,14 @@ function createFighter(color, isPlayer = false) {
   cockpitGlass.scale.set(3.81, 1.67, 1.2);
   cockpitGlass.position.set(2.9, 2.18, 0);
 
-  const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.54, 8.4, 24), bodyMat);
+  const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 5.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
-  noseSection.position.set(16.8, 0.24, 0);
+  noseSection.position.set(12.8, 0.24, 0);
 
-  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.42, 7.2, 24), wingMat);
+  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4.6, 24), wingMat);
   noseCone.rotation.z = -Math.PI * 0.5;
   noseCone.scale.set(1, 0.34, 0.72);
-  noseCone.position.set(24.8, 0.08, 0);
+  noseCone.position.set(16.9, 0.08, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -720,7 +703,7 @@ function createFighter(color, isPlayer = false) {
     [-8.0, 0.7],
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
-  mainWingL.position.set(-10.7, -0.28, 0);
+  mainWingL.position.set(-10.7, 0.1, 0);
   mainWingL.rotation.x = 0;
   const mainWingR = new THREE.Mesh(taperWingThickness(buildSurface(mirrorPoints(mainWingPoints), 1.92), 0.42, 1.45), wingMat);
   mainWingR.position.copy(mainWingL.position);
@@ -776,10 +759,6 @@ function createFighter(color, isPlayer = false) {
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 3.25, 6.2, 30), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
   nozzle.position.set(-37.6, 1.15, 0);
-
-  const nozzleLip = new THREE.Mesh(new THREE.TorusGeometry(3.18, 0.16, 14, 32), nozzleMetalMat);
-  nozzleLip.rotation.y = Math.PI * 0.5;
-  nozzleLip.position.set(-40.1, 1.15, 0);
 
   const burnerMat = new THREE.MeshStandardMaterial({
     color: isPlayer ? 0x82e9ff : 0xffad77,
@@ -850,16 +829,12 @@ function createFighter(color, isPlayer = false) {
   flameTrail.userData.baseX = flameTrail.position.x;
   flameNeedle.userData.baseX = flameNeedle.position.x;
 
-  const intake = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.1, 2.0), darkMat);
-  intake.position.set(10.4, 0.32, 0);
-
   g.add(
-    fuselage, centerSpine, fuselageJoinCollar, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
+    centerSpine, forwardSpineTaper, dorsalFlowHump, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
-    engineCore, shroud, nozzle, nozzleLip, burner,
-    flameCore, flamePlume, flameTrail, flameNeedle,
-    intake
+    engineCore, shroud, nozzle, burner,
+    flameCore, flamePlume, flameTrail, flameNeedle
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
