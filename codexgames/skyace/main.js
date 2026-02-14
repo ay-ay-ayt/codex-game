@@ -660,7 +660,7 @@ function createFighter(color, isPlayer = false) {
     })
   );
   cockpitBody.rotation.z = Math.PI * 0.5;
-  cockpitBody.scale.set(0.34, 0.12, 0.14);
+  cockpitBody.scale.set(0.272, 0.12, 0.14);
   cockpitBody.position.set(3.9, 1.56, 0);
 
   const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 6.8, 22), bodyMat);
@@ -686,7 +686,7 @@ function createFighter(color, isPlayer = false) {
   });
   const cockpitGlass = new THREE.Mesh(new THREE.SphereGeometry(0.82, 24, 18), canopyGlassMat);
   cockpitGlass.scale.set(0.88, 0.5, 0.36);
-  cockpitGlass.position.set(4.0, 2.3, 0);
+  cockpitGlass.position.set(3.9, 2.08, 0);
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.54, 8.4, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
