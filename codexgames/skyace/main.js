@@ -771,7 +771,7 @@ function createFighter(color, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.42,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -780,7 +780,7 @@ function createFighter(color, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.46,
+    opacity: 0.24,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -789,35 +789,35 @@ function createFighter(color, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.2,
+    opacity: 0.1,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
 
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 0.58, 11.0, 26, 1, true), flameCoreMat);
+  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 0.56, 8.6, 26, 1, true), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-43.2, 1.15, 0);
+  flameCore.position.set(-42.1, 1.15, 0);
 
-  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 0.4, 18.8, 28, 1, true), flamePlumeMat);
+  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.38, 0.28, 13.8, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
-  flamePlume.position.set(-47.0, 1.15, 0);
+  flamePlume.position.set(-45.8, 1.15, 0);
 
-  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(0.96, 0.12, 32.0, 24, 1, true), flameTrailMat);
+  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.08, 20.0, 24, 1, true), flameTrailMat);
   flameTrail.rotation.z = -Math.PI * 0.5;
-  flameTrail.position.set(-55.6, 1.15, 0);
+  flameTrail.position.set(-50.7, 1.15, 0);
 
   const flameNeedle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.34, 8.0, 16),
+    new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
     new THREE.MeshBasicMaterial({
       color: isPlayer ? 0xf4fdff : 0xfff1de,
       transparent: true,
-      opacity: 0.78,
+      opacity: 0.4,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     })
   );
   flameNeedle.rotation.z = -Math.PI * 0.5;
-  flameNeedle.position.set(-41.2, 1.15, 0);
+  flameNeedle.position.set(-40.7, 1.15, 0);
 
   flameCore.userData.baseX = flameCore.position.x;
   flamePlume.userData.baseX = flamePlume.position.x;
@@ -888,11 +888,11 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   if (!plane?.exhaust) return;
   const t = performance.now() * 0.02;
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
-  const radiusGain = 1 + boostLevel * 0.5;
-  const lengthGain = 1 + boostLevel * 2.6;
-  const radiusByLayer = [1.0, 0.82, 0.58, 0.4];
-  const depthByLayer = [1.0, 1.16, 1.42, 0.94];
-  const opacityByLayer = [0.92, 0.58, 0.3, 0.74];
+  const radiusGain = 1 + boostLevel * 0.28;
+  const lengthGain = 1 + boostLevel * 1.5;
+  const radiusByLayer = [0.92, 0.68, 0.46, 0.28];
+  const depthByLayer = [1.0, 1.08, 1.2, 0.9];
+  const opacityByLayer = [0.52, 0.28, 0.12, 0.36];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
     const flameLengthScale = pulseA * lengthGain * depthByLayer[i];
@@ -903,8 +903,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
       radiusLayer
     );
     const baseX = flame.userData.baseX ?? flame.position.x;
-    flame.position.x = baseX - (flameLengthScale - 1) * (1.55 + i * 0.54);
-    flame.material.opacity = clamp((opacityByLayer[i] ?? 0.56) + boostLevel * (i === 2 ? 0.14 : 0.12), 0.14, 0.96);
+    flame.position.x = baseX - (flameLengthScale - 1) * (1.2 + i * 0.35);
+    flame.material.opacity = clamp((opacityByLayer[i] ?? 0.3) + boostLevel * (i === 2 ? 0.08 : 0.06), 0.08, 0.72);
   });
 
   plane.exhaust.burners.forEach((burner) => {
