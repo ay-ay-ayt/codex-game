@@ -659,12 +659,12 @@ function createFighter(color, isPlayer = false) {
     })
   );
   cockpitBody.rotation.z = Math.PI * 0.5;
-  cockpitBody.scale.set(1.12, 0.26, 0.42);
-  cockpitBody.position.set(5.8, 0.64, 0);
+  cockpitBody.scale.set(1.12, 0.25, 0.3);
+  cockpitBody.position.set(5.9, 0.66, 0);
 
-  const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.76, 1.04, 8.8, 24), bodyMat);
+  const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.82, 8.8, 24), bodyMat);
   cockpitFairing.rotation.z = -Math.PI * 0.5;
-  cockpitFairing.position.set(9.9, 0.55, 0);
+  cockpitFairing.position.set(10.0, 0.56, 0);
 
   const canopyGlassMat = new THREE.MeshStandardMaterial({
     color: 0xd6f6ff,
@@ -679,17 +679,17 @@ function createFighter(color, isPlayer = false) {
     new THREE.SphereGeometry(1.42, 24, 20),
     canopyGlassMat
   );
-  cockpitGlass.scale.set(1.68, 0.72, 0.96);
-  cockpitGlass.position.set(7.15, 1.24, 0);
+  cockpitGlass.scale.set(1.44, 1.08, 0.84);
+  cockpitGlass.position.set(7.25, 1.86, 0);
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.86, 9.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
   noseSection.position.set(18.0, 0.3, 0);
 
-  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.72, 12.2, 24), wingMat);
+  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.68, 10.6, 24), wingMat);
   noseCone.rotation.z = -Math.PI * 0.5;
   noseCone.scale.set(1, 0.42, 0.9);
-  noseCone.position.set(36.4, -0.05, 0);
+  noseCone.position.set(35.5, -0.04, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -736,8 +736,8 @@ function createFighter(color, isPlayer = false) {
   const finShape = [
     [-37.8, -1.2], // rear-lower
     [-33.6, -1.2], // front-lower (more forward near the bottom)
-    [-35.0, 11.1], // front-upper (less forward toward the top)
-    [-36.8, 11.1], // rear-upper
+    [-35.0, 10.2], // front-upper (less forward toward the top)
+    [-36.8, 10.2], // rear-upper
   ];
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
