@@ -707,26 +707,26 @@ function createFighter(color, isPlayer = false) {
   const tailplaneShape = tailplaneBaseShape.map(([x, z]) => [x * tailplaneScale, z * tailplaneScale]);
   const tailplaneLocalMinX = Math.min(...tailplaneShape.map(([x]) => x));
   const jetBodyRearX = -40.7; // rear edge of the physical jet body (nozzle), excluding flame
-  const tailJetProtrusion = 0.9; // let jet body extend slightly behind the tail trailing edge
+  const tailJetProtrusion = 3.0; // move horizontal tail further forward while keeping jet-body protrusion
   const tailplaneX = jetBodyRearX - tailplaneLocalMinX + tailJetProtrusion;
 
   const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.62), wingMat);
-  tailplaneL.position.set(tailplaneX, -1.7, 3.4);
+  tailplaneL.position.set(tailplaneX, -1.7, 2.7);
   tailplaneL.rotation.x = 0.04;
   const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.62), wingMat);
-  tailplaneR.position.set(tailplaneX, -1.7, -3.4);
+  tailplaneR.position.set(tailplaneX, -1.7, -2.7);
   tailplaneR.rotation.x = tailplaneL.rotation.x;
 
-  const finBase = new THREE.Mesh(new THREE.BoxGeometry(4.8, 2.0, 3.1), bodyMat);
-  finBase.position.set(-35.2, -0.88, 0);
+  const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.1, 1.7), bodyMat);
+  finBase.position.set(-34.2, -1.24, 0);
 
   // NOTE: keep the single vertical fin with primitive geometry for maximum WebGL/Safari stability
-  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(6.8, 21.6, 0.7), wingMat);
-  finCenter.position.set(-37.2, 8.9, 0);
+  const finCenter = new THREE.Mesh(new THREE.BoxGeometry(3.4, 10.2, 0.3), wingMat);
+  finCenter.position.set(-35.4, 3.8, 0);
   finCenter.rotation.z = THREE.MathUtils.degToRad(-8);
-  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.46, 2.6, 12), wingMat);
+  const finTip = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.2, 12), wingMat);
   finTip.rotation.z = Math.PI * 0.5;
-  finTip.position.set(-41.1, 18.2, 0);
+  finTip.position.set(-37.5, 8.1, 0);
 
   // Single center engine (写真イメージ寄せ): larger nozzle and center-mounted exhaust
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.2, 23.2, 24), bodyMat);
