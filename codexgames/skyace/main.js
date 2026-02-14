@@ -685,8 +685,8 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.1,
   });
   const cockpitGlass = new THREE.Mesh(new THREE.SphereGeometry(0.82, 24, 18), canopyGlassMat);
-  cockpitGlass.scale.set(0.88, 0.5, 0.36);
-  cockpitGlass.position.set(3.9, 2.08, 0);
+  cockpitGlass.scale.set(8.8, 5.0, 3.6);
+  cockpitGlass.position.set(3.9, 6.4, 0);
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.54, 8.4, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
