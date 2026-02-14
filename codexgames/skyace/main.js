@@ -651,7 +651,7 @@ function createFighter(color, isPlayer = false) {
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
   fuselage.rotation.x = Math.PI;
-  fuselage.scale.set(1, 0.42, 1.34);
+  fuselage.scale.set(1, 0.42, 1.28);
 
   const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.08, 21.8, 24), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
