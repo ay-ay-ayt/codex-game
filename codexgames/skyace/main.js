@@ -635,8 +635,8 @@ function createFighter(color, isPlayer = false) {
     new THREE.Vector2(2.18, -1.0),
     new THREE.Vector2(2.22, 6.8),
     new THREE.Vector2(2.02, 14.8),
-    new THREE.Vector2(1.42, 23.2),
-    new THREE.Vector2(0.46, 30.3),
+    new THREE.Vector2(1.34, 21.4),
+    new THREE.Vector2(0.3, 26.0),
   ];
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
@@ -659,12 +659,12 @@ function createFighter(color, isPlayer = false) {
     })
   );
   cockpitBody.rotation.z = Math.PI * 0.5;
-  cockpitBody.scale.set(1.12, 0.25, 0.3);
-  cockpitBody.position.set(5.9, 0.66, 0);
+  cockpitBody.scale.set(0.98, 0.17, 0.2);
+  cockpitBody.position.set(6.0, 0.62, 0);
 
-  const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.82, 8.8, 24), bodyMat);
+  const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.66, 8.8, 24), bodyMat);
   cockpitFairing.rotation.z = -Math.PI * 0.5;
-  cockpitFairing.position.set(10.0, 0.56, 0);
+  cockpitFairing.position.set(9.6, 0.56, 0);
 
   const canopyGlassMat = new THREE.MeshStandardMaterial({
     color: 0xd6f6ff,
@@ -679,8 +679,8 @@ function createFighter(color, isPlayer = false) {
     new THREE.SphereGeometry(1.42, 24, 20),
     canopyGlassMat
   );
-  cockpitGlass.scale.set(1.44, 1.08, 0.84);
-  cockpitGlass.position.set(7.25, 1.86, 0);
+  cockpitGlass.scale.set(1.2, 0.86, 0.6);
+  cockpitGlass.position.set(7.0, 1.76, 0);
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.86, 9.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
@@ -713,7 +713,7 @@ function createFighter(color, isPlayer = false) {
     [-10.6, 18.8],
     [-8.0, 0.7],
   ];
-  const tailplaneScale = 0.48;
+  const tailplaneScale = 0.44;
   const tailplaneShape = tailplaneBaseShape.map(([x, z]) => [x * tailplaneScale, z * tailplaneScale]);
   const tailplaneLocalMinX = Math.min(...tailplaneShape.map(([x]) => x));
   const jetBodyRearX = -40.7; // rear edge of the physical jet body (nozzle), excluding flame
