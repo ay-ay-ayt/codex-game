@@ -628,15 +628,15 @@ function createFighter(color, isPlayer = false) {
 
   const fuselageProfile = [
     new THREE.Vector2(0.18, -33.2),
-    new THREE.Vector2(0.54, -30.1),
-    new THREE.Vector2(0.98, -24.5),
-    new THREE.Vector2(1.52, -18.2),
-    new THREE.Vector2(2.1, -10.8),
-    new THREE.Vector2(2.66, -3.2),
-    new THREE.Vector2(2.86, 4.8),
-    new THREE.Vector2(2.6, 12.8),
-    new THREE.Vector2(1.86, 21.8),
-    new THREE.Vector2(0.68, 30.3),
+    new THREE.Vector2(0.52, -29.8),
+    new THREE.Vector2(0.94, -24.2),
+    new THREE.Vector2(1.42, -17.9),
+    new THREE.Vector2(1.96, -10.2),
+    new THREE.Vector2(2.42, -2.2),
+    new THREE.Vector2(2.48, 5.4),
+    new THREE.Vector2(2.24, 13.6),
+    new THREE.Vector2(1.58, 22.3),
+    new THREE.Vector2(0.56, 30.3),
   ];
   const fuselage = new THREE.Mesh(new THREE.LatheGeometry(fuselageProfile, 34), bodyMat);
   fuselage.rotation.z = -Math.PI * 0.5;
@@ -648,24 +648,24 @@ function createFighter(color, isPlayer = false) {
   nose.scale.set(1, 0.44, 0.96);
   nose.position.set(35.8, -0.04, 0);
 
-  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.38, 20.8, 22), bodyMat);
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 1.18, 19.6, 24), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
-  centerSpine.position.set(1.9, 1.28, 0);
+  centerSpine.position.set(2.2, 1.02, 0);
 
-  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.42, 10.6, 20), bodyMat);
+  const canopyBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.34, 9.2, 20), bodyMat);
   canopyBase.rotation.z = -Math.PI * 0.5;
-  canopyBase.position.set(6.8, 0.58, 0);
+  canopyBase.position.set(7.4, 0.46, 0);
   const canopy = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.58, 6.0, 7, 16),
+    new THREE.CapsuleGeometry(0.46, 5.2, 7, 16),
     new THREE.MeshStandardMaterial({ color: 0xbcefff, transparent: true, opacity: 0.75, roughness: 0.06, metalness: 0.2 })
   );
   canopy.rotation.z = Math.PI * 0.5;
-  canopy.scale.set(0.88, 0.22, 0.26);
-  canopy.position.set(6.9, 0.72, 0);
+  canopy.scale.set(0.78, 0.18, 0.2);
+  canopy.position.set(7.4, 0.58, 0);
 
-  const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.28, 11.1, 22), bodyMat);
+  const foreBlend = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 1.04, 10.2, 22), bodyMat);
   foreBlend.rotation.z = -Math.PI * 0.5;
-  foreBlend.position.set(15.9, 0.92, 0);
+  foreBlend.position.set(15.6, 0.74, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -722,10 +722,10 @@ function createFighter(color, isPlayer = false) {
 
   const tailplaneL = new THREE.Mesh(buildSurface(tailplaneShape, 0.34), wingMat);
   tailplaneL.position.set(tailplaneX, 1.15, 2.2);
-  tailplaneL.rotation.x = 0.04;
+  tailplaneL.rotation.x = 0;
   const tailplaneR = new THREE.Mesh(buildSurface(mirrorPoints(tailplaneShape), 0.34), wingMat);
   tailplaneR.position.set(tailplaneX, 1.15, -2.2);
-  tailplaneR.rotation.x = tailplaneL.rotation.x;
+  tailplaneR.rotation.x = 0;
 
   const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.2, 1.9), bodyMat);
   finBase.position.set(-34.3, -1.2, 0);
