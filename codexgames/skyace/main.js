@@ -639,6 +639,11 @@ function createFighter(color, isPlayer = false) {
   forwardSpineTaper.scale.set(1, 1.24, 0.78);
   forwardSpineTaper.position.set(4.0, 0.72, 0);
 
+  // Add a little extra bulge on top of the forward taper.
+  const forwardTaperTopBulge = new THREE.Mesh(new THREE.SphereGeometry(0.84, 20, 16), bodyMat);
+  forwardTaperTopBulge.scale.set(2.7, 0.76, 0.98);
+  forwardTaperTopBulge.position.set(6.2, 1.46, 0);
+
   // Slightly raised streamlined top profile near the cockpit shoulder.
   const dorsalFlowHump = new THREE.Mesh(new THREE.SphereGeometry(1.14, 22, 16), bodyMat);
   dorsalFlowHump.scale.set(3.5, 0.66, 1.16);
@@ -830,7 +835,7 @@ function createFighter(color, isPlayer = false) {
   flameNeedle.userData.baseX = flameNeedle.position.x;
 
   g.add(
-    centerSpine, forwardSpineTaper, dorsalFlowHump, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
+    centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, shroud, nozzle, burner,
