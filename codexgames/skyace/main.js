@@ -660,20 +660,20 @@ function createFighter(color, isPlayer = false) {
     })
   );
   cockpitBody.rotation.z = Math.PI * 0.5;
-  cockpitBody.scale.set(0.42, 0.14, 0.16);
-  cockpitBody.position.set(7.0, 1.92, 0);
+  cockpitBody.scale.set(0.34, 0.12, 0.14);
+  cockpitBody.position.set(3.9, 1.56, 0);
 
   const cockpitFairing = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 6.8, 22), bodyMat);
   cockpitFairing.rotation.z = -Math.PI * 0.5;
-  cockpitFairing.position.set(9.2, 1.58, 0);
+  cockpitFairing.position.set(6.2, 1.34, 0);
 
   const cockpitBlend = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.9, 5.4, 24), bodyMat);
   cockpitBlend.rotation.z = -Math.PI * 0.5;
-  cockpitBlend.position.set(4.9, 1.22, 0);
+  cockpitBlend.position.set(2.4, 1.18, 0);
 
   const dorsalDeck = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 5.6, 20), bodyMat);
   dorsalDeck.rotation.z = -Math.PI * 0.5;
-  dorsalDeck.position.set(7.2, 1.74, 0);
+  dorsalDeck.position.set(4.3, 1.52, 0);
 
   const canopyGlassMat = new THREE.MeshStandardMaterial({
     color: 0xd6f6ff,
@@ -685,8 +685,8 @@ function createFighter(color, isPlayer = false) {
     metalness: 0.1,
   });
   const cockpitGlass = new THREE.Mesh(new THREE.SphereGeometry(0.82, 24, 18), canopyGlassMat);
-  cockpitGlass.scale.set(1.06, 0.56, 0.42);
-  cockpitGlass.position.set(7.2, 2.86, 0);
+  cockpitGlass.scale.set(0.88, 0.5, 0.36);
+  cockpitGlass.position.set(4.0, 2.3, 0);
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.54, 8.4, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
