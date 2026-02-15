@@ -626,7 +626,7 @@ function createFighter(color, isPlayer = false) {
   // Main axis body: keep the thick section running forward to around the main-wing leading edge.
   const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.28, 27.0, 30), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
-  centerSpine.position.set(-21.2, 0.72, 0);
+  centerSpine.position.set(-11.2, 0.72, 0);
 
   // Rebuild the front section from the wing-leading-edge area onward with a shorter reach.
   const forwardSpineTaper = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 2.04, 0.2, 28), bodyMat);
