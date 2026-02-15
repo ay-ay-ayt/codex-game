@@ -587,13 +587,13 @@ function createFighter(color, isPlayer = false) {
     return geo;
   }
   const playerPalette = {
-    body: 0x0d1118,
-    wing: 0x1f4fae,
-    accent: 0xd71f33,
+    body: 0x2a2546,
+    wing: 0xb9c2cf,
+    accent: 0xff7a18,
   };
   const enemyPalette = {
-    body: 0x1a1f29,
-    wing: 0x2a3963,
+    body: 0x353a4b,
+    wing: 0x98a6b8,
     accent: color,
   };
   const palette = isPlayer ? playerPalette : enemyPalette;
@@ -605,10 +605,10 @@ function createFighter(color, isPlayer = false) {
     roughnessMap: fighterTextures.bodyRoughness,
     metalnessMap: fighterTextures.bodyMetalness,
     normalScale: new THREE.Vector2(0.3, 0.3),
-    roughness: 0.44,
-    metalness: 0.88,
-    clearcoat: 0.22,
-    clearcoatRoughness: 0.32,
+    roughness: 0.28,
+    metalness: 0.84,
+    clearcoat: 0.52,
+    clearcoatRoughness: 0.64,
   });
   const wingMat = new THREE.MeshPhysicalMaterial({
     color: palette.wing,
@@ -616,34 +616,34 @@ function createFighter(color, isPlayer = false) {
     normalMap: fighterTextures.bodyNormal,
     roughnessMap: fighterTextures.bodyRoughness,
     metalnessMap: fighterTextures.bodyMetalness,
-    normalScale: new THREE.Vector2(0.24, 0.24),
-    roughness: 0.4,
-    metalness: 0.82,
-    clearcoat: 0.35,
-    clearcoatRoughness: 0.2,
+    normalScale: new THREE.Vector2(0.22, 0.22),
+    roughness: 0.5,
+    metalness: 0.34,
+    clearcoat: 0.1,
+    clearcoatRoughness: 0.64,
   });
   const nozzleMetalMat = new THREE.MeshPhysicalMaterial({
-    color: 0x131820,
+    color: 0x7d4be8,
     roughnessMap: fighterTextures.bodyRoughness,
     normalMap: fighterTextures.bodyNormal,
     metalnessMap: fighterTextures.bodyMetalness,
     normalScale: new THREE.Vector2(0.24, 0.24),
-    roughness: 0.28,
+    roughness: 0.18,
     metalness: 0.98,
-    clearcoat: 0.18,
-    clearcoatRoughness: 0.45,
+    clearcoat: 0.62,
+    clearcoatRoughness: 0.12,
   });
   const accentMat = new THREE.MeshPhysicalMaterial({
     color: palette.accent,
     roughnessMap: fighterTextures.trimRoughness,
     normalMap: fighterTextures.trimNormal,
     normalScale: new THREE.Vector2(0.16, 0.16),
-    roughness: 0.48,
-    metalness: 0.72,
-    emissive: isPlayer ? 0x4f080d : 0x000000,
-    emissiveIntensity: isPlayer ? 0.2 : 0,
-    clearcoat: 0.26,
-    clearcoatRoughness: 0.3,
+    roughness: 0.22,
+    metalness: 0.66,
+    emissive: isPlayer ? 0x4a1900 : 0x000000,
+    emissiveIntensity: isPlayer ? 0.35 : 0,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.22,
   });
 
   // Main axis body: keep the thick section running forward to around the main-wing leading edge.
@@ -680,14 +680,14 @@ function createFighter(color, isPlayer = false) {
   const cockpitBody = new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.18, 9.8, 18),
     new THREE.MeshPhysicalMaterial({
-      color: isPlayer ? 0x131a25 : 0x212a37,
+      color: isPlayer ? 0x3f4a64 : 0x5e6a7f,
       roughnessMap: fighterTextures.bodyRoughness,
       normalMap: fighterTextures.bodyNormal,
       normalScale: new THREE.Vector2(0.18, 0.18),
-      roughness: 0.5,
-      metalness: 0.76,
-      clearcoat: 0.15,
-      clearcoatRoughness: 0.38,
+      roughness: 0.36,
+      metalness: 0.78,
+      clearcoat: 0.24,
+      clearcoatRoughness: 0.26,
     })
   );
   cockpitBody.rotation.z = Math.PI * 0.5;
@@ -708,16 +708,16 @@ function createFighter(color, isPlayer = false) {
 
 
   const canopyGlassMat = new THREE.MeshPhysicalMaterial({
-    color: 0x89b8ff,
-    emissive: 0x071123,
-    emissiveIntensity: 0.42,
+    color: 0xffc4a1,
+    emissive: 0x2b1205,
+    emissiveIntensity: 0.38,
     transparent: true,
-    opacity: 0.76,
-    roughness: 0.08,
-    metalness: 0.02,
-    transmission: 0.62,
-    thickness: 0.42,
-    ior: 1.32,
+    opacity: 0.66,
+    roughness: 0.05,
+    metalness: 0.01,
+    transmission: 0.82,
+    thickness: 0.44,
+    ior: 1.36,
   });
   const cockpitGlass = new THREE.Mesh(new THREE.SphereGeometry(0.82, 24, 18), canopyGlassMat);
   cockpitGlass.scale.set(3.81, 1.67, 1.2);
