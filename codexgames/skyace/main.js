@@ -586,15 +586,18 @@ function createFighter(color, isPlayer = false) {
     geo.computeVertexNormals();
     return geo;
   }
+  const botBaseColor = new THREE.Color(color);
   const playerPalette = {
     body: 0x0b0c10,
     wing: 0x1f4f9a,
     accent: 0x8a3f00,
+    cockpit: 0x0f1117,
   };
   const enemyPalette = {
-    body: 0x88a9d6,
-    wing: 0x6ea0e2,
-    accent: color,
+    body: botBaseColor.clone().offsetHSL(0, -0.1, 0.2).getHex(),
+    wing: botBaseColor.clone().offsetHSL(0.03, 0.03, 0.26).getHex(),
+    accent: botBaseColor.clone().offsetHSL(-0.05, 0.1, 0.08).getHex(),
+    cockpit: botBaseColor.clone().offsetHSL(0, -0.04, 0.32).getHex(),
   };
   const palette = isPlayer ? playerPalette : enemyPalette;
 
@@ -680,7 +683,7 @@ function createFighter(color, isPlayer = false) {
   const cockpitBody = new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.18, 9.8, 18),
     new THREE.MeshPhysicalMaterial({
-      color: isPlayer ? 0x0f1117 : 0x6d87b1,
+      color: palette.cockpit,
       roughnessMap: fighterTextures.bodyRoughness,
       normalMap: fighterTextures.bodyNormal,
       normalScale: new THREE.Vector2(0.18, 0.18),
@@ -789,8 +792,13 @@ function createFighter(color, isPlayer = false) {
   chineStripeR.position.z *= -1;
   chineStripeR.rotation.z *= -1;
 
-  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.035, 0.42), accentMat);
-  wingPatternL.position.set(-0.1, 0.22, 10.9);
+  const wingPatternMat = accentMat.clone();
+  wingPatternMat.polygonOffset = true;
+  wingPatternMat.polygonOffsetFactor = -2;
+  wingPatternMat.polygonOffsetUnits = -2;
+
+  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.9, 0.012, 0.46), wingPatternMat);
+  wingPatternL.position.set(-0.2, -0.92, 10.9);
   wingPatternL.rotation.set(0, 0.02, -0.035);
   mainWingL.add(wingPatternL);
 
@@ -855,7 +863,7 @@ function createFighter(color, isPlayer = false) {
   nozzleInnerHole.position.set(-38.2, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xc9f3ff : 0xffd8bb,
+    color: isPlayer ? 0xffb8d2 : 0xffd8bb,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -864,7 +872,7 @@ function createFighter(color, isPlayer = false) {
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x67beff : 0xffab6b,
+    color: isPlayer ? 0x9568ff : 0xffab6b,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -873,7 +881,7 @@ function createFighter(color, isPlayer = false) {
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x2c79ff : 0xff8d59,
+    color: isPlayer ? 0x4677ff : 0xff8d59,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -897,7 +905,7 @@ function createFighter(color, isPlayer = false) {
   const flameNeedle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
     new THREE.MeshBasicMaterial({
-      color: isPlayer ? 0xdff3ff : 0xfff1de,
+      color: isPlayer ? 0xffd2e5 : 0xfff1de,
       transparent: true,
       opacity: 0.4,
       blending: THREE.AdditiveBlending,
