@@ -587,13 +587,13 @@ function createFighter(color, isPlayer = false) {
     return geo;
   }
   const playerPalette = {
-    body: 0x2a2546,
-    wing: 0xb9c2cf,
-    accent: 0xff7a18,
+    body: 0x0b0c10,
+    wing: 0x12305c,
+    accent: 0x8a3f00,
   };
   const enemyPalette = {
-    body: 0x353a4b,
-    wing: 0x98a6b8,
+    body: 0x171a21,
+    wing: 0x1a3d70,
     accent: color,
   };
   const palette = isPlayer ? playerPalette : enemyPalette;
@@ -605,10 +605,10 @@ function createFighter(color, isPlayer = false) {
     roughnessMap: fighterTextures.bodyRoughness,
     metalnessMap: fighterTextures.bodyMetalness,
     normalScale: new THREE.Vector2(0.3, 0.3),
-    roughness: 0.28,
-    metalness: 0.84,
-    clearcoat: 0.52,
-    clearcoatRoughness: 0.64,
+    roughness: 0.3,
+    metalness: 0.72,
+    clearcoat: 0.44,
+    clearcoatRoughness: 0.24,
   });
   const wingMat = new THREE.MeshPhysicalMaterial({
     color: palette.wing,
@@ -617,21 +617,21 @@ function createFighter(color, isPlayer = false) {
     roughnessMap: fighterTextures.bodyRoughness,
     metalnessMap: fighterTextures.bodyMetalness,
     normalScale: new THREE.Vector2(0.22, 0.22),
-    roughness: 0.5,
-    metalness: 0.34,
-    clearcoat: 0.1,
-    clearcoatRoughness: 0.64,
+    roughness: 0.26,
+    metalness: 0.82,
+    clearcoat: 0.48,
+    clearcoatRoughness: 0.24,
   });
   const nozzleMetalMat = new THREE.MeshPhysicalMaterial({
-    color: 0x7d4be8,
+    color: 0x5a0d16,
     roughnessMap: fighterTextures.bodyRoughness,
     normalMap: fighterTextures.bodyNormal,
     metalnessMap: fighterTextures.bodyMetalness,
     normalScale: new THREE.Vector2(0.24, 0.24),
-    roughness: 0.18,
-    metalness: 0.98,
-    clearcoat: 0.62,
-    clearcoatRoughness: 0.12,
+    roughness: 0.3,
+    metalness: 0.9,
+    clearcoat: 0.24,
+    clearcoatRoughness: 0.34,
   });
   const accentMat = new THREE.MeshPhysicalMaterial({
     color: palette.accent,
@@ -640,8 +640,8 @@ function createFighter(color, isPlayer = false) {
     normalScale: new THREE.Vector2(0.16, 0.16),
     roughness: 0.22,
     metalness: 0.66,
-    emissive: isPlayer ? 0x4a1900 : 0x000000,
-    emissiveIntensity: isPlayer ? 0.35 : 0,
+    emissive: isPlayer ? 0x2b1200 : 0x000000,
+    emissiveIntensity: isPlayer ? 0.32 : 0,
     clearcoat: 0.3,
     clearcoatRoughness: 0.22,
   });
@@ -680,12 +680,12 @@ function createFighter(color, isPlayer = false) {
   const cockpitBody = new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.18, 9.8, 18),
     new THREE.MeshPhysicalMaterial({
-      color: isPlayer ? 0x3f4a64 : 0x5e6a7f,
+      color: isPlayer ? 0x0f1117 : 0x1f2430,
       roughnessMap: fighterTextures.bodyRoughness,
       normalMap: fighterTextures.bodyNormal,
       normalScale: new THREE.Vector2(0.18, 0.18),
-      roughness: 0.36,
-      metalness: 0.78,
+      roughness: 0.33,
+      metalness: 0.7,
       clearcoat: 0.24,
       clearcoatRoughness: 0.26,
     })
@@ -708,11 +708,11 @@ function createFighter(color, isPlayer = false) {
 
 
   const canopyGlassMat = new THREE.MeshPhysicalMaterial({
-    color: 0xffc4a1,
-    emissive: 0x2b1205,
-    emissiveIntensity: 0.38,
+    color: 0x9cb6e9,
+    emissive: 0x0e1d3c,
+    emissiveIntensity: 0.28,
     transparent: true,
-    opacity: 0.66,
+    opacity: 0.7,
     roughness: 0.05,
     metalness: 0.01,
     transmission: 0.82,
@@ -789,6 +789,14 @@ function createFighter(color, isPlayer = false) {
   chineStripeR.position.z *= -1;
   chineStripeR.rotation.z *= -1;
 
+  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.05, 0.5), accentMat);
+  wingPatternL.position.set(-10.2, 1.08, 11.8);
+  wingPatternL.rotation.set(0, 0.08, -0.07);
+  const wingPatternR = wingPatternL.clone();
+  wingPatternR.position.z *= -1;
+  wingPatternR.rotation.y *= -1;
+
+
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
   // Horizontal tail is defined independently, but keeps exactly the same shape as the main wing (uniform scale only).
   const tailplaneBaseShape = [
@@ -844,7 +852,7 @@ function createFighter(color, isPlayer = false) {
   nozzleInnerHole.position.set(-38.2, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xbef3ff : 0xffd8bb,
+    color: isPlayer ? 0x9f2232 : 0xffd8bb,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -853,7 +861,7 @@ function createFighter(color, isPlayer = false) {
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x6ecfff : 0xffab6b,
+    color: isPlayer ? 0x7b1422 : 0xffab6b,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -862,7 +870,7 @@ function createFighter(color, isPlayer = false) {
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x5ea6ff : 0xff8d59,
+    color: isPlayer ? 0x4a0b14 : 0xff8d59,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -903,7 +911,7 @@ function createFighter(color, isPlayer = false) {
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
-    mainWingL, mainWingR,
+    mainWingL, mainWingR, wingPatternL, wingPatternR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, nozzle, nozzleInnerHole,
     flameCore, flamePlume, flameTrail, flameNeedle
