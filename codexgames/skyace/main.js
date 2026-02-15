@@ -588,12 +588,12 @@ function createFighter(color, isPlayer = false) {
   }
   const playerPalette = {
     body: 0x0b0c10,
-    wing: 0x12305c,
+    wing: 0x1f4f9a,
     accent: 0x8a3f00,
   };
   const enemyPalette = {
     body: 0x171a21,
-    wing: 0x1a3d70,
+    wing: 0x2a5fb0,
     accent: color,
   };
   const palette = isPlayer ? playerPalette : enemyPalette;
@@ -789,12 +789,15 @@ function createFighter(color, isPlayer = false) {
   chineStripeR.position.z *= -1;
   chineStripeR.rotation.z *= -1;
 
-  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.05, 0.5), accentMat);
-  wingPatternL.position.set(-10.2, 1.08, 11.8);
-  wingPatternL.rotation.set(0, 0.08, -0.07);
+  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.035, 0.42), accentMat);
+  wingPatternL.position.set(-0.1, 0.22, 10.9);
+  wingPatternL.rotation.set(0, 0.02, -0.035);
+  mainWingL.add(wingPatternL);
+
   const wingPatternR = wingPatternL.clone();
   wingPatternR.position.z *= -1;
   wingPatternR.rotation.y *= -1;
+  mainWingR.add(wingPatternR);
 
 
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
