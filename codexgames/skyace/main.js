@@ -594,10 +594,10 @@ function createFighter(color, isPlayer = false) {
     cockpit: 0x0f1117,
   };
   const enemyPalette = {
-    body: botBaseColor.clone().offsetHSL(0, -0.1, 0.2).getHex(),
-    wing: botBaseColor.clone().offsetHSL(0.03, 0.03, 0.26).getHex(),
-    accent: botBaseColor.clone().offsetHSL(-0.05, 0.1, 0.08).getHex(),
-    cockpit: botBaseColor.clone().offsetHSL(0, -0.04, 0.32).getHex(),
+    body: botBaseColor.clone().offsetHSL(0.02, 0.24, 0.16).getHex(),
+    wing: botBaseColor.clone().offsetHSL(0.12, 0.3, 0.2).getHex(),
+    accent: botBaseColor.clone().offsetHSL(-0.18, 0.2, 0.12).getHex(),
+    cockpit: botBaseColor.clone().offsetHSL(0.04, 0.14, 0.28).getHex(),
   };
   const palette = isPlayer ? playerPalette : enemyPalette;
 
@@ -728,12 +728,12 @@ function createFighter(color, isPlayer = false) {
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 5.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
-  noseSection.position.set(12.8, 0.24, 0);
+  noseSection.position.set(12.8, 0.86, 0);
 
   const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4.6, 24), wingMat);
   noseCone.rotation.z = -Math.PI * 0.5;
   noseCone.scale.set(1, 0.34, 0.72);
-  noseCone.position.set(16.9, 0.08, 0);
+  noseCone.position.set(16.9, 0.72, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -797,9 +797,9 @@ function createFighter(color, isPlayer = false) {
   wingPatternMat.polygonOffsetFactor = -2;
   wingPatternMat.polygonOffsetUnits = -2;
 
-  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.9, 0.012, 0.46), wingPatternMat);
-  wingPatternL.position.set(-0.2, -0.92, 10.9);
-  wingPatternL.rotation.set(0, 0.02, -0.035);
+  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.01, 0.42), wingPatternMat);
+  wingPatternL.position.set(-2.6, -0.935, 8.2);
+  wingPatternL.rotation.set(0, 0.01, -0.028);
   mainWingL.add(wingPatternL);
 
   const wingPatternR = wingPatternL.clone();
@@ -1393,7 +1393,7 @@ function resetMatch() {
   game.player.pitch = 0;
   game.player.roll = 0;
 
-  const colors = [0xff615d, 0xffc065, 0xc993ff, 0x62e7b3, 0xff7eb9];
+  const colors = [0xff5f6d, 0xffdd57, 0x66f0ff, 0x8dff7a, 0xff8bf1];
   const botCount = Number(botCountEl.value);
   game.bots = Array.from({ length: botCount }, (_, i) => {
     const bot = createFighter(colors[i]);
