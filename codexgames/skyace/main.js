@@ -624,7 +624,7 @@ function createFighter(color, isPlayer = false) {
   });
 
   // Main axis body: keep the thick section running forward to around the main-wing leading edge.
-  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.28, 29.0, 30), bodyMat);
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.28, 18.0, 30), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
   centerSpine.position.set(-18.0, 0.72, 0);
 
