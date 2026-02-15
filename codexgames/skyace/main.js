@@ -547,7 +547,6 @@ function buildWorld(mapType) {
 
 function createFighter(color, isPlayer = false) {
   const g = new THREE.Group();
-  const jet = new THREE.Group();
 
   function buildSurface(points, thickness = 0.24) {
     const shape = new THREE.Shape();
@@ -587,16 +586,6 @@ function createFighter(color, isPlayer = false) {
     geo.computeVertexNormals();
     return geo;
   }
-  function squashMeshWidthByGeometry(mesh, widthScale = 1 / 3) {
-    mesh.geometry = mesh.geometry.clone();
-    const pos = mesh.geometry.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      pos.setZ(i, pos.getZ(i) * widthScale);
-    }
-    pos.needsUpdate = true;
-    mesh.geometry.computeVertexNormals();
-  }
-
   const bodyMat = new THREE.MeshStandardMaterial({
     color: 0xa7afb8,
     map: null,
@@ -625,6 +614,13 @@ function createFighter(color, isPlayer = false) {
     normalScale: new THREE.Vector2(0.26, 0.26),
     roughness: 0.18,
     metalness: 0.94,
+  });
+  const accentMat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.46,
+    metalness: 0.5,
+    emissive: isPlayer ? color : 0x000000,
+    emissiveIntensity: isPlayer ? 0.08 : 0,
   });
 
   // Main axis body: keep the thick section running forward to around the main-wing leading edge.
@@ -722,6 +718,49 @@ function createFighter(color, isPlayer = false) {
   mainWingR.position.copy(mainWingL.position);
   mainWingR.rotation.x = mainWingL.rotation.x;
 
+  const rootStrakeL = new THREE.Mesh(
+    taperWingThickness(buildSurface([[7.4, 0.35], [0.8, 5.9], [-2.6, 4.3], [0.4, 0.18]], 0.86), 0.66, 1.25),
+    bodyMat
+  );
+  rootStrakeL.position.set(0.5, 1.28, 2.18);
+  rootStrakeL.rotation.set(0.12, 0, -0.06);
+  const rootStrakeR = rootStrakeL.clone();
+  rootStrakeR.position.z *= -1;
+  rootStrakeR.rotation.x *= -1;
+
+  const intakeShellL = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 1.18, 4.1, 18), bodyMat);
+  intakeShellL.rotation.set(0, 0, -Math.PI * 0.5);
+  intakeShellL.scale.set(1, 0.66, 1.26);
+  intakeShellL.position.set(4.9, 0.7, 2.28);
+  const intakeInnerMat = new THREE.MeshStandardMaterial({ color: 0x232a31, roughness: 0.72, metalness: 0.24 });
+  const intakeLipL = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.76, 22), nozzleMetalMat);
+  intakeLipL.rotation.set(0, Math.PI * 0.5, 0);
+  intakeLipL.position.set(7.06, 0.76, 2.28);
+  const intakeInnerL = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 2.55, 16), intakeInnerMat);
+  intakeInnerL.rotation.set(0, 0, -Math.PI * 0.5);
+  intakeInnerL.position.set(6.06, 0.74, 2.28);
+
+  const intakeShellR = intakeShellL.clone();
+  intakeShellR.position.z *= -1;
+  const intakeLipR = intakeLipL.clone();
+  intakeLipR.position.z *= -1;
+  const intakeInnerR = intakeInnerL.clone();
+  intakeInnerR.position.z *= -1;
+
+  const wingtipRailL = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.16, 0.22), nozzleMetalMat);
+  wingtipRailL.position.set(-18.1, 1.1, 18.78);
+  wingtipRailL.rotation.set(0, 0.06, 0.02);
+  const wingtipRailR = wingtipRailL.clone();
+  wingtipRailR.position.z *= -1;
+  wingtipRailR.rotation.y *= -1;
+
+  const chineStripeL = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.07, 0.2), accentMat);
+  chineStripeL.position.set(8.8, 1.48, 1.72);
+  chineStripeL.rotation.set(0.08, 0, -0.3);
+  const chineStripeR = chineStripeL.clone();
+  chineStripeR.position.z *= -1;
+  chineStripeR.rotation.z *= -1;
+
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
   // Horizontal tail is defined independently, but keeps exactly the same shape as the main wing (uniform scale only).
   const tailplaneBaseShape = [
@@ -759,6 +798,14 @@ function createFighter(color, isPlayer = false) {
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
   finCenter.rotation.z = 0;
+
+  const ventralFinL = new THREE.Mesh(
+    buildVerticalSurface([[-31.2, -4.7], [-26.2, -4.7], [-28.9, -0.7], [-30.5, -0.7]], 0.22),
+    wingMat
+  );
+  ventralFinL.position.set(0, 0, 1.52);
+  const ventralFinR = ventralFinL.clone();
+  ventralFinR.position.z *= -1;
 
   // Rebuilt single center jet: smaller and simpler with a clear exhaust hole.
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 20.0, 24), bodyMat);
@@ -836,14 +883,15 @@ function createFighter(color, isPlayer = false) {
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
-    mainWingL, mainWingR,
-    tailplaneL, tailplaneR, finBase, finCenter,
+    mainWingL, mainWingR, rootStrakeL, rootStrakeR,
+    intakeShellL, intakeShellR, intakeLipL, intakeLipR, intakeInnerL, intakeInnerR,
+    wingtipRailL, wingtipRailR, chineStripeL, chineStripeR,
+    tailplaneL, tailplaneR, finBase, finCenter, ventralFinL, ventralFinR,
     engineCore, nozzle, nozzleInnerHole,
     flameCore, flamePlume, flameTrail, flameNeedle
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
-  g.add(jet);
   g.rotation.y = -Math.PI * 0.5;
 
   if (!isPlayer) {
