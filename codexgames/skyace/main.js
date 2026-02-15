@@ -914,7 +914,7 @@ function createFighter(color, isPlayer = false) {
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
-    mainWingL, mainWingR,
+    mainWingL, mainWingR, wingPatternL, wingPatternR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, nozzle, nozzleInnerHole,
     flameCore, flamePlume, flameTrail, flameNeedle
