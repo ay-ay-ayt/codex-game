@@ -628,7 +628,7 @@ function createFighter(color, isPlayer = false) {
   });
 
   // Main axis body: keep the thick section running forward to around the main-wing leading edge.
-  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.28, 41.0, 30), bodyMat);
+  const centerSpine = new THREE.Mesh(new THREE.CylinderGeometry(2.14, 2.28, 29.0, 30), bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
   centerSpine.position.set(-22.7, 0.72, 0);
 
@@ -761,7 +761,7 @@ function createFighter(color, isPlayer = false) {
   finCenter.rotation.z = 0;
 
   // Rebuilt single center jet: smaller and simpler with a clear exhaust hole.
-  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 20.0, 24), bodyMat);
+  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 30.0, 24), bodyMat);
   engineCore.rotation.z = -Math.PI * 0.5;
   engineCore.position.set(-25.0, 1.15, 0);
 
