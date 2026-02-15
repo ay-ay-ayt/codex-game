@@ -799,14 +799,6 @@ function createFighter(color, isPlayer = false) {
   finCenter.position.set(0, 0, 0);
   finCenter.rotation.z = 0;
 
-  const ventralFinL = new THREE.Mesh(
-    buildVerticalSurface([[-31.2, -4.7], [-26.2, -4.7], [-28.9, -0.7], [-30.5, -0.7]], 0.22),
-    wingMat
-  );
-  ventralFinL.position.set(0, 0, 1.52);
-  const ventralFinR = ventralFinL.clone();
-  ventralFinR.position.z *= -1;
-
   // Rebuilt single center jet: smaller and simpler with a clear exhaust hole.
   const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 20.0, 24), bodyMat);
   engineCore.rotation.z = -Math.PI * 0.5;
@@ -883,10 +875,8 @@ function createFighter(color, isPlayer = false) {
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
-    mainWingL, mainWingR, rootStrakeL, rootStrakeR,
-    intakeShellL, intakeShellR, intakeLipL, intakeLipR, intakeInnerL, intakeInnerR,
-    wingtipRailL, wingtipRailR, chineStripeL, chineStripeR,
-    tailplaneL, tailplaneR, finBase, finCenter, ventralFinL, ventralFinR,
+    mainWingL, mainWingR,
+    tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, nozzle, nozzleInnerHole,
     flameCore, flamePlume, flameTrail, flameNeedle
   );
