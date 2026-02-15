@@ -586,41 +586,64 @@ function createFighter(color, isPlayer = false) {
     geo.computeVertexNormals();
     return geo;
   }
-  const bodyMat = new THREE.MeshStandardMaterial({
-    color: 0xa7afb8,
-    map: null,
+  const playerPalette = {
+    body: 0x0d1118,
+    wing: 0x1f4fae,
+    accent: 0xd71f33,
+  };
+  const enemyPalette = {
+    body: 0x1a1f29,
+    wing: 0x2a3963,
+    accent: color,
+  };
+  const palette = isPlayer ? playerPalette : enemyPalette;
+
+  const bodyMat = new THREE.MeshPhysicalMaterial({
+    color: palette.body,
+    map: fighterTextures.bodyColor,
     normalMap: fighterTextures.bodyNormal,
     roughnessMap: fighterTextures.bodyRoughness,
     metalnessMap: fighterTextures.bodyMetalness,
-    normalScale: new THREE.Vector2(0.34, 0.34),
-    roughness: 0.34,
-    metalness: 0.7,
+    normalScale: new THREE.Vector2(0.3, 0.3),
+    roughness: 0.44,
+    metalness: 0.88,
+    clearcoat: 0.22,
+    clearcoatRoughness: 0.32,
   });
-  const wingMat = new THREE.MeshStandardMaterial({
-    color: isPlayer ? 0xc0c8d1 : 0xaeb6c0,
-    map: null,
+  const wingMat = new THREE.MeshPhysicalMaterial({
+    color: palette.wing,
+    map: fighterTextures.trimColor,
     normalMap: fighterTextures.bodyNormal,
     roughnessMap: fighterTextures.bodyRoughness,
     metalnessMap: fighterTextures.bodyMetalness,
-    normalScale: new THREE.Vector2(0.28, 0.28),
-    roughness: 0.32,
-    metalness: 0.66,
+    normalScale: new THREE.Vector2(0.24, 0.24),
+    roughness: 0.4,
+    metalness: 0.82,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.2,
   });
-  const nozzleMetalMat = new THREE.MeshStandardMaterial({
-    color: 0xd8e1ea,
+  const nozzleMetalMat = new THREE.MeshPhysicalMaterial({
+    color: 0x131820,
     roughnessMap: fighterTextures.bodyRoughness,
     normalMap: fighterTextures.bodyNormal,
     metalnessMap: fighterTextures.bodyMetalness,
-    normalScale: new THREE.Vector2(0.26, 0.26),
-    roughness: 0.18,
-    metalness: 0.94,
+    normalScale: new THREE.Vector2(0.24, 0.24),
+    roughness: 0.28,
+    metalness: 0.98,
+    clearcoat: 0.18,
+    clearcoatRoughness: 0.45,
   });
-  const accentMat = new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.46,
-    metalness: 0.5,
-    emissive: isPlayer ? color : 0x000000,
-    emissiveIntensity: isPlayer ? 0.08 : 0,
+  const accentMat = new THREE.MeshPhysicalMaterial({
+    color: palette.accent,
+    roughnessMap: fighterTextures.trimRoughness,
+    normalMap: fighterTextures.trimNormal,
+    normalScale: new THREE.Vector2(0.16, 0.16),
+    roughness: 0.48,
+    metalness: 0.72,
+    emissive: isPlayer ? 0x4f080d : 0x000000,
+    emissiveIntensity: isPlayer ? 0.2 : 0,
+    clearcoat: 0.26,
+    clearcoatRoughness: 0.3,
   });
 
   // Main axis body: keep the thick section running forward to around the main-wing leading edge.
@@ -656,13 +679,15 @@ function createFighter(color, isPlayer = false) {
   // Rebuild cockpit/top/nose area from scratch with a slimmer silhouette.
   const cockpitBody = new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.18, 9.8, 18),
-    new THREE.MeshStandardMaterial({
-      color: 0x98a7b8,
+    new THREE.MeshPhysicalMaterial({
+      color: isPlayer ? 0x131a25 : 0x212a37,
       roughnessMap: fighterTextures.bodyRoughness,
       normalMap: fighterTextures.bodyNormal,
       normalScale: new THREE.Vector2(0.18, 0.18),
-      roughness: 0.44,
-      metalness: 0.52,
+      roughness: 0.5,
+      metalness: 0.76,
+      clearcoat: 0.15,
+      clearcoatRoughness: 0.38,
     })
   );
   cockpitBody.rotation.z = Math.PI * 0.5;
@@ -682,14 +707,17 @@ function createFighter(color, isPlayer = false) {
   dorsalDeck.position.set(3.2, 1.3, 0);
 
 
-  const canopyGlassMat = new THREE.MeshStandardMaterial({
-    color: 0xd6f6ff,
-    emissive: 0x1c3a4f,
-    emissiveIntensity: 0.34,
+  const canopyGlassMat = new THREE.MeshPhysicalMaterial({
+    color: 0x89b8ff,
+    emissive: 0x071123,
+    emissiveIntensity: 0.42,
     transparent: true,
-    opacity: 0.82,
-    roughness: 0.04,
-    metalness: 0.1,
+    opacity: 0.76,
+    roughness: 0.08,
+    metalness: 0.02,
+    transmission: 0.62,
+    thickness: 0.42,
+    ior: 1.32,
   });
   const cockpitGlass = new THREE.Mesh(new THREE.SphereGeometry(0.82, 24, 18), canopyGlassMat);
   cockpitGlass.scale.set(3.81, 1.67, 1.2);
