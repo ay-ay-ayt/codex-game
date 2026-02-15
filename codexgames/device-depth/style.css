@@ -1,0 +1,41 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 20%, #2c3561 0%, #141a33 48%, #090b15 100%);
+  color: #edf3ff;
+  font-family: "Inter", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+}
+
+canvas {
+  display: block;
+}
+
+.hud {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  width: min(86vw, 440px);
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(8, 12, 28, 0.55);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.hud h1 {
+  margin: 0;
+  font-size: clamp(16px, 2.5vw, 24px);
+}
+
+.hud p {
+  margin: 8px 0 0;
+  font-size: clamp(12px, 1.9vw, 14px);
+  opacity: 0.92;
+  line-height: 1.5;
+}
