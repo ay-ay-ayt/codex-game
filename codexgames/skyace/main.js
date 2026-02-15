@@ -592,8 +592,8 @@ function createFighter(color, isPlayer = false) {
     accent: 0x8a3f00,
   };
   const enemyPalette = {
-    body: 0x171a21,
-    wing: 0x2a5fb0,
+    body: 0x88a9d6,
+    wing: 0x6ea0e2,
     accent: color,
   };
   const palette = isPlayer ? playerPalette : enemyPalette;
@@ -680,7 +680,7 @@ function createFighter(color, isPlayer = false) {
   const cockpitBody = new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.18, 9.8, 18),
     new THREE.MeshPhysicalMaterial({
-      color: isPlayer ? 0x0f1117 : 0x1f2430,
+      color: isPlayer ? 0x0f1117 : 0x6d87b1,
       roughnessMap: fighterTextures.bodyRoughness,
       normalMap: fighterTextures.bodyNormal,
       normalScale: new THREE.Vector2(0.18, 0.18),
@@ -855,29 +855,29 @@ function createFighter(color, isPlayer = false) {
   nozzleInnerHole.position.set(-38.2, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x9f2232 : 0xffd8bb,
+    color: isPlayer ? 0xc9f3ff : 0xffd8bb,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.42,
+    opacity: 0.36,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x7b1422 : 0xffab6b,
+    color: isPlayer ? 0x67beff : 0xffab6b,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.24,
+    opacity: 0.22,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x4a0b14 : 0xff8d59,
+    color: isPlayer ? 0x2c79ff : 0xff8d59,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.1,
+    opacity: 0.09,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -897,7 +897,7 @@ function createFighter(color, isPlayer = false) {
   const flameNeedle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
     new THREE.MeshBasicMaterial({
-      color: isPlayer ? 0xf4fdff : 0xfff1de,
+      color: isPlayer ? 0xdff3ff : 0xfff1de,
       transparent: true,
       opacity: 0.4,
       blending: THREE.AdditiveBlending,
