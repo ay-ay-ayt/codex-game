@@ -545,7 +545,7 @@ function buildWorld(mapType) {
   }
 }
 
-function createFighter(color, isPlayer = false) {
+function createFighter(colorOrPalette, isPlayer = false) {
   const g = new THREE.Group();
 
   function buildSurface(points, thickness = 0.24) {
@@ -586,41 +586,71 @@ function createFighter(color, isPlayer = false) {
     geo.computeVertexNormals();
     return geo;
   }
-  const bodyMat = new THREE.MeshStandardMaterial({
-    color: 0xa7afb8,
-    map: null,
+  const botBaseColor = new THREE.Color(typeof colorOrPalette === "number" ? colorOrPalette : 0x48d7ff);
+  const playerPalette = {
+    body: 0x0b0c10,
+    wing: 0x1f4f9a,
+    accent: 0x8a3f00,
+    cockpit: 0x0f1117,
+  };
+  const enemyPalette = {
+    body: botBaseColor.clone().offsetHSL(0.02, 0.32, 0.24).getHex(),
+    wing: botBaseColor.clone().offsetHSL(0.1, 0.55, 0.3).getHex(),
+    accent: botBaseColor.clone().offsetHSL(-0.14, 0.45, 0.2).getHex(),
+    cockpit: botBaseColor.clone().offsetHSL(-0.06, 0.2, 0.36).getHex(),
+  };
+  const palette = isPlayer
+    ? playerPalette
+    : (typeof colorOrPalette === "object" && colorOrPalette !== null ? colorOrPalette : enemyPalette);
+
+  const bodyMat = new THREE.MeshPhysicalMaterial({
+    color: palette.body,
+    map: fighterTextures.bodyColor,
     normalMap: fighterTextures.bodyNormal,
     roughnessMap: fighterTextures.bodyRoughness,
     metalnessMap: fighterTextures.bodyMetalness,
-    normalScale: new THREE.Vector2(0.34, 0.34),
-    roughness: 0.34,
-    metalness: 0.7,
+    normalScale: new THREE.Vector2(0.3, 0.3),
+    roughness: 0.3,
+    metalness: 0.72,
+    clearcoat: 0.44,
+    clearcoatRoughness: 0.24,
   });
-  const wingMat = new THREE.MeshStandardMaterial({
-    color: isPlayer ? 0xc0c8d1 : 0xaeb6c0,
-    map: null,
-    normalMap: fighterTextures.bodyNormal,
+  const wingMat = new THREE.MeshPhysicalMaterial({
+    color: palette.wing,
+    map: isPlayer ? fighterTextures.trimColor : null,
+    normalMap: isPlayer ? fighterTextures.bodyNormal : null,
+    roughnessMap: isPlayer ? fighterTextures.bodyRoughness : null,
+    metalnessMap: isPlayer ? fighterTextures.bodyMetalness : null,
+    normalScale: new THREE.Vector2(0.22, 0.22),
+    roughness: isPlayer ? 0.26 : 0.22,
+    metalness: isPlayer ? 0.82 : 0.68,
+    clearcoat: 0.48,
+    clearcoatRoughness: 0.24,
+    emissive: isPlayer ? 0x000000 : new THREE.Color(palette.wing).multiplyScalar(0.18),
+    emissiveIntensity: isPlayer ? 0 : 0.32,
+  });
+  const nozzleMetalMat = new THREE.MeshPhysicalMaterial({
+    color: 0x5a0d16,
     roughnessMap: fighterTextures.bodyRoughness,
+    normalMap: fighterTextures.bodyNormal,
     metalnessMap: fighterTextures.bodyMetalness,
-    normalScale: new THREE.Vector2(0.28, 0.28),
-    roughness: 0.32,
+    normalScale: new THREE.Vector2(0.24, 0.24),
+    roughness: 0.3,
+    metalness: 0.9,
+    clearcoat: 0.24,
+    clearcoatRoughness: 0.34,
+  });
+  const accentMat = new THREE.MeshPhysicalMaterial({
+    color: palette.accent,
+    roughnessMap: fighterTextures.trimRoughness,
+    normalMap: fighterTextures.trimNormal,
+    normalScale: new THREE.Vector2(0.16, 0.16),
+    roughness: 0.22,
     metalness: 0.66,
-  });
-  const nozzleMetalMat = new THREE.MeshStandardMaterial({
-    color: 0xd8e1ea,
-    roughnessMap: fighterTextures.bodyRoughness,
-    normalMap: fighterTextures.bodyNormal,
-    metalnessMap: fighterTextures.bodyMetalness,
-    normalScale: new THREE.Vector2(0.26, 0.26),
-    roughness: 0.18,
-    metalness: 0.94,
-  });
-  const accentMat = new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.46,
-    metalness: 0.5,
-    emissive: isPlayer ? color : 0x000000,
-    emissiveIntensity: isPlayer ? 0.08 : 0,
+    emissive: isPlayer ? 0x2b1200 : 0x000000,
+    emissiveIntensity: isPlayer ? 0.32 : 0,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.22,
   });
 
   // Main axis body: keep the thick section running forward to around the main-wing leading edge.
@@ -656,13 +686,15 @@ function createFighter(color, isPlayer = false) {
   // Rebuild cockpit/top/nose area from scratch with a slimmer silhouette.
   const cockpitBody = new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.18, 9.8, 18),
-    new THREE.MeshStandardMaterial({
-      color: 0x98a7b8,
+    new THREE.MeshPhysicalMaterial({
+      color: palette.cockpit,
       roughnessMap: fighterTextures.bodyRoughness,
       normalMap: fighterTextures.bodyNormal,
       normalScale: new THREE.Vector2(0.18, 0.18),
-      roughness: 0.44,
-      metalness: 0.52,
+      roughness: 0.33,
+      metalness: 0.7,
+      clearcoat: 0.24,
+      clearcoatRoughness: 0.26,
     })
   );
   cockpitBody.rotation.z = Math.PI * 0.5;
@@ -682,14 +714,17 @@ function createFighter(color, isPlayer = false) {
   dorsalDeck.position.set(3.2, 1.3, 0);
 
 
-  const canopyGlassMat = new THREE.MeshStandardMaterial({
-    color: 0xd6f6ff,
-    emissive: 0x1c3a4f,
-    emissiveIntensity: 0.34,
+  const canopyGlassMat = new THREE.MeshPhysicalMaterial({
+    color: 0x9cb6e9,
+    emissive: 0x0e1d3c,
+    emissiveIntensity: 0.28,
     transparent: true,
-    opacity: 0.82,
-    roughness: 0.04,
-    metalness: 0.1,
+    opacity: 0.7,
+    roughness: 0.05,
+    metalness: 0.01,
+    transmission: 0.82,
+    thickness: 0.44,
+    ior: 1.36,
   });
   const cockpitGlass = new THREE.Mesh(new THREE.SphereGeometry(0.82, 24, 18), canopyGlassMat);
   cockpitGlass.scale.set(3.81, 1.67, 1.2);
@@ -697,12 +732,12 @@ function createFighter(color, isPlayer = false) {
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 5.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
-  noseSection.position.set(12.8, 0.24, 0);
+  noseSection.position.set(11.3, 1.48, 0);
 
   const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4.6, 24), wingMat);
   noseCone.rotation.z = -Math.PI * 0.5;
   noseCone.scale.set(1, 0.34, 0.72);
-  noseCone.position.set(16.9, 0.08, 0);
+  noseCone.position.set(15.4, 1.34, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -761,6 +796,22 @@ function createFighter(color, isPlayer = false) {
   chineStripeR.position.z *= -1;
   chineStripeR.rotation.z *= -1;
 
+  const wingPatternMat = accentMat.clone();
+  wingPatternMat.polygonOffset = true;
+  wingPatternMat.polygonOffsetFactor = -2;
+  wingPatternMat.polygonOffsetUnits = -2;
+
+  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.014, 0.52), wingPatternMat);
+  wingPatternL.position.set(-9.1, 0.972, 11.8);
+  wingPatternL.rotation.set(0, 0, -0.012);
+  mainWingL.add(wingPatternL);
+
+  const wingPatternR = wingPatternL.clone();
+  wingPatternR.position.z *= -1;
+  wingPatternR.rotation.y *= -1;
+  mainWingR.add(wingPatternR);
+
+
   // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
   // Horizontal tail is defined independently, but keeps exactly the same shape as the main wing (uniform scale only).
   const tailplaneBaseShape = [
@@ -816,29 +867,29 @@ function createFighter(color, isPlayer = false) {
   nozzleInnerHole.position.set(-38.2, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xbef3ff : 0xffd8bb,
+    color: isPlayer ? 0xffb8d2 : 0xffd8bb,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.42,
+    opacity: 0.36,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x6ecfff : 0xffab6b,
+    color: isPlayer ? 0x9568ff : 0xffab6b,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.24,
+    opacity: 0.22,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x5ea6ff : 0xff8d59,
+    color: isPlayer ? 0x4677ff : 0xff8d59,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.1,
+    opacity: 0.09,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -858,7 +909,7 @@ function createFighter(color, isPlayer = false) {
   const flameNeedle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
     new THREE.MeshBasicMaterial({
-      color: isPlayer ? 0xf4fdff : 0xfff1de,
+      color: isPlayer ? 0xffd2e5 : 0xfff1de,
       transparent: true,
       opacity: 0.4,
       blending: THREE.AdditiveBlending,
@@ -1346,10 +1397,17 @@ function resetMatch() {
   game.player.pitch = 0;
   game.player.roll = 0;
 
-  const colors = [0xff615d, 0xffc065, 0xc993ff, 0x62e7b3, 0xff7eb9];
+  const botPalettes = [
+    { body: 0xff8a3d, wing: 0x2ff7ff, accent: 0xff2fb3, cockpit: 0x12314c },
+    { body: 0x7cff4c, wing: 0xff5de4, accent: 0x3d8bff, cockpit: 0x1a2340 },
+    { body: 0xfff04a, wing: 0x32ff9f, accent: 0xff4c4c, cockpit: 0x35214d },
+    { body: 0x57d0ff, wing: 0xff8c42, accent: 0xa14dff, cockpit: 0x1c2f45 },
+    { body: 0xff62a8, wing: 0x6aff55, accent: 0x32a0ff, cockpit: 0x2b2648 },
+    { body: 0x3effd5, wing: 0xff6a3d, accent: 0xd85dff, cockpit: 0x1e3243 },
+  ];
   const botCount = Number(botCountEl.value);
   game.bots = Array.from({ length: botCount }, (_, i) => {
-    const bot = createFighter(colors[i]);
+    const bot = createFighter(botPalettes[i % botPalettes.length]);
     for (let tries = 0; tries < 40; tries++) {
       bot.mesh.position.set(rand(-1100, 1100), rand(240, 560), rand(-1100, 1100));
       if (intersectsObstacle(bot.mesh.position, 26)) continue;
@@ -1670,6 +1728,8 @@ mapTypeEl.addEventListener("change", () => {
   resetMatch();
 });
 
+
+
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 window.addEventListener("selectstart", (e) => e.preventDefault());
 window.addEventListener("dragstart", (e) => e.preventDefault());
@@ -1677,9 +1737,14 @@ window.addEventListener("gesturestart", (e) => e.preventDefault());
 window.addEventListener("touchstart", (e) => {
   if (e.touches.length <= 1) return;
   const target = e.target;
-  const menuTouch = target instanceof Element
-    && (menuBtn.contains(target) || menuPanel.contains(target));
-  if (!menuTouch) e.preventDefault();
+  const fromMenuUi = target instanceof Element && (
+    menuBtn.contains(target)
+    || menuPanel.contains(target)
+    || target.closest("#menuPanel")
+    || target.matches("select, option, button, input, label")
+  );
+  if (fromMenuUi) return;
+  if (target === canvas) e.preventDefault();
 }, { passive: false });
 
 window.addEventListener("resize", () => {
