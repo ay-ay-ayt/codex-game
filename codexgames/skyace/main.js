@@ -1485,19 +1485,22 @@ function setupJoystick(stickId, onMove) {
 
   stick.addEventListener("pointerdown", (e) => {
     state.pointerId = e.pointerId;
-    stick.setPointerCapture?.(e.pointerId);
     moveFromClient(e.clientX, e.clientY);
   });
-  stick.addEventListener("pointermove", (e) => {
+
+  const onPointerMove = (e) => {
     if (state.pointerId !== e.pointerId) return;
     moveFromClient(e.clientX, e.clientY);
-  });
+  };
+
   const onPointerRelease = (e) => {
     if (state.pointerId !== e.pointerId) return;
     releaseStick();
   };
-  stick.addEventListener("pointerup", onPointerRelease);
-  stick.addEventListener("pointercancel", onPointerRelease);
+
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerRelease);
+  window.addEventListener("pointercancel", onPointerRelease);
 
   // Fallback for very old browsers that do not support Pointer Events.
   if (!window.PointerEvent) {
@@ -1567,19 +1570,22 @@ function setupBoostLever() {
 
   boostLeverEl.addEventListener("pointerdown", (e) => {
     boostLeverState.pointerId = e.pointerId;
-    boostLeverEl.setPointerCapture?.(e.pointerId);
     moveFromClient(e.clientY);
   });
-  boostLeverEl.addEventListener("pointermove", (e) => {
+
+  const onPointerMove = (e) => {
     if (boostLeverState.pointerId !== e.pointerId) return;
     moveFromClient(e.clientY);
-  });
+  };
+
   const release = (e) => {
     if (boostLeverState.pointerId !== e.pointerId) return;
     boostLeverState.pointerId = null;
   };
-  boostLeverEl.addEventListener("pointerup", release);
-  boostLeverEl.addEventListener("pointercancel", release);
+
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", release);
+  window.addEventListener("pointercancel", release);
 
   applyLevel(0);
 }
