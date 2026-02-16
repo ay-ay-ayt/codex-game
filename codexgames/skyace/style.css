@@ -366,12 +366,12 @@ body {
   display: grid;
   grid-template-columns: max-content max-content;
   align-items: end;
-  gap: 8px;
+  gap: 4px;
 }
 
 #fireBtn {
   align-self: end;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .lever-wrap {
@@ -404,8 +404,8 @@ body {
 }
 
 .action {
-  width: min(18vw, 110px);
-  min-height: 48px;
+  width: min(17vw, 104px);
+  min-height: 56px;
   border: 1px solid var(--line);
   border-radius: 12px;
   font-weight: 800;
@@ -460,4 +460,20 @@ body {
   #mobileControls {
     opacity: 0.35;
   }
+}
+
+#buildDebug {
+  position: fixed;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 40;
+  padding: 4px 7px;
+  border-radius: 7px;
+  border: 1px solid rgba(148, 218, 252, 0.4);
+  background: rgba(4, 14, 28, 0.56);
+  color: rgba(208, 238, 255, 0.78);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  pointer-events: none;
 }
