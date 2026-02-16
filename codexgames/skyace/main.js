@@ -732,12 +732,12 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 5.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
-  noseSection.position.set(11.3, 1.48, 0);
+  noseSection.position.set(10.55, 1.6, 0);
 
   const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4.6, 24), wingMat);
   noseCone.rotation.z = -Math.PI * 0.5;
   noseCone.scale.set(1, 0.34, 0.72);
-  noseCone.position.set(15.4, 1.34, 0);
+  noseCone.position.set(14.65, 1.46, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -1734,18 +1734,6 @@ window.addEventListener("contextmenu", (e) => e.preventDefault());
 window.addEventListener("selectstart", (e) => e.preventDefault());
 window.addEventListener("dragstart", (e) => e.preventDefault());
 window.addEventListener("gesturestart", (e) => e.preventDefault());
-window.addEventListener("touchstart", (e) => {
-  if (e.touches.length <= 1) return;
-  const target = e.target;
-  const fromMenuUi = target instanceof Element && (
-    menuBtn.contains(target)
-    || menuPanel.contains(target)
-    || target.closest("#menuPanel")
-    || target.matches("select, option, button, input, label")
-  );
-  if (fromMenuUi) return;
-  if (target === canvas) e.preventDefault();
-}, { passive: false });
 
 window.addEventListener("resize", () => {
   fitViewport();
