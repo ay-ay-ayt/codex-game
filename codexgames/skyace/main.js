@@ -732,12 +732,12 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 5.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
-  noseSection.position.set(10.55, 1.6, 0);
+  noseSection.position.set(10.25, 1.66, 0);
 
   const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4.6, 24), wingMat);
   noseCone.rotation.z = -Math.PI * 0.5;
   noseCone.scale.set(1, 0.34, 0.72);
-  noseCone.position.set(14.65, 1.46, 0);
+  noseCone.position.set(14.35, 1.52, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -1502,43 +1502,46 @@ function setupJoystick(stickId, onMove) {
   stick.addEventListener("pointerup", onPointerRelease);
   stick.addEventListener("pointercancel", onPointerRelease);
 
-  stick.addEventListener(
-    "touchstart",
-    (e) => {
-      if (state.touchId != null) return;
-      const t = e.changedTouches[0];
-      state.touchId = t.identifier;
-      moveFromClient(t.clientX, t.clientY);
-      e.preventDefault();
-    },
-    { passive: false }
-  );
+  // Fallback for very old browsers that do not support Pointer Events.
+  if (!window.PointerEvent) {
+    stick.addEventListener(
+      "touchstart",
+      (e) => {
+        if (state.touchId != null) return;
+        const t = e.changedTouches[0];
+        state.touchId = t.identifier;
+        moveFromClient(t.clientX, t.clientY);
+        e.preventDefault();
+      },
+      { passive: false }
+    );
 
-  stick.addEventListener(
-    "touchmove",
-    (e) => {
+    stick.addEventListener(
+      "touchmove",
+      (e) => {
+        if (state.touchId == null) return;
+        for (const t of e.changedTouches) {
+          if (t.identifier !== state.touchId) continue;
+          moveFromClient(t.clientX, t.clientY);
+          e.preventDefault();
+          break;
+        }
+      },
+      { passive: false }
+    );
+
+    const onTouchEnd = (e) => {
       if (state.touchId == null) return;
       for (const t of e.changedTouches) {
         if (t.identifier !== state.touchId) continue;
-        moveFromClient(t.clientX, t.clientY);
+        releaseStick();
         e.preventDefault();
         break;
       }
-    },
-    { passive: false }
-  );
-
-  const onTouchEnd = (e) => {
-    if (state.touchId == null) return;
-    for (const t of e.changedTouches) {
-      if (t.identifier !== state.touchId) continue;
-      releaseStick();
-      e.preventDefault();
-      break;
-    }
-  };
-  stick.addEventListener("touchend", onTouchEnd, { passive: false });
-  stick.addEventListener("touchcancel", onTouchEnd, { passive: false });
+    };
+    stick.addEventListener("touchend", onTouchEnd, { passive: false });
+    stick.addEventListener("touchcancel", onTouchEnd, { passive: false });
+  }
 }
 
 function setupBoostLever() {
