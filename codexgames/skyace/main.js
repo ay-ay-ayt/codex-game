@@ -732,12 +732,12 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 5.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
-  noseSection.position.set(12.5, 1.22, 0);
+  noseSection.position.set(12.1, 1.3, 0);
 
   const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4.6, 24), wingMat);
   noseCone.rotation.z = -Math.PI * 0.5;
   noseCone.scale.set(1, 0.34, 0.72);
-  noseCone.position.set(16.6, 1.08, 0);
+  noseCone.position.set(16.2, 1.16, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -802,8 +802,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
   wingPatternMat.polygonOffsetUnits = -2;
 
   const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.014, 0.52), wingPatternMat);
-  wingPatternL.position.set(-7.2, 0.006, 11.2);
-  wingPatternL.rotation.set(0, 0, -0.018);
+  wingPatternL.position.set(-9.1, 0.972, 11.8);
+  wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
   const wingPatternR = wingPatternL.clone();
@@ -1727,6 +1727,44 @@ mapTypeEl.addEventListener("change", () => {
   buildWorld(mapTypeEl.value);
   resetMatch();
 });
+
+
+function bindQuickCycleSelect(selectEl) {
+  let lastCycleAt = 0;
+  const cycleNext = () => {
+    if (!menuPanel.hidden) {
+      const len = selectEl.options.length;
+      if (len > 1) {
+        const next = (selectEl.selectedIndex + 1) % len;
+        if (next !== selectEl.selectedIndex) {
+          selectEl.selectedIndex = next;
+          selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }
+    }
+  };
+
+  selectEl.addEventListener("pointerup", (e) => {
+    if (!isMobile) return;
+    e.preventDefault();
+    cycleNext();
+    lastCycleAt = performance.now();
+  });
+
+  selectEl.addEventListener("click", (e) => {
+    if (!isMobile) return;
+    if (performance.now() - lastCycleAt < 320) {
+      e.preventDefault();
+      return;
+    }
+    e.preventDefault();
+    cycleNext();
+    lastCycleAt = performance.now();
+  });
+}
+
+bindQuickCycleSelect(botCountEl);
+bindQuickCycleSelect(mapTypeEl);
 
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 window.addEventListener("selectstart", (e) => e.preventDefault());
