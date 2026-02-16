@@ -62,8 +62,10 @@ body {
 }
 
 #hud button,
+#menuPanel,
+#menuPanel *,
 #menuPanel select {
-  touch-action: auto;
+  touch-action: manipulation;
 }
 
 #hud,
