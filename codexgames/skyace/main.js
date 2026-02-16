@@ -545,7 +545,7 @@ function buildWorld(mapType) {
   }
 }
 
-function createFighter(color, isPlayer = false) {
+function createFighter(colorOrPalette, isPlayer = false) {
   const g = new THREE.Group();
 
   function buildSurface(points, thickness = 0.24) {
@@ -586,17 +586,22 @@ function createFighter(color, isPlayer = false) {
     geo.computeVertexNormals();
     return geo;
   }
+  const botBaseColor = new THREE.Color(typeof colorOrPalette === "number" ? colorOrPalette : 0x48d7ff);
   const playerPalette = {
     body: 0x0b0c10,
     wing: 0x1f4f9a,
     accent: 0x8a3f00,
+    cockpit: 0x0f1117,
   };
   const enemyPalette = {
-    body: 0x88a9d6,
-    wing: 0x6ea0e2,
-    accent: color,
+    body: botBaseColor.clone().offsetHSL(0.02, 0.32, 0.24).getHex(),
+    wing: botBaseColor.clone().offsetHSL(0.1, 0.55, 0.3).getHex(),
+    accent: botBaseColor.clone().offsetHSL(-0.14, 0.45, 0.2).getHex(),
+    cockpit: botBaseColor.clone().offsetHSL(-0.06, 0.2, 0.36).getHex(),
   };
-  const palette = isPlayer ? playerPalette : enemyPalette;
+  const palette = isPlayer
+    ? playerPalette
+    : (typeof colorOrPalette === "object" && colorOrPalette !== null ? colorOrPalette : enemyPalette);
 
   const bodyMat = new THREE.MeshPhysicalMaterial({
     color: palette.body,
@@ -612,15 +617,17 @@ function createFighter(color, isPlayer = false) {
   });
   const wingMat = new THREE.MeshPhysicalMaterial({
     color: palette.wing,
-    map: fighterTextures.trimColor,
-    normalMap: fighterTextures.bodyNormal,
-    roughnessMap: fighterTextures.bodyRoughness,
-    metalnessMap: fighterTextures.bodyMetalness,
+    map: isPlayer ? fighterTextures.trimColor : null,
+    normalMap: isPlayer ? fighterTextures.bodyNormal : null,
+    roughnessMap: isPlayer ? fighterTextures.bodyRoughness : null,
+    metalnessMap: isPlayer ? fighterTextures.bodyMetalness : null,
     normalScale: new THREE.Vector2(0.22, 0.22),
-    roughness: 0.26,
-    metalness: 0.82,
+    roughness: isPlayer ? 0.26 : 0.22,
+    metalness: isPlayer ? 0.82 : 0.68,
     clearcoat: 0.48,
     clearcoatRoughness: 0.24,
+    emissive: isPlayer ? 0x000000 : new THREE.Color(palette.wing).multiplyScalar(0.18),
+    emissiveIntensity: isPlayer ? 0 : 0.32,
   });
   const nozzleMetalMat = new THREE.MeshPhysicalMaterial({
     color: 0x5a0d16,
@@ -680,7 +687,7 @@ function createFighter(color, isPlayer = false) {
   const cockpitBody = new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.18, 9.8, 18),
     new THREE.MeshPhysicalMaterial({
-      color: isPlayer ? 0x0f1117 : 0x6d87b1,
+      color: palette.cockpit,
       roughnessMap: fighterTextures.bodyRoughness,
       normalMap: fighterTextures.bodyNormal,
       normalScale: new THREE.Vector2(0.18, 0.18),
@@ -725,12 +732,12 @@ function createFighter(color, isPlayer = false) {
 
   const noseSection = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 5.8, 24), bodyMat);
   noseSection.rotation.z = -Math.PI * 0.5;
-  noseSection.position.set(12.8, 0.24, 0);
+  noseSection.position.set(10.25, 1.66, 0);
 
   const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4.6, 24), wingMat);
   noseCone.rotation.z = -Math.PI * 0.5;
   noseCone.scale.set(1, 0.34, 0.72);
-  noseCone.position.set(16.9, 0.08, 0);
+  noseCone.position.set(14.35, 1.52, 0);
 
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
@@ -789,9 +796,14 @@ function createFighter(color, isPlayer = false) {
   chineStripeR.position.z *= -1;
   chineStripeR.rotation.z *= -1;
 
-  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.035, 0.42), accentMat);
-  wingPatternL.position.set(-0.1, 0.22, 10.9);
-  wingPatternL.rotation.set(0, 0.02, -0.035);
+  const wingPatternMat = accentMat.clone();
+  wingPatternMat.polygonOffset = true;
+  wingPatternMat.polygonOffsetFactor = -2;
+  wingPatternMat.polygonOffsetUnits = -2;
+
+  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.014, 0.52), wingPatternMat);
+  wingPatternL.position.set(-9.1, 0.972, 11.8);
+  wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
   const wingPatternR = wingPatternL.clone();
@@ -855,7 +867,7 @@ function createFighter(color, isPlayer = false) {
   nozzleInnerHole.position.set(-38.2, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xc9f3ff : 0xffd8bb,
+    color: isPlayer ? 0xffb8d2 : 0xffd8bb,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -864,7 +876,7 @@ function createFighter(color, isPlayer = false) {
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x67beff : 0xffab6b,
+    color: isPlayer ? 0x9568ff : 0xffab6b,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -873,7 +885,7 @@ function createFighter(color, isPlayer = false) {
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x2c79ff : 0xff8d59,
+    color: isPlayer ? 0x4677ff : 0xff8d59,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -897,7 +909,7 @@ function createFighter(color, isPlayer = false) {
   const flameNeedle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
     new THREE.MeshBasicMaterial({
-      color: isPlayer ? 0xdff3ff : 0xfff1de,
+      color: isPlayer ? 0xffd2e5 : 0xfff1de,
       transparent: true,
       opacity: 0.4,
       blending: THREE.AdditiveBlending,
@@ -1385,10 +1397,17 @@ function resetMatch() {
   game.player.pitch = 0;
   game.player.roll = 0;
 
-  const colors = [0xff615d, 0xffc065, 0xc993ff, 0x62e7b3, 0xff7eb9];
+  const botPalettes = [
+    { body: 0xff8a3d, wing: 0x2ff7ff, accent: 0xff2fb3, cockpit: 0x12314c },
+    { body: 0x7cff4c, wing: 0xff5de4, accent: 0x3d8bff, cockpit: 0x1a2340 },
+    { body: 0xfff04a, wing: 0x32ff9f, accent: 0xff4c4c, cockpit: 0x35214d },
+    { body: 0x57d0ff, wing: 0xff8c42, accent: 0xa14dff, cockpit: 0x1c2f45 },
+    { body: 0xff62a8, wing: 0x6aff55, accent: 0x32a0ff, cockpit: 0x2b2648 },
+    { body: 0x3effd5, wing: 0xff6a3d, accent: 0xd85dff, cockpit: 0x1e3243 },
+  ];
   const botCount = Number(botCountEl.value);
   game.bots = Array.from({ length: botCount }, (_, i) => {
-    const bot = createFighter(colors[i]);
+    const bot = createFighter(botPalettes[i % botPalettes.length]);
     for (let tries = 0; tries < 40; tries++) {
       bot.mesh.position.set(rand(-1100, 1100), rand(240, 560), rand(-1100, 1100));
       if (intersectsObstacle(bot.mesh.position, 26)) continue;
@@ -1465,61 +1484,61 @@ function setupJoystick(stickId, onMove) {
   }
 
   stick.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
     state.pointerId = e.pointerId;
     stick.setPointerCapture?.(e.pointerId);
     moveFromClient(e.clientX, e.clientY);
   });
   stick.addEventListener("pointermove", (e) => {
     if (state.pointerId !== e.pointerId) return;
-    e.preventDefault();
     moveFromClient(e.clientX, e.clientY);
   });
   const onPointerRelease = (e) => {
     if (state.pointerId !== e.pointerId) return;
-    e.preventDefault();
     releaseStick();
   };
   stick.addEventListener("pointerup", onPointerRelease);
   stick.addEventListener("pointercancel", onPointerRelease);
 
-  stick.addEventListener(
-    "touchstart",
-    (e) => {
-      if (state.touchId != null) return;
-      const t = e.changedTouches[0];
-      state.touchId = t.identifier;
-      moveFromClient(t.clientX, t.clientY);
-      e.preventDefault();
-    },
-    { passive: false }
-  );
+  // Fallback for very old browsers that do not support Pointer Events.
+  if (!window.PointerEvent) {
+    stick.addEventListener(
+      "touchstart",
+      (e) => {
+        if (state.touchId != null) return;
+        const t = e.changedTouches[0];
+        state.touchId = t.identifier;
+        moveFromClient(t.clientX, t.clientY);
+        e.preventDefault();
+      },
+      { passive: false }
+    );
 
-  stick.addEventListener(
-    "touchmove",
-    (e) => {
+    stick.addEventListener(
+      "touchmove",
+      (e) => {
+        if (state.touchId == null) return;
+        for (const t of e.changedTouches) {
+          if (t.identifier !== state.touchId) continue;
+          moveFromClient(t.clientX, t.clientY);
+          e.preventDefault();
+          break;
+        }
+      },
+      { passive: false }
+    );
+
+    const onTouchEnd = (e) => {
       if (state.touchId == null) return;
       for (const t of e.changedTouches) {
         if (t.identifier !== state.touchId) continue;
-        moveFromClient(t.clientX, t.clientY);
+        releaseStick();
         e.preventDefault();
         break;
       }
-    },
-    { passive: false }
-  );
-
-  const onTouchEnd = (e) => {
-    if (state.touchId == null) return;
-    for (const t of e.changedTouches) {
-      if (t.identifier !== state.touchId) continue;
-      releaseStick();
-      e.preventDefault();
-      break;
-    }
-  };
-  stick.addEventListener("touchend", onTouchEnd, { passive: false });
-  stick.addEventListener("touchcancel", onTouchEnd, { passive: false });
+    };
+    stick.addEventListener("touchend", onTouchEnd, { passive: false });
+    stick.addEventListener("touchcancel", onTouchEnd, { passive: false });
+  }
 }
 
 function setupBoostLever() {
@@ -1547,14 +1566,12 @@ function setupBoostLever() {
   }
 
   boostLeverEl.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
     boostLeverState.pointerId = e.pointerId;
     boostLeverEl.setPointerCapture?.(e.pointerId);
     moveFromClient(e.clientY);
   });
   boostLeverEl.addEventListener("pointermove", (e) => {
     if (boostLeverState.pointerId !== e.pointerId) return;
-    e.preventDefault();
     moveFromClient(e.clientY);
   });
   const release = (e) => {
@@ -1566,6 +1583,7 @@ function setupBoostLever() {
 
   applyLevel(0);
 }
+
 
 function bindActionButton(btn) {
   const press = (e) => {
@@ -1709,17 +1727,12 @@ mapTypeEl.addEventListener("change", () => {
   resetMatch();
 });
 
+
+
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 window.addEventListener("selectstart", (e) => e.preventDefault());
 window.addEventListener("dragstart", (e) => e.preventDefault());
 window.addEventListener("gesturestart", (e) => e.preventDefault());
-window.addEventListener("touchstart", (e) => {
-  if (e.touches.length <= 1) return;
-  const target = e.target;
-  const menuTouch = target instanceof Element
-    && (menuBtn.contains(target) || menuPanel.contains(target));
-  if (!menuTouch) e.preventDefault();
-}, { passive: false });
 
 window.addEventListener("resize", () => {
   fitViewport();

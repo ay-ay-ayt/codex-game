@@ -23,7 +23,7 @@
 
   <div id="menuPanel">
     <button id="restartBtn" type="button">RESTART</button>
-    <label id="botWrap">AI
+    <label id="botWrap">BOT
       <select id="botCount" aria-label="対戦AI数">
         <option value="1">1</option>
         <option value="2" selected>2</option>
@@ -64,7 +64,7 @@
   </div>
 
   <script type="module">
-    import("./main.js?v=20260215-revert-stable").catch((err) => {
+    import("./main.js?v=20260216-stick-menu-multitouch-fix").catch((err) => {
       console.error("[skyace:module-load]", err);
       const messageEl = document.getElementById("message");
       if (messageEl) {
