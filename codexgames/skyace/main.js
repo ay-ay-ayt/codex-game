@@ -6,6 +6,8 @@ const ammoEl = document.getElementById("ammo");
 const boostStatEl = document.getElementById("boostStat");
 const botCountEl = document.getElementById("botCount");
 const mapTypeEl = document.getElementById("mapType");
+const botChoiceButtons = [...botCountEl.querySelectorAll(".choice-btn")];
+const mapChoiceButtons = [...mapTypeEl.querySelectorAll(".choice-btn")];
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
 const menuPanel = document.getElementById("menuPanel");
@@ -1405,7 +1407,7 @@ function resetMatch() {
     { body: 0xff62a8, wing: 0x6aff55, accent: 0x32a0ff, cockpit: 0x2b2648 },
     { body: 0x3effd5, wing: 0xff6a3d, accent: 0xd85dff, cockpit: 0x1e3243 },
   ];
-  const botCount = Number(botCountEl.value);
+  const botCount = getBotCount();
   game.bots = Array.from({ length: botCount }, (_, i) => {
     const bot = createFighter(botPalettes[i % botPalettes.length]);
     for (let tries = 0; tries < 40; tries++) {
@@ -1450,6 +1452,10 @@ function setupJoystick(stickId, onMove) {
   const knob = stick.querySelector(".knob");
   const state = { pointerId: null, touchId: null };
 
+  function isInteractiveElement(target) {
+    return Boolean(target?.closest?.("button, select, option, input, textarea, a, label"));
+  }
+
   function updateKnob(nx, ny) {
     const max = stick.clientWidth * 0.34;
     knob.style.transform = `translate(${nx * max}px, ${ny * max}px)`;
@@ -1484,6 +1490,8 @@ function setupJoystick(stickId, onMove) {
   }
 
   stick.addEventListener("pointerdown", (e) => {
+    if (!e.isPrimary) return;
+    if (isInteractiveElement(e.target)) return;
     e.preventDefault();
     state.pointerId = e.pointerId;
     stick.setPointerCapture?.(e.pointerId);
@@ -1569,6 +1577,7 @@ function setupBoostLever() {
   }
 
   boostLeverEl.addEventListener("pointerdown", (e) => {
+    if (!e.isPrimary) return;
     e.preventDefault();
     boostLeverState.pointerId = e.pointerId;
     boostLeverEl.setPointerCapture?.(e.pointerId);
@@ -1706,9 +1715,13 @@ restartBtn.addEventListener("pointerup", restartFromHud);
 
 let lastMenuToggleAt = 0;
 
-function toggleMenuPanel() {
+function toggleMenuPanel(forceOpen) {
   updateMenuPanelPosition();
-  menuPanel.hidden = !menuPanel.hidden;
+  if (typeof forceOpen === "boolean") {
+    menuPanel.hidden = !forceOpen;
+  } else {
+    menuPanel.hidden = !menuPanel.hidden;
+  }
   menuBtn.setAttribute("aria-expanded", String(!menuPanel.hidden));
   lastMenuToggleAt = performance.now();
 }
@@ -1724,10 +1737,47 @@ menuBtn.addEventListener("click", (e) => {
   toggleMenuPanel();
 });
 
-botCountEl.addEventListener("change", resetMatch);
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
+function getBotCount() {
+  return Number(botCountEl.dataset.value || "2");
+}
+
+function getMapType() {
+  return mapTypeEl.dataset.value || "city";
+}
+
+function setChoiceValue(container, buttons, nextValue) {
+  const normalized = String(nextValue);
+  container.dataset.value = normalized;
+  buttons.forEach((btn) => {
+    const active = btn.dataset.value === normalized;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function bindChoiceButtons(container, buttons, onChange) {
+  buttons.forEach((btn) => {
+    const activate = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (container.dataset.value === btn.dataset.value) return;
+      setChoiceValue(container, buttons, btn.dataset.value);
+      onChange();
+    };
+    btn.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "touch") return;
+      activate(event);
+    });
+    btn.addEventListener("click", activate);
+  });
+}
+
+bindChoiceButtons(botCountEl, botChoiceButtons, () => {
+  resetMatch();
+});
+
+bindChoiceButtons(mapTypeEl, mapChoiceButtons, () => {
+  buildWorld(getMapType());
   resetMatch();
 });
 
@@ -1750,7 +1800,8 @@ window.visualViewport?.addEventListener("resize", () => {
 
 window.addEventListener(
   "pointerdown",
-  () => {
+  (event) => {
+    if (event.pointerType === "touch" && event.isPrimary === false) return;
     tryFullscreen();
     lockLandscape();
   },
@@ -1782,7 +1833,7 @@ function tick(now) {
 try {
   runStartupStep("fitViewport", () => fitViewport());
   runStartupStep("orientationHint", () => updateOrientationHint());
-  runStartupStep("buildWorld", () => buildWorld(mapTypeEl.value));
+  runStartupStep("buildWorld", () => buildWorld(getMapType()));
   runStartupStep("resetMatch", () => resetMatch());
   runStartupStep("startLoop", () => requestAnimationFrame(tick));
 } catch (err) {

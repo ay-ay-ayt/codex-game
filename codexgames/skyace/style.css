@@ -135,6 +135,40 @@ body {
   padding: 3px 6px;
 }
 
+.menu-choice {
+  display: grid;
+  gap: 6px;
+}
+
+.menu-choice-title {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.choice-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+  gap: 6px;
+}
+
+.choice-btn {
+  border: 1px solid rgba(166, 225, 255, 0.5);
+  border-radius: 8px;
+  color: #e8f7ff;
+  background: rgba(8, 29, 50, 0.7);
+  min-height: 34px;
+  font-size: 12px;
+  font-weight: 800;
+  touch-action: manipulation;
+}
+
+.choice-btn.is-active {
+  color: #0f2b44;
+  background: linear-gradient(180deg, rgba(193, 238, 255, 0.95), rgba(133, 213, 246, 0.95));
+  border-color: rgba(216, 247, 255, 0.92);
+  box-shadow: 0 0 12px rgba(123, 214, 255, 0.45);
+}
+
 #title {
   color: #9fdfff;
   grid-column: 1 / 2;
@@ -151,21 +185,10 @@ body {
   min-width: 0;
 }
 
-#botWrap {
-  display: inline-flex;
-  gap: 7px;
-  align-items: center;
+#botWrap,
+#mapWrap {
+  align-items: stretch;
 }
-
-#botCount,
-#mapType {
-  border: 0;
-  border-radius: 8px;
-  background: #d7f0ff;
-  padding: 4px 8px;
-  font-weight: 700;
-}
-
 
 #health {
   display: grid;
