@@ -8,6 +8,11 @@ const botCountEl = document.getElementById("botCount");
 const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
+const botCountButtons = Array.from(botCountEl.querySelectorAll(".tap-btn[data-bot-count]"));
+const mapTypeButtons = Array.from(mapTypeEl.querySelectorAll(".tap-btn[data-map-type]"));
+
+let selectedBotCount = Number(botCountButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.botCount || 2);
+let selectedMapType = mapTypeButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.mapType || "city";
 const menuPanel = document.getElementById("menuPanel");
 menuPanel.hidden = true;
 menuBtn.setAttribute("aria-expanded", "false");
@@ -1405,7 +1410,7 @@ function resetMatch() {
     { body: 0xff62a8, wing: 0x6aff55, accent: 0x32a0ff, cockpit: 0x2b2648 },
     { body: 0x3effd5, wing: 0xff6a3d, accent: 0xd85dff, cockpit: 0x1e3243 },
   ];
-  const botCount = Number(botCountEl.value);
+  const botCount = selectedBotCount;
   game.bots = Array.from({ length: botCount }, (_, i) => {
     const bot = createFighter(botPalettes[i % botPalettes.length]);
     for (let tries = 0; tries < 40; tries++) {
@@ -1632,6 +1637,45 @@ function updateOrientationHint() {
   rotateHint.hidden = window.innerWidth >= window.innerHeight;
 }
 
+function setActiveTapButton(buttons, activeButton) {
+  buttons.forEach((btn) => {
+    const isActive = btn === activeButton;
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function setupTapMenuButtons() {
+  const initialBotBtn = botCountButtons.find((btn) => Number(btn.dataset.botCount) === selectedBotCount);
+  if (initialBotBtn) setActiveTapButton(botCountButtons, initialBotBtn);
+
+  const initialMapBtn = mapTypeButtons.find((btn) => btn.dataset.mapType === selectedMapType);
+  if (initialMapBtn) setActiveTapButton(mapTypeButtons, initialMapBtn);
+
+  botCountButtons.forEach((btn) => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const next = Number(btn.dataset.botCount);
+      if (!Number.isFinite(next) || next === selectedBotCount) return;
+      selectedBotCount = next;
+      setActiveTapButton(botCountButtons, btn);
+      resetMatch();
+    });
+  });
+
+  mapTypeButtons.forEach((btn) => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const next = btn.dataset.mapType;
+      if (!next || next === selectedMapType) return;
+      selectedMapType = next;
+      setActiveTapButton(mapTypeButtons, btn);
+      buildWorld(selectedMapType);
+      resetMatch();
+    });
+  });
+}
+
 if (!rendererReady) {
   drawRendererFallback();
   messageEl.hidden = false;
@@ -1726,14 +1770,7 @@ menuBtn.addEventListener("click", (e) => {
   toggleMenuPanel();
 });
 
-botCountEl.addEventListener("change", resetMatch);
-botCountEl.addEventListener("input", resetMatch);
-mapTypeEl.addEventListener("change", () => {
-  buildWorld(mapTypeEl.value);
-  resetMatch();
-});
-
-
+setupTapMenuButtons();
 
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 window.addEventListener("selectstart", (e) => e.preventDefault());
@@ -1784,7 +1821,7 @@ function tick(now) {
 try {
   runStartupStep("fitViewport", () => fitViewport());
   runStartupStep("orientationHint", () => updateOrientationHint());
-  runStartupStep("buildWorld", () => buildWorld(mapTypeEl.value));
+  runStartupStep("buildWorld", () => buildWorld(selectedMapType));
   runStartupStep("resetMatch", () => resetMatch());
   runStartupStep("startLoop", () => requestAnimationFrame(tick));
 } catch (err) {
