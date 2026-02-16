@@ -1484,19 +1484,16 @@ function setupJoystick(stickId, onMove) {
   }
 
   stick.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
     state.pointerId = e.pointerId;
     stick.setPointerCapture?.(e.pointerId);
     moveFromClient(e.clientX, e.clientY);
   });
   stick.addEventListener("pointermove", (e) => {
     if (state.pointerId !== e.pointerId) return;
-    e.preventDefault();
     moveFromClient(e.clientX, e.clientY);
   });
   const onPointerRelease = (e) => {
     if (state.pointerId !== e.pointerId) return;
-    e.preventDefault();
     releaseStick();
   };
   stick.addEventListener("pointerup", onPointerRelease);
@@ -1569,14 +1566,12 @@ function setupBoostLever() {
   }
 
   boostLeverEl.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
     boostLeverState.pointerId = e.pointerId;
     boostLeverEl.setPointerCapture?.(e.pointerId);
     moveFromClient(e.clientY);
   });
   boostLeverEl.addEventListener("pointermove", (e) => {
     if (boostLeverState.pointerId !== e.pointerId) return;
-    e.preventDefault();
     moveFromClient(e.clientY);
   });
   const release = (e) => {
@@ -1588,6 +1583,7 @@ function setupBoostLever() {
 
   applyLevel(0);
 }
+
 
 function bindActionButton(btn) {
   const press = (e) => {
