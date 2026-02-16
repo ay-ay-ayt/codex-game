@@ -940,15 +940,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
   g.rotation.y = -Math.PI * 0.5;
 
-  if (!isPlayer) {
-    const navMat = new THREE.MeshBasicMaterial({ color: 0xe7ecf5 });
-    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), navMat);
-    navL.position.set(13.6, 1.26, -2.6);
-    const navR = navL.clone();
-    navR.position.x *= -1;
-    g.add(navL, navR);
-  }
-
   g.scale.setScalar(1.24);
   g.position.set(0, 300, 0);
   g.traverse((node) => {
