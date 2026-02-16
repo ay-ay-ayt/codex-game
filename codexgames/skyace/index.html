@@ -44,6 +44,7 @@
 
   <div id="crosshair" aria-hidden="true"></div>
   <div id="message" hidden></div>
+  <div id="buildDebug" aria-hidden="true"></div>
 
   <div id="mobileControls" aria-label="mobile controls">
     <div class="stick-wrap" id="leftStickWrap">
@@ -66,7 +67,7 @@
   </div>
 
   <script type="module">
-    import("./main.js?v=20260216-tap-menu-buttons-v1").catch((err) => {
+    import("./main.js?v=20260216-wing-align-zoom-v4").catch((err) => {
       console.error("[skyace:module-load]", err);
       const messageEl = document.getElementById("message");
       if (messageEl) {
