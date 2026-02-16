@@ -21,20 +21,20 @@ const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
+const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
+
+// DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
+const DEBUG_BUILD_NUMBER = 1;
+if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
   || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 if (isMobile) {
-  let lastTouchEndAt = 0;
-  document.addEventListener("touchend", (event) => {
-    const now = performance.now();
-    if (now - lastTouchEndAt < 320) {
-      event.preventDefault();
-    }
-    lastTouchEndAt = now;
-  }, { passive: false });
+  const preventZoomGesture = (event) => event.preventDefault();
+  document.addEventListener("gesturestart", preventZoomGesture, { passive: false });
+  document.addEventListener("dblclick", preventZoomGesture, { passive: false });
 }
 
 function setupHudHealthPanel() {
@@ -818,7 +818,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   wingPatternMat.polygonOffsetUnits = -2;
 
   const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.014, 0.52), wingPatternMat);
-  wingPatternL.position.set(-9.1, 0.955, 11.8);
+  wingPatternL.position.set(-9.1, 0.948, 11.8);
   wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
