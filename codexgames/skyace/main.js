@@ -26,6 +26,17 @@ let hpPanelReady = false;
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
   || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
+if (isMobile) {
+  let lastTouchEndAt = 0;
+  document.addEventListener("touchend", (event) => {
+    const now = performance.now();
+    if (now - lastTouchEndAt < 320) {
+      event.preventDefault();
+    }
+    lastTouchEndAt = now;
+  }, { passive: false });
+}
+
 function setupHudHealthPanel() {
   healthEl.innerHTML = "";
   hpPanelReady = true;
@@ -752,7 +763,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     [-8.0, 0.7],
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
-  mainWingL.position.set(-10.7, 0.1, 0);
+  mainWingL.position.set(-10.7, 0.28, 0);
   mainWingL.rotation.x = 0;
   const mainWingR = new THREE.Mesh(taperWingThickness(buildSurface(mirrorPoints(mainWingPoints), 1.92), 0.42, 1.45), wingMat);
   mainWingR.position.copy(mainWingL.position);
@@ -807,7 +818,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   wingPatternMat.polygonOffsetUnits = -2;
 
   const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.014, 0.52), wingPatternMat);
-  wingPatternL.position.set(-9.1, 0.972, 11.8);
+  wingPatternL.position.set(-9.1, 0.955, 11.8);
   wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
