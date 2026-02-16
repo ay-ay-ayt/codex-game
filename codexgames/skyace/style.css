@@ -366,12 +366,12 @@ body {
   display: grid;
   grid-template-columns: max-content max-content;
   align-items: end;
-  gap: 8px;
+  gap: 4px;
 }
 
 #fireBtn {
   align-self: end;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .lever-wrap {
@@ -404,8 +404,8 @@ body {
 }
 
 .action {
-  width: min(18vw, 110px);
-  min-height: 48px;
+  width: min(17vw, 104px);
+  min-height: 56px;
   border: 1px solid var(--line);
   border-radius: 12px;
   font-weight: 800;
