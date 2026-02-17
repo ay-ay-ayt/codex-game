@@ -44,6 +44,7 @@
 
   <div id="crosshair" aria-hidden="true"></div>
   <div id="message" hidden></div>
+  <div id="buildDebug" aria-hidden="true"></div>
 
   <div id="mobileControls" aria-label="mobile controls">
     <div class="stick-wrap" id="leftStickWrap">
@@ -66,12 +67,17 @@
   </div>
 
   <script type="module">
-    import("./main.js?v=20260216-tap-menu-buttons-v1").catch((err) => {
-      console.error("[skyace:module-load]", err);
-      const messageEl = document.getElementById("message");
-      if (messageEl) {
-        messageEl.hidden = false;
-        messageEl.textContent = `初期化エラー(module-load): ${err?.message || err}`;
+    import("./main.js?v=20260216-wing-align-zoom-v19").catch(async (err) => {
+      console.warn("[skyace:module-load:cache-busted-failed]", err);
+      try {
+        await import("./main.js");
+      } catch (fallbackErr) {
+        console.error("[skyace:module-load]", fallbackErr);
+        const messageEl = document.getElementById("message");
+        if (messageEl) {
+          messageEl.hidden = false;
+          messageEl.textContent = `初期化エラー(module-load): ${fallbackErr?.message || fallbackErr}`;
+        }
       }
     });
   </script>

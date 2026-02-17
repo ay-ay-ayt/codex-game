@@ -21,10 +21,21 @@ const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
+const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
+
+// DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
+const DEBUG_BUILD_NUMBER = 18;
+if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
   || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+if (isMobile) {
+  const preventZoomGesture = (event) => event.preventDefault();
+  document.addEventListener("gesturestart", preventZoomGesture, { passive: false });
+  document.addEventListener("dblclick", preventZoomGesture, { passive: false });
+}
 
 function setupHudHealthPanel() {
   healthEl.innerHTML = "";
@@ -595,7 +606,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const playerPalette = {
     body: 0x0b0c10,
     wing: 0x1f4f9a,
-    accent: 0x8a3f00,
+    accent: 0xffa13a,
     cockpit: 0x0f1117,
   };
   const enemyPalette = {
@@ -752,7 +763,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     [-8.0, 0.7],
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
-  mainWingL.position.set(-10.7, 0.1, 0);
+  mainWingL.position.set(-10.7, 2.0, 0);
   mainWingL.rotation.x = 0;
   const mainWingR = new THREE.Mesh(taperWingThickness(buildSurface(mirrorPoints(mainWingPoints), 1.92), 0.42, 1.45), wingMat);
   mainWingR.position.copy(mainWingL.position);
@@ -806,8 +817,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
   wingPatternMat.polygonOffsetFactor = -2;
   wingPatternMat.polygonOffsetUnits = -2;
 
-  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.014, 0.52), wingPatternMat);
-  wingPatternL.position.set(-9.1, 0.972, 11.8);
+  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.006, 0.42), wingPatternMat);
+  wingPatternL.position.set(-8.7, 0.15, 11.8);
   wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
@@ -860,19 +871,31 @@ function createFighter(colorOrPalette, isPlayer = false) {
   engineCore.rotation.z = -Math.PI * 0.5;
   engineCore.position.set(-25.0, 1.15, 0);
 
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.5, 5.4, 28), nozzleMetalMat);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.5, 4.6, 28), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
-  nozzle.position.set(-36.9, 1.15, 0);
+  nozzle.position.set(-37.3, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.45, 2.18, 4.2, 24),
-    new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.36, metalness: 0.72 })
+    new THREE.CylinderGeometry(3.0995, 3.4995, 5.0, 24),
+    new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62 })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
-  nozzleInnerHole.position.set(-38.2, 1.15, 0);
+  nozzleInnerHole.position.set(-38.35, 1.15, 0);
+
+  const nozzleInnerLiner = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.09, 3.485, 4.8, 24, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: 0xc1c9d2,
+      roughness: 0.22,
+      metalness: 0.92,
+      side: THREE.BackSide,
+    })
+  );
+  nozzleInnerLiner.rotation.z = Math.PI * 0.5;
+  nozzleInnerLiner.position.copy(nozzleInnerHole.position);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xffb8d2 : 0xffd8bb,
+    color: isPlayer ? 0xffb08a : 0xff9a78,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -881,7 +904,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x9568ff : 0xffab6b,
+    color: isPlayer ? 0xff6b52 : 0xff7156,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -890,7 +913,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x4677ff : 0xff8d59,
+    color: isPlayer ? 0xb12e28 : 0xa8362c,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -899,22 +922,22 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
 
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 0.56, 8.6, 26, 1, true), flameCoreMat);
+  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.28, 0.82, 8.8, 26, 1, true), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
   flameCore.position.set(-41.3, 1.15, 0);
 
-  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.38, 0.28, 13.8, 28, 1, true), flamePlumeMat);
+  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.92, 0.52, 14.2, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
   flamePlume.position.set(-44.8, 1.15, 0);
 
-  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.08, 20.0, 24, 1, true), flameTrailMat);
+  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(1.12, 0.22, 20.5, 24, 1, true), flameTrailMat);
   flameTrail.rotation.z = -Math.PI * 0.5;
   flameTrail.position.set(-49.4, 1.15, 0);
 
   const flameNeedle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
+    new THREE.CylinderGeometry(0.14, 0.34, 6.2, 16),
     new THREE.MeshBasicMaterial({
-      color: isPlayer ? 0xffd2e5 : 0xfff1de,
+      color: isPlayer ? 0xffd8c6 : 0xffd0bc,
       transparent: true,
       opacity: 0.4,
       blending: THREE.AdditiveBlending,
@@ -931,9 +954,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
-    mainWingL, mainWingR, wingPatternL, wingPatternR,
+    mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
-    engineCore, nozzle, nozzleInnerHole,
+    engineCore, nozzle, nozzleInnerHole, nozzleInnerLiner,
     flameCore, flamePlume, flameTrail, flameNeedle
   );
 
