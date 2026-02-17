@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 21;
+const DEBUG_BUILD_NUMBER = 23;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -818,7 +818,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   wingPatternMat.polygonOffsetUnits = -2;
 
   const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.006, 0.42), wingPatternMat);
-  wingPatternL.position.set(-8.7, 0.15, 11.8);
+  wingPatternL.position.set(-7.8, 0.15, 11.8);
   wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
@@ -876,26 +876,14 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzle.position.set(-37.3, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.45, 2.18, 4.2, 24),
+    new THREE.CylinderGeometry(3.02, 3.42, 4.2, 24),
     new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62 })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
   nozzleInnerHole.position.set(-38.35, 1.15, 0);
 
   const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.09, 3.485, 4.8, 24, 1, true),
-    new THREE.MeshStandardMaterial({
-      color: 0xc1c9d2,
-      roughness: 0.22,
-      metalness: 0.92,
-      side: THREE.BackSide,
-    })
-  );
-  nozzleInnerLiner.rotation.z = Math.PI * 0.5;
-  nozzleInnerLiner.position.copy(nozzleInnerHole.position);
-
-  const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.34, 2.06, 4.0, 24, 1, true),
+    new THREE.CylinderGeometry(3.0, 3.4, 4.0, 24, 1, true),
     new THREE.MeshStandardMaterial({
       color: 0xc1c9d2,
       roughness: 0.22,
