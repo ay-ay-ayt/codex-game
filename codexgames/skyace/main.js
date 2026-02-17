@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 19;
+const DEBUG_BUILD_NUMBER = 20;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -883,7 +883,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleInnerHole.position.set(-38.35, 1.15, 0);
 
   const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.09, 3.485, 4.8, 24, 1, true),
     new THREE.CylinderGeometry(3.09, 3.485, 4.8, 24, 1, true),
     new THREE.MeshStandardMaterial({
       color: 0xc1c9d2,
