@@ -21,10 +21,21 @@ const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
+const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
+
+// DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
+const DEBUG_BUILD_NUMBER = 7;
+if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
   || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+if (isMobile) {
+  const preventZoomGesture = (event) => event.preventDefault();
+  document.addEventListener("gesturestart", preventZoomGesture, { passive: false });
+  document.addEventListener("dblclick", preventZoomGesture, { passive: false });
+}
 
 function setupHudHealthPanel() {
   healthEl.innerHTML = "";
@@ -595,7 +606,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const playerPalette = {
     body: 0x0b0c10,
     wing: 0x1f4f9a,
-    accent: 0x8a3f00,
+    accent: 0xffa13a,
     cockpit: 0x0f1117,
   };
   const enemyPalette = {
@@ -752,7 +763,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     [-8.0, 0.7],
   ];
   const mainWingL = new THREE.Mesh(taperWingThickness(buildSurface(mainWingPoints, 1.92), 0.42, 1.45), wingMat);
-  mainWingL.position.set(-10.7, 0.1, 0);
+  mainWingL.position.set(-10.7, 2.0, 0);
   mainWingL.rotation.x = 0;
   const mainWingR = new THREE.Mesh(taperWingThickness(buildSurface(mirrorPoints(mainWingPoints), 1.92), 0.42, 1.45), wingMat);
   mainWingR.position.copy(mainWingL.position);
@@ -806,8 +817,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
   wingPatternMat.polygonOffsetFactor = -2;
   wingPatternMat.polygonOffsetUnits = -2;
 
-  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.014, 0.52), wingPatternMat);
-  wingPatternL.position.set(-9.1, 0.972, 11.8);
+  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.006, 0.42), wingPatternMat);
+  wingPatternL.position.set(-9.1, 0.2, 11.8);
   wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
@@ -872,7 +883,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleInnerHole.position.set(-38.2, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xffb8d2 : 0xffd8bb,
+    color: isPlayer ? 0xffb08a : 0xff9a78,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -881,7 +892,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x9568ff : 0xffab6b,
+    color: isPlayer ? 0xff6b52 : 0xff7156,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -890,7 +901,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x4677ff : 0xff8d59,
+    color: isPlayer ? 0xb12e28 : 0xa8362c,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -914,7 +925,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const flameNeedle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
     new THREE.MeshBasicMaterial({
-      color: isPlayer ? 0xffd2e5 : 0xfff1de,
+      color: isPlayer ? 0xffd8c6 : 0xffd0bc,
       transparent: true,
       opacity: 0.4,
       blending: THREE.AdditiveBlending,
@@ -931,7 +942,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
-    mainWingL, mainWingR, wingPatternL, wingPatternR,
+    mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, nozzle, nozzleInnerHole,
     flameCore, flamePlume, flameTrail, flameNeedle
