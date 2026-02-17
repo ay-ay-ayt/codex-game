@@ -884,6 +884,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const nozzleInnerLiner = new THREE.Mesh(
     new THREE.CylinderGeometry(3.09, 3.485, 4.8, 24, 1, true),
+    new THREE.CylinderGeometry(3.09, 3.485, 4.8, 24, 1, true),
     new THREE.MeshStandardMaterial({
       color: 0xc1c9d2,
       roughness: 0.22,
