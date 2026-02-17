@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 6;
+const DEBUG_BUILD_NUMBER = 7;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -818,7 +818,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   wingPatternMat.polygonOffsetUnits = -2;
 
   const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.006, 0.42), wingPatternMat);
-  wingPatternL.position.set(-9.1, 0.75, 11.8);
+  wingPatternL.position.set(-9.1, 0.2, 11.8);
   wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
@@ -883,7 +883,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleInnerHole.position.set(-38.2, 1.15, 0);
 
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xffb8d2 : 0xffd8bb,
+    color: isPlayer ? 0xffb08a : 0xff9a78,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -892,7 +892,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x9568ff : 0xffab6b,
+    color: isPlayer ? 0xff6b52 : 0xff7156,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -901,7 +901,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x4677ff : 0xff8d59,
+    color: isPlayer ? 0xb12e28 : 0xa8362c,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -925,7 +925,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const flameNeedle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
     new THREE.MeshBasicMaterial({
-      color: isPlayer ? 0xffd2e5 : 0xfff1de,
+      color: isPlayer ? 0xffd8c6 : 0xffd0bc,
       transparent: true,
       opacity: 0.4,
       blending: THREE.AdditiveBlending,
