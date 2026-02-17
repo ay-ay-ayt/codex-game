@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 5;
+const DEBUG_BUILD_NUMBER = 6;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -817,8 +817,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
   wingPatternMat.polygonOffsetFactor = -2;
   wingPatternMat.polygonOffsetUnits = -2;
 
-  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.008, 0.52), wingPatternMat);
-  wingPatternL.position.set(-9.1, 0.858, 11.8);
+  const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.006, 0.42), wingPatternMat);
+  wingPatternL.position.set(-9.1, 0.75, 11.8);
   wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
