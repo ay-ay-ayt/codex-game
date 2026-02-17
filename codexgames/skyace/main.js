@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 7;
+const DEBUG_BUILD_NUMBER = 9;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -818,7 +818,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   wingPatternMat.polygonOffsetUnits = -2;
 
   const wingPatternL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.006, 0.42), wingPatternMat);
-  wingPatternL.position.set(-9.1, 0.2, 11.8);
+  wingPatternL.position.set(-8.7, 0.15, 11.8);
   wingPatternL.rotation.set(0, 0, -0.012);
   mainWingL.add(wingPatternL);
 
@@ -876,7 +876,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzle.position.set(-36.9, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.45, 2.18, 4.2, 24),
+    new THREE.CylinderGeometry(2.95, 2.68, 4.4, 24),
     new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.36, metalness: 0.72 })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
@@ -910,20 +910,20 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
 
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 0.56, 8.6, 26, 1, true), flameCoreMat);
+  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.28, 0.82, 8.8, 26, 1, true), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
   flameCore.position.set(-41.3, 1.15, 0);
 
-  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.38, 0.28, 13.8, 28, 1, true), flamePlumeMat);
+  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.92, 0.52, 14.2, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
   flamePlume.position.set(-44.8, 1.15, 0);
 
-  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.08, 20.0, 24, 1, true), flameTrailMat);
+  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(1.12, 0.22, 20.5, 24, 1, true), flameTrailMat);
   flameTrail.rotation.z = -Math.PI * 0.5;
   flameTrail.position.set(-49.4, 1.15, 0);
 
   const flameNeedle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.24, 6.0, 16),
+    new THREE.CylinderGeometry(0.14, 0.34, 6.2, 16),
     new THREE.MeshBasicMaterial({
       color: isPlayer ? 0xffd8c6 : 0xffd0bc,
       transparent: true,
