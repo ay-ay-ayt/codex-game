@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 25;
+const DEBUG_BUILD_NUMBER = 26;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -670,9 +670,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
   });
 
   // Main axis body: keep the thick section running forward to around the main-wing leading edge.
-  const centerSpineGeo = new THREE.CylinderGeometry(2.14, 2.28, 24.6, 30);
+  const centerSpineGeo = new THREE.CylinderGeometry(2.14, 2.28, 14.6, 30);
   // Keep the mesh position unchanged while shortening only the rear side (no front-side shift).
-  centerSpineGeo.translate(0, 1.2, 0);
+  centerSpineGeo.translate(0, 6.2, 0);
   const centerSpine = new THREE.Mesh(centerSpineGeo, bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
   centerSpine.position.set(-12.2, 0.72, 0);
@@ -883,14 +883,14 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLip.position.set(-39.6, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.02, 3.42, 4.2, 24),
+    new THREE.CylinderGeometry(3.18, 3.58, 4.2, 24),
     new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62 })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
   nozzleInnerHole.position.set(-38.35, 1.15, 0);
 
   const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.0, 3.4, 4.0, 24, 1, true),
+    new THREE.CylinderGeometry(3.14, 3.54, 4.0, 24, 1, true),
     new THREE.MeshStandardMaterial({
       color: 0xc1c9d2,
       roughness: 0.22,
