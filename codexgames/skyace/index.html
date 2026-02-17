@@ -66,15 +66,6 @@
     <small>ブラウザUIが狭い場合は「ホーム画面に追加」で全画面化できます。</small>
   </div>
 
-  <script type="module">
-    import("./main.js?v=20260216-wing-align-zoom-v18").catch((err) => {
-      console.error("[skyace:module-load]", err);
-      const messageEl = document.getElementById("message");
-      if (messageEl) {
-        messageEl.hidden = false;
-        messageEl.textContent = `初期化エラー(module-load): ${err?.message || err}`;
-      }
-    });
-  </script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
