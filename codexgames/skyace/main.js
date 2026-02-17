@@ -880,14 +880,14 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLip.position.set(-39.6, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.45, 2.18, 4.2, 24),
+    new THREE.CylinderGeometry(3.02, 3.42, 4.2, 24),
     new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62 })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
   nozzleInnerHole.position.set(-38.35, 1.15, 0);
 
   const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.34, 2.06, 4.0, 24, 1, true),
+    new THREE.CylinderGeometry(3.0, 3.4, 4.0, 24, 1, true),
     new THREE.MeshStandardMaterial({
       color: 0xc1c9d2,
       roughness: 0.22,
