@@ -5,5 +5,5 @@
   "orientation": "landscape",
   "background_color": "#030c18",
   "theme_color": "#030c18",
-  "start_url": "./index.html"
+  "start_url": "./index.html?v=23"
 }
