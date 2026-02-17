@@ -883,7 +883,11 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleInnerHole.position.set(-38.35, 1.15, 0);
 
   const nozzleInnerLiner = new THREE.Mesh(
+<<<<<<< codex/2026-02-17-13-33-18-adjust-main-wing-position-and-pattern-alignment
     new THREE.CylinderGeometry(3.09, 3.485, 4.8, 24, 1, true),
+=======
+    new THREE.CylinderGeometry(3.08, 3.48, 4.8, 24, 1, true),
+>>>>>>> main
     new THREE.MeshStandardMaterial({
       color: 0xc1c9d2,
       roughness: 0.22,
