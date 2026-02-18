@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 46;
+const DEBUG_BUILD_NUMBER = 47;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -904,11 +904,11 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
+    color: isPlayer ? 0xff5648 : 0xff6a56,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.0,
+    opacity: 0.22,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -931,9 +931,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
 
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(1.72, 1.1, 3.2, 26, 1, true), flameCoreMat);
+  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.46, 2.96, 19.8, 30, 1, true), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-37.2, 1.15, 0);
+  flameCore.position.set(-23.0, 1.15, 0);
 
   const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 0.72, 5.4, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
@@ -966,7 +966,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, nozzle, nozzleLip, nozzleInnerHole, nozzleInnerLiner,
-    // flameCore, flamePlume, flameTrail, flameNeedle
+    flameCore, // red layer tightly wrapped on engine core
+    // flamePlume, flameTrail, flameNeedle
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
