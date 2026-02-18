@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 56;
+const DEBUG_BUILD_NUMBER = 57;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -646,7 +646,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     emissiveIntensity: isPlayer ? 0 : 0.32,
   });
   const nozzleMetalMat = new THREE.MeshPhysicalMaterial({
-    color: 0x7a828d,
+    color: 0x3a0a0f,
     roughnessMap: fighterTextures.bodyRoughness,
     normalMap: fighterTextures.bodyNormal,
     metalnessMap: fighterTextures.bodyMetalness,
@@ -857,10 +857,10 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
-    [-37.5, 3.4], // rear-lower trimmed upward so lower section does not protrude into nozzle interior
-    [-31.6, -0.2], // front-lower requested x, trimmed upward from previous lower edge
-    [-34.7, 10.2], // front-upper (top height unchanged)
-    [-37.5, 10.2], // rear-upper (top height unchanged)
+    [-37.0, 3.4], // rear-lower trimmed upward so lower section does not protrude into nozzle interior
+    [-31.1, -0.2], // front-lower requested x, trimmed upward from previous lower edge
+    [-34.2, 10.2], // front-upper (top height unchanged)
+    [-37.0, 10.2], // rear-upper (top height unchanged)
   ];
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
@@ -872,13 +872,13 @@ function createFighter(colorOrPalette, isPlayer = false) {
   engineCore.rotation.z = -Math.PI * 0.5;
   engineCore.position.set(-23.0, 1.15, 0);
 
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.8175, 3.3925, 4.0, 28, 1, true), nozzleMetalMat);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.75692375, 3.38401875, 5.0, 28, 1, true), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
-  nozzle.position.set(-31.7, 1.15, 0);
+  nozzle.position.set(-32.2, 1.15, 0);
 
-  const nozzleLip = new THREE.Mesh(new THREE.RingGeometry(2.87, 3.3925, 28), nozzleMetalMat);
+  const nozzleLip = new THREE.Mesh(new THREE.RingGeometry(2.808295, 3.38401875, 28), nozzleMetalMat);
   nozzleLip.rotation.y = -Math.PI * 0.5;
-  nozzleLip.position.set(-33.7, 1.15, 0);
+  nozzleLip.position.set(-34.7, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
     new THREE.CylinderGeometry(1.78, 2.08, 2.8, 24, 1, true),
