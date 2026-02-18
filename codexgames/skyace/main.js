@@ -25,11 +25,8 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-<<<<<<< codex/2026-02-18-01-27-38-implement-cache-measures-for-skyace
+const DEBUG_BUILD_NUMBER = 28;
 const DEBUG_BUILD_NUMBER = 27;
-=======
-const DEBUG_BUILD_NUMBER = 26;
->>>>>>> main
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -878,23 +875,23 @@ function createFighter(colorOrPalette, isPlayer = false) {
   engineCore.rotation.z = -Math.PI * 0.5;
   engineCore.position.set(-25.0, 1.15, 0);
 
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.5, 4.6, 28, 1, true), nozzleMetalMat);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(3.28, 3.68, 4.6, 28, 1, true), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
   nozzle.position.set(-37.3, 1.15, 0);
 
-  const nozzleLip = new THREE.Mesh(new THREE.RingGeometry(3.36, 3.5, 28), nozzleMetalMat);
+  const nozzleLip = new THREE.Mesh(new THREE.RingGeometry(3.6, 3.68, 28), nozzleMetalMat);
   nozzleLip.rotation.y = -Math.PI * 0.5;
   nozzleLip.position.set(-39.6, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.18, 3.58, 4.2, 24),
+    new THREE.CylinderGeometry(3.22, 3.62, 4.2, 24),
     new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62 })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
   nozzleInnerHole.position.set(-38.35, 1.15, 0);
 
   const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.14, 3.54, 4.0, 24, 1, true),
+    new THREE.CylinderGeometry(3.2, 3.6, 4.0, 24, 1, true),
     new THREE.MeshStandardMaterial({
       color: 0xc1c9d2,
       roughness: 0.22,
