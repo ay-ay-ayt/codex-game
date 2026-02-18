@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 59;
+const DEBUG_BUILD_NUMBER = 60;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -857,10 +857,10 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
-    [-35.5, 3.4], // shifted 1.5 forward in x from the base fin layout
-    [-29.6, -0.2],
-    [-32.7, 10.2],
-    [-35.5, 10.2],
+    [-34.5, 3.4], // moved 1.0 forward; lower edge is horizontal/parallel to upper edge
+    [-28.6, 3.4],
+    [-31.7, 10.2],
+    [-34.5, 10.2],
   ];
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
@@ -881,23 +881,12 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLip.position.set(-35.7, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.6166, 3.0576, 2.8, 24, 1, true),
+    new THREE.CylinderGeometry(2.09328, 2.44608, 0.5, 24, 1, true),
     new THREE.MeshStandardMaterial({ color: 0xc2cbd6, roughness: 0.2, metalness: 0.94, side: THREE.BackSide })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
   nozzleInnerHole.position.set(-36.6, 1.15, 0);
 
-  const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.1059, 3.6414, 2.6, 24, 1, true),
-    new THREE.MeshStandardMaterial({
-      color: 0xc1c9d2,
-      roughness: 0.22,
-      metalness: 0.92,
-      side: THREE.BackSide,
-    })
-  );
-  nozzleInnerLiner.rotation.z = Math.PI * 0.5;
-  nozzleInnerLiner.position.copy(nozzleInnerHole.position);
 
   // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
   const flamePlumeMat = new THREE.MeshBasicMaterial({
@@ -948,7 +937,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
-    engineCore, nozzle, nozzleInnerHole, nozzleInnerLiner,
+    engineCore, nozzle, nozzleLip, nozzleInnerHole,
     // flamePlume, flameTrail, flameNeedle
   );
 
