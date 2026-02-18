@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 35;
+const DEBUG_BUILD_NUMBER = 36;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -883,8 +883,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLip.position.set(-39.6, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.98, 3.393, 4.2, 24),
-    new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62 })
+    new THREE.CylinderGeometry(2.98, 3.393, 4.2, 24, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62, side: THREE.DoubleSide })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
   nozzleInnerHole.position.set(-38.35, 1.15, 0);
@@ -901,7 +901,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleInnerLiner.rotation.z = Math.PI * 0.5;
   nozzleInnerLiner.position.copy(nozzleInnerHole.position);
 
-  // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance.
+  // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
   const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0xffb08a : 0xff9a78,
     map: exhaustAlphaTex,
