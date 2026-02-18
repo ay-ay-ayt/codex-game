@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 49;
+const DEBUG_BUILD_NUMBER = 50;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -875,11 +875,11 @@ function createFighter(colorOrPalette, isPlayer = false) {
   engineCore.rotation.z = -Math.PI * 0.5;
   engineCore.position.set(-23.0, 1.15, 0);
 
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.95, 3.25, 4.0, 28, 1, true), nozzleMetalMat);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 4.0, 28, 1, true), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
   nozzle.position.set(-36.7, 1.15, 0);
 
-  const nozzleLip = new THREE.Mesh(new THREE.RingGeometry(3.17, 3.25, 28), nozzleMetalMat);
+  const nozzleLip = new THREE.Mesh(new THREE.RingGeometry(2.87, 2.95, 28), nozzleMetalMat);
   nozzleLip.rotation.y = -Math.PI * 0.5;
   nozzleLip.position.set(-38.7, 1.15, 0);
 
@@ -908,7 +908,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.0,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -966,8 +966,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, nozzle, nozzleLip, nozzleInnerHole, nozzleInnerLiner,
-    flameCore, // red layer tightly wrapped on engine core
-    // flamePlume, flameTrail, flameNeedle
+    // flameCore, flamePlume, flameTrail, flameNeedle
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
