@@ -25,8 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 28;
-const DEBUG_BUILD_NUMBER = 27;
+const DEBUG_BUILD_NUMBER = 35;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -884,14 +883,14 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLip.position.set(-39.6, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.22, 3.62, 4.2, 24),
+    new THREE.CylinderGeometry(2.98, 3.393, 4.2, 24),
     new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62 })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
   nozzleInnerHole.position.set(-38.35, 1.15, 0);
 
   const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.2, 3.6, 4.0, 24, 1, true),
+    new THREE.CylinderGeometry(2.94, 3.353, 4.0, 24, 1, true),
     new THREE.MeshStandardMaterial({
       color: 0xc1c9d2,
       roughness: 0.22,
@@ -902,6 +901,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleInnerLiner.rotation.z = Math.PI * 0.5;
   nozzleInnerLiner.position.copy(nozzleInnerHole.position);
 
+  // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance.
   const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0xffb08a : 0xff9a78,
     map: exhaustAlphaTex,
@@ -916,7 +916,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.22,
+    opacity: isPlayer ? 0.18 : 0.22,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -925,20 +925,20 @@ function createFighter(colorOrPalette, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.09,
+    opacity: isPlayer ? 0.045 : 0.09,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
 
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.28, 0.82, 8.8, 26, 1, true), flameCoreMat);
+  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.18, 1.14, 8.8, 26, 1, true), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
   flameCore.position.set(-41.3, 1.15, 0);
 
-  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.92, 0.52, 14.2, 28, 1, true), flamePlumeMat);
+  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.82, 0.86, 14.2, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
   flamePlume.position.set(-44.8, 1.15, 0);
 
-  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(1.12, 0.22, 20.5, 24, 1, true), flameTrailMat);
+  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(1.04, 0.54, 20.5, 24, 1, true), flameTrailMat);
   flameTrail.rotation.z = -Math.PI * 0.5;
   flameTrail.position.set(-49.4, 1.15, 0);
 
@@ -965,7 +965,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, nozzle, nozzleLip, nozzleInnerHole, nozzleInnerLiner,
-    flameCore, flamePlume, flameTrail, flameNeedle
+    // flameCore, flamePlume, flameTrail, flameNeedle
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -997,7 +997,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
     hpLabel: null,
     exhaust: {
       burners: [],
-      outerFlames: [flameCore, flamePlume, flameTrail, flameNeedle],
+      // outerFlames: [flameCore, flamePlume, flameTrail, flameNeedle],
+      outerFlames: [],
       heatRings: [],
     },
   };
@@ -1011,9 +1012,15 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
   const radiusGain = 1 + boostLevel * 0.28;
   const lengthGain = 1 + boostLevel * 1.5;
-  const radiusByLayer = [0.92, 0.68, 0.46, 0.28];
-  const depthByLayer = [1.0, 1.08, 1.2, 0.9];
-  const opacityByLayer = [0.52, 0.28, 0.12, 0.36];
+  const radiusByLayer = plane.isPlayer
+    ? [0.72, 0.46, 0.3, 0.24]
+    : [0.92, 0.68, 0.46, 0.28];
+  const depthByLayer = plane.isPlayer
+    ? [1.0, 1.0, 1.08, 0.9]
+    : [1.0, 1.08, 1.2, 0.9];
+  const opacityByLayer = plane.isPlayer
+    ? [0.62, 0.24, 0.12, 0.4]
+    : [0.52, 0.28, 0.12, 0.36];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
     const flameLengthScale = pulseA * lengthGain * depthByLayer[i];
