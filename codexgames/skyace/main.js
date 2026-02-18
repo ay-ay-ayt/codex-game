@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 45;
+const DEBUG_BUILD_NUMBER = 46;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -871,9 +871,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Rebuilt single center jet: smaller and simpler with a clear exhaust hole.
   // Keep engine core from occupying the nozzle opening region so the rear hole remains visually open.
-  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 21.0, 24), bodyMat);
+  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 19.8, 24), bodyMat);
   engineCore.rotation.z = -Math.PI * 0.5;
-  engineCore.position.set(-23.6, 1.15, 0);
+  engineCore.position.set(-23.0, 1.15, 0);
 
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.95, 3.25, 4.0, 28, 1, true), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
@@ -904,57 +904,57 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xffb08a : 0xff9a78,
+    color: 0xffffff,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.36,
+    opacity: 0.0,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x8ad8ff : 0xff7156,
+    color: 0xffffff,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: isPlayer ? 0.18 : 0.22,
+    opacity: 0.0,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0x4aa8ff : 0xa8362c,
+    color: 0xffffff,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: isPlayer ? 0.045 : 0.09,
+    opacity: 0.0,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
 
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.18, 1.14, 8.8, 26, 1, true), flameCoreMat);
+  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(1.72, 1.1, 3.2, 26, 1, true), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-41.3, 1.15, 0);
+  flameCore.position.set(-37.2, 1.15, 0);
 
-  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.82, 0.86, 14.2, 28, 1, true), flamePlumeMat);
+  const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 0.72, 5.4, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
-  flamePlume.position.set(-44.8, 1.15, 0);
+  flamePlume.position.set(-39.6, 1.15, 0);
 
-  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(1.04, 0.54, 20.5, 24, 1, true), flameTrailMat);
+  const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.46, 6.2, 24, 1, true), flameTrailMat);
   flameTrail.rotation.z = -Math.PI * 0.5;
-  flameTrail.position.set(-49.4, 1.15, 0);
+  flameTrail.position.set(-41.8, 1.15, 0);
 
   const flameNeedle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.14, 0.34, 6.2, 16),
+    new THREE.CylinderGeometry(0.12, 0.24, 2.4, 16),
     new THREE.MeshBasicMaterial({
       color: isPlayer ? 0xffd8c6 : 0xffd0bc,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.0,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     })
   );
   flameNeedle.rotation.z = -Math.PI * 0.5;
-  flameNeedle.position.set(-40.0, 1.15, 0);
+  flameNeedle.position.set(-36.9, 1.15, 0);
 
   flameCore.userData.baseX = flameCore.position.x;
   flamePlume.userData.baseX = flamePlume.position.x;
