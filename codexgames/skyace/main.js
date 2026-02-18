@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 53;
+const DEBUG_BUILD_NUMBER = 54;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -857,10 +857,10 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
-    [-38.4, 3.4], // rear-lower trimmed upward so lower section does not protrude into nozzle interior
-    [-32.5, -0.2], // front-lower requested x, trimmed upward from previous lower edge
-    [-35.6, 10.2], // front-upper (top height unchanged)
-    [-38.4, 10.2], // rear-upper (top height unchanged)
+    [-38.0, 3.4], // rear-lower trimmed upward so lower section does not protrude into nozzle interior
+    [-32.1, -0.2], // front-lower requested x, trimmed upward from previous lower edge
+    [-35.2, 10.2], // front-upper (top height unchanged)
+    [-38.0, 10.2], // rear-upper (top height unchanged)
   ];
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
@@ -900,15 +900,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleInnerLiner.position.copy(nozzleInnerHole.position);
 
   // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
-  const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xff5648 : 0xff6a56,
-    map: exhaustAlphaTex,
-    alphaMap: exhaustAlphaTex,
-    transparent: true,
-    opacity: 0.0,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
     color: 0xffffff,
     map: exhaustAlphaTex,
@@ -927,10 +918,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.48, 3.278, 19.8, 30, 1, true), flameCoreMat);
-  flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-10.1, 1.15, 0);
 
   const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 0.72, 5.4, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
@@ -953,7 +940,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameNeedle.rotation.z = -Math.PI * 0.5;
   flameNeedle.position.set(-36.9, 1.15, 0);
 
-  flameCore.userData.baseX = flameCore.position.x;
   flamePlume.userData.baseX = flamePlume.position.x;
   flameTrail.userData.baseX = flameTrail.position.x;
   flameNeedle.userData.baseX = flameNeedle.position.x;
@@ -963,7 +949,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
     engineCore, nozzle, nozzleLip, nozzleInnerHole, nozzleInnerLiner,
-    // flameCore, flamePlume, flameTrail, flameNeedle
+    // flamePlume, flameTrail, flameNeedle
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -995,7 +981,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     hpLabel: null,
     exhaust: {
       burners: [],
-      // outerFlames: [flameCore, flamePlume, flameTrail, flameNeedle],
+      // outerFlames: [flamePlume, flameTrail, flameNeedle],
       outerFlames: [],
       heatRings: [],
     },
