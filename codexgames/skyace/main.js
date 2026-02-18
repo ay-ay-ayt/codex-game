@@ -25,8 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 28;
-const DEBUG_BUILD_NUMBER = 27;
+const DEBUG_BUILD_NUMBER = 31;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -916,7 +915,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.22,
+    opacity: isPlayer ? 0.18 : 0.22,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -925,7 +924,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.09,
+    opacity: isPlayer ? 0.045 : 0.09,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
