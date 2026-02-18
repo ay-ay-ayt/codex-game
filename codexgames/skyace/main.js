@@ -25,7 +25,11 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
+<<<<<<< codex/2026-02-18-01-27-38-implement-cache-measures-for-skyace
 const DEBUG_BUILD_NUMBER = 27;
+=======
+const DEBUG_BUILD_NUMBER = 26;
+>>>>>>> main
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
