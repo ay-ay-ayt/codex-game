@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 36;
+const DEBUG_BUILD_NUMBER = 37;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -870,9 +870,10 @@ function createFighter(colorOrPalette, isPlayer = false) {
   finCenter.rotation.z = 0;
 
   // Rebuilt single center jet: smaller and simpler with a clear exhaust hole.
-  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 30.0, 24), bodyMat);
+  // Keep engine core from occupying the nozzle opening region so the rear hole remains visually open.
+  const engineCore = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 21.0, 24), bodyMat);
   engineCore.rotation.z = -Math.PI * 0.5;
-  engineCore.position.set(-25.0, 1.15, 0);
+  engineCore.position.set(-23.6, 1.15, 0);
 
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(3.28, 3.68, 4.6, 28, 1, true), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
