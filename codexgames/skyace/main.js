@@ -25,7 +25,11 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
+<<<<<<< codex/2026-02-18-01-27-38-implement-cache-measures-for-skyace
+const DEBUG_BUILD_NUMBER = 27;
+=======
 const DEBUG_BUILD_NUMBER = 26;
+>>>>>>> main
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -670,9 +674,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
   });
 
   // Main axis body: keep the thick section running forward to around the main-wing leading edge.
-  const centerSpineGeo = new THREE.CylinderGeometry(2.14, 2.28, 14.6, 30);
+  const centerSpineGeo = new THREE.CylinderGeometry(2.14, 2.28, 24.6, 30);
   // Keep the mesh position unchanged while shortening only the rear side (no front-side shift).
-  centerSpineGeo.translate(0, 6.2, 0);
+  centerSpineGeo.translate(0, 1.2, 0);
   const centerSpine = new THREE.Mesh(centerSpineGeo, bodyMat);
   centerSpine.rotation.z = -Math.PI * 0.5;
   centerSpine.position.set(-12.2, 0.72, 0);
