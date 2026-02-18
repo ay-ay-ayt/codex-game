@@ -26,6 +26,7 @@ let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
 const DEBUG_BUILD_NUMBER = 28;
+const DEBUG_BUILD_NUMBER = 27;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
