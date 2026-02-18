@@ -948,7 +948,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
-    engineCore, nozzle, nozzleLip, nozzleInnerHole, nozzleInnerLiner,
+    engineCore, nozzle, nozzleInnerHole, nozzleInnerLiner,
     // flamePlume, flameTrail, flameNeedle
   );
 
