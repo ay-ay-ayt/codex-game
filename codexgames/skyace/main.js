@@ -25,8 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 28;
-const DEBUG_BUILD_NUMBER = 27;
+const DEBUG_BUILD_NUMBER = 32;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -916,7 +915,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.22,
+    opacity: isPlayer ? 0.18 : 0.22,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -925,7 +924,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
-    opacity: 0.09,
+    opacity: isPlayer ? 0.045 : 0.09,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -1011,9 +1010,15 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
   const radiusGain = 1 + boostLevel * 0.28;
   const lengthGain = 1 + boostLevel * 1.5;
-  const radiusByLayer = [0.92, 0.68, 0.46, 0.28];
-  const depthByLayer = [1.0, 1.08, 1.2, 0.9];
-  const opacityByLayer = [0.52, 0.28, 0.12, 0.36];
+  const radiusByLayer = plane.isPlayer
+    ? [0.86, 0.52, 0.32, 0.26]
+    : [0.92, 0.68, 0.46, 0.28];
+  const depthByLayer = plane.isPlayer
+    ? [1.0, 1.0, 1.08, 0.9]
+    : [1.0, 1.08, 1.2, 0.9];
+  const opacityByLayer = plane.isPlayer
+    ? [0.5, 0.18, 0.07, 0.34]
+    : [0.52, 0.28, 0.12, 0.36];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
     const flameLengthScale = pulseA * lengthGain * depthByLayer[i];
