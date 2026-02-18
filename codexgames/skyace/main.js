@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 34;
+const DEBUG_BUILD_NUMBER = 35;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -901,6 +901,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleInnerLiner.rotation.z = Math.PI * 0.5;
   nozzleInnerLiner.position.copy(nozzleInnerHole.position);
 
+  // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance.
   const flameCoreMat = new THREE.MeshBasicMaterial({
     color: isPlayer ? 0xffb08a : 0xff9a78,
     map: exhaustAlphaTex,
@@ -964,7 +965,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finBase, finCenter,
     engineCore, nozzle, nozzleLip, nozzleInnerHole, nozzleInnerLiner,
-    flameCore, flamePlume, flameTrail, flameNeedle
+    // flameCore, flamePlume, flameTrail, flameNeedle
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -996,7 +997,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
     hpLabel: null,
     exhaust: {
       burners: [],
-      outerFlames: [flameCore, flamePlume, flameTrail, flameNeedle],
+      // outerFlames: [flameCore, flamePlume, flameTrail, flameNeedle],
+      outerFlames: [],
       heatRings: [],
     },
   };
