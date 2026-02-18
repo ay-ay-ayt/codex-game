@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 52;
+const DEBUG_BUILD_NUMBER = 53;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -855,9 +855,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   tailplaneR.position.set(tailplaneX, 1.15, -2.2);
   tailplaneR.rotation.set(0, 0, 0);
 
-  const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.2, 1.9), bodyMat);
-  finBase.position.set(-34.0, -1.2, 0);
-
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
     [-38.4, 3.4], // rear-lower trimmed upward so lower section does not protrude into nozzle interior
@@ -931,9 +928,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
 
-  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.48, 2.98, 19.8, 30, 1, true), flameCoreMat);
+  const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.48, 3.278, 19.8, 30, 1, true), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-13.1, 1.15, 0);
+  flameCore.position.set(-10.1, 1.15, 0);
 
   const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 0.72, 5.4, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
@@ -964,7 +961,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
-    tailplaneL, tailplaneR, finBase, finCenter,
+    tailplaneL, tailplaneR, finCenter,
     engineCore, nozzle, nozzleLip, nozzleInnerHole, nozzleInnerLiner,
     // flameCore, flamePlume, flameTrail, flameNeedle
   );
