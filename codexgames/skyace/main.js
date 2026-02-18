@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 61;
+const DEBUG_BUILD_NUMBER = 62;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -880,15 +880,15 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLip.rotation.y = -Math.PI * 0.5;
   nozzleLip.position.set(-35.7, 1.15, 0);
 
-  const nozzleInnerHoleThickness = 0.5;
-  const nozzleInnerHoleRearRadius = 2.09328;
+  const nozzleInnerHoleThickness = 0.3;
+  const nozzleInnerHoleRearRadius = 1.883952;
   const nozzleInnerHoleFrontRadius = nozzleInnerHoleRearRadius + nozzleInnerHoleThickness;
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(nozzleInnerHoleRearRadius, nozzleInnerHoleFrontRadius, 2.8, 24, 1, true),
+    new THREE.CylinderGeometry(nozzleInnerHoleRearRadius, nozzleInnerHoleFrontRadius, 7.5, 24, 1, true),
     new THREE.MeshStandardMaterial({ color: 0xc2cbd6, roughness: 0.2, metalness: 0.94, side: THREE.BackSide })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
-  nozzleInnerHole.position.set(-36.6, 1.15, 0);
+  nozzleInnerHole.position.set(-32.6, 1.15, 0);
 
 
   // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
