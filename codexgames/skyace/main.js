@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 51;
+const DEBUG_BUILD_NUMBER = 52;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -877,18 +877,18 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.45, 2.95, 4.0, 28, 1, true), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
-  nozzle.position.set(-34.7, 1.15, 0);
+  nozzle.position.set(-36.7, 1.15, 0);
 
   const nozzleLip = new THREE.Mesh(new THREE.RingGeometry(2.87, 2.95, 28), nozzleMetalMat);
   nozzleLip.rotation.y = -Math.PI * 0.5;
-  nozzleLip.position.set(-36.7, 1.15, 0);
+  nozzleLip.position.set(-38.7, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
     new THREE.CylinderGeometry(1.78, 2.08, 2.8, 24, 1, true),
     new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62, side: THREE.BackSide })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
-  nozzleInnerHole.position.set(-34.6, 1.15, 0);
+  nozzleInnerHole.position.set(-36.6, 1.15, 0);
 
   const nozzleInnerLiner = new THREE.Mesh(
     new THREE.CylinderGeometry(1.74, 2.04, 2.6, 24, 1, true),
@@ -933,7 +933,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const flameCore = new THREE.Mesh(new THREE.CylinderGeometry(2.48, 2.98, 19.8, 30, 1, true), flameCoreMat);
   flameCore.rotation.z = -Math.PI * 0.5;
-  flameCore.position.set(-3.2, 1.15, 0);
+  flameCore.position.set(-13.1, 1.15, 0);
 
   const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 0.72, 5.4, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
