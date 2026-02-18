@@ -856,14 +856,14 @@ function createFighter(colorOrPalette, isPlayer = false) {
   tailplaneR.rotation.set(0, 0, 0);
 
   const finBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.2, 1.9), bodyMat);
-  finBase.position.set(-34.3, -1.2, 0);
+  finBase.position.set(-32.7, -1.2, 0); // keep base rear edge ahead of engineCore rear edge
 
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
-    [-37.8, -1.2], // rear-lower
-    [-33.6, -1.2], // front-lower (more forward near the bottom)
-    [-35.0, 10.2], // front-upper (less forward toward the top)
-    [-36.8, 10.2], // rear-upper
+    [-33.6, -1.2], // rear-lower (height unchanged; moved forward to stay out of nozzle)
+    [-29.4, -1.2], // front-lower (more forward near the bottom)
+    [-30.8, 10.2], // front-upper (less forward toward the top)
+    [-32.6, 10.2], // rear-upper
   ];
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
@@ -913,7 +913,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xff6b52 : 0xff7156,
+    color: isPlayer ? 0x8ad8ff : 0xff7156,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -922,7 +922,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xb12e28 : 0xa8362c,
+    color: isPlayer ? 0x4aa8ff : 0xa8362c,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
