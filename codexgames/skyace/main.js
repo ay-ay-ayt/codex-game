@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 43;
+const DEBUG_BUILD_NUMBER = 44;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -860,10 +860,10 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
-    [-38.4, 1.6], // rear-lower trimmed so lower section does not protrude into nozzle interior
+    [-38.4, 1.6], // rear-lower
     [-34.2, -1.2], // front-lower (more forward near the bottom)
-    [-35.6, 10.2], // front-upper (less forward toward the top) - top height unchanged
-    [-37.4, 10.2], // rear-upper - top height unchanged
+    [-35.6, 10.2], // front-upper (moved rearward so front side becomes the slanted edge)
+    [-38.4, 10.2], // rear-upper (rear side kept straight)
   ];
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
