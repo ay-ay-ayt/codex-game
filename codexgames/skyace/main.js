@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 44;
+const DEBUG_BUILD_NUMBER = 45;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -860,10 +860,10 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
-    [-38.4, 1.6], // rear-lower
-    [-34.2, -1.2], // front-lower (more forward near the bottom)
-    [-35.6, 10.2], // front-upper (moved rearward so front side becomes the slanted edge)
-    [-38.4, 10.2], // rear-upper (rear side kept straight)
+    [-38.4, 3.4], // rear-lower trimmed upward so lower section does not protrude into nozzle interior
+    [-32.5, -0.2], // front-lower requested x, trimmed upward from previous lower edge
+    [-35.6, 10.2], // front-upper (top height unchanged)
+    [-38.4, 10.2], // rear-upper (top height unchanged)
   ];
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
@@ -884,14 +884,14 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLip.position.set(-38.7, 1.15, 0);
 
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.56, 2.86, 2.8, 24, 1, true),
+    new THREE.CylinderGeometry(1.78, 2.08, 2.8, 24, 1, true),
     new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62, side: THREE.BackSide })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
   nozzleInnerHole.position.set(-36.6, 1.15, 0);
 
   const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.52, 2.82, 2.6, 24, 1, true),
+    new THREE.CylinderGeometry(1.74, 2.04, 2.6, 24, 1, true),
     new THREE.MeshStandardMaterial({
       color: 0xc1c9d2,
       roughness: 0.22,
