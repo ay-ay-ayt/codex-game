@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 37;
+const DEBUG_BUILD_NUMBER = 38;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -860,7 +860,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
-    [-37.8, -1.2], // rear-lower
+    [-37.8, 1.8], // rear-lower trimmed to avoid protruding into nozzle opening
     [-33.6, -1.2], // front-lower (more forward near the bottom)
     [-35.0, 10.2], // front-upper (less forward toward the top)
     [-36.8, 10.2], // rear-upper
