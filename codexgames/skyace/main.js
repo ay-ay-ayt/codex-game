@@ -912,7 +912,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xff6b52 : 0xff7156,
+    color: isPlayer ? 0x8ad8ff : 0xff7156,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -921,7 +921,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: isPlayer ? 0xb12e28 : 0xa8362c,
+    color: isPlayer ? 0x4aa8ff : 0xa8362c,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
