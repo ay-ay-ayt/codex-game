@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 62;
+const DEBUG_BUILD_NUMBER = 63;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -872,23 +872,22 @@ function createFighter(colorOrPalette, isPlayer = false) {
   engineCore.rotation.z = -Math.PI * 0.5;
   engineCore.position.set(-23.0, 1.15, 0);
 
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.591508325, 3.180977625, 6.0, 28, 1, true), nozzleMetalMat);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.41010274225, 2.95830919125, 6.0, 28, 1, true), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
   nozzle.position.set(-32.7, 1.15, 0);
 
-  const nozzleLip = new THREE.Mesh(new THREE.RingGeometry(2.591508325, 3.180977625, 28), nozzleMetalMat);
-  nozzleLip.rotation.y = -Math.PI * 0.5;
-  nozzleLip.position.set(-35.7, 1.15, 0);
+  const nozzleLip = new THREE.Mesh(new THREE.CylinderGeometry(2.41010274225, 2.95830919125, 3.5, 28, 1, true), nozzleMetalMat);
+  nozzleLip.rotation.z = Math.PI * 0.5;
+  nozzleLip.position.set(-34.45, 1.15, 0);
 
-  const nozzleInnerHoleThickness = 0.3;
-  const nozzleInnerHoleRearRadius = 1.883952;
-  const nozzleInnerHoleFrontRadius = nozzleInnerHoleRearRadius + nozzleInnerHoleThickness;
+  const nozzleInnerHoleRearRadius = 1.9781496;
+  const nozzleInnerHoleFrontRadius = 2.2931496;
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(nozzleInnerHoleRearRadius, nozzleInnerHoleFrontRadius, 7.5, 24, 1, true),
+    new THREE.CylinderGeometry(nozzleInnerHoleRearRadius, nozzleInnerHoleFrontRadius, 8.5, 24, 1, true),
     new THREE.MeshStandardMaterial({ color: 0xc2cbd6, roughness: 0.2, metalness: 0.94, side: THREE.BackSide })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
-  nozzleInnerHole.position.set(-32.6, 1.15, 0);
+  nozzleInnerHole.position.set(-33.1, 1.15, 0);
 
 
   // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
