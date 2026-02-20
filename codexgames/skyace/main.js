@@ -25,8 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 67;
-const DEBUG_BUILD_NUMBER = 66;
+const DEBUG_BUILD_NUMBER = 68;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -881,11 +880,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLip.rotation.z = Math.PI * 0.5;
   nozzleLip.position.set(-34.7, 1.15, 0);
 
-  const nozzleInnerHoleRearRadius = 1.9781496;
-  const nozzleInnerHoleFrontRadius = nozzleInnerHoleRearRadius + 1.0;
   const nozzleLipInner = new THREE.Mesh(
     new THREE.CylinderGeometry(2.7, 2.79, 4.0, 28, 1, true),
-    new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.27, metalness: 0.95, side: THREE.BackSide })
+    new THREE.MeshStandardMaterial({ color: 0xa8b0ba, roughness: 0.24, metalness: 0.95, side: THREE.BackSide })
   );
   nozzleLipInner.rotation.z = Math.PI * 0.5;
   nozzleLipInner.position.copy(nozzleLip.position);
@@ -949,7 +946,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
-    engineCore, nozzle, nozzleLip, nozzleInnerHole,
+    engineCore, nozzle, nozzleLip, nozzleLipInner, nozzleInnerHole,
     // flamePlume, flameTrail, flameNeedle
   );
 
