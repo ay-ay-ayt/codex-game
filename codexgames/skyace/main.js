@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 63;
+const DEBUG_BUILD_NUMBER = 64;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -872,16 +872,16 @@ function createFighter(colorOrPalette, isPlayer = false) {
   engineCore.rotation.z = -Math.PI * 0.5;
   engineCore.position.set(-23.0, 1.15, 0);
 
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.41010274225, 2.95830919125, 6.0, 28, 1, true), nozzleMetalMat);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.1, 6.0, 28, 1, true), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
   nozzle.position.set(-32.7, 1.15, 0);
 
-  const nozzleLip = new THREE.Mesh(new THREE.CylinderGeometry(2.41010274225, 2.95830919125, 3.5, 28, 1, true), nozzleMetalMat);
+  const nozzleLip = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.1, 4.0, 28, 1, true), nozzleMetalMat);
   nozzleLip.rotation.z = Math.PI * 0.5;
-  nozzleLip.position.set(-34.45, 1.15, 0);
+  nozzleLip.position.set(-34.7, 1.15, 0);
 
   const nozzleInnerHoleRearRadius = 1.9781496;
-  const nozzleInnerHoleFrontRadius = 2.2931496;
+  const nozzleInnerHoleFrontRadius = nozzleInnerHoleRearRadius + 0.45;
   const nozzleInnerHole = new THREE.Mesh(
     new THREE.CylinderGeometry(nozzleInnerHoleRearRadius, nozzleInnerHoleFrontRadius, 8.5, 24, 1, true),
     new THREE.MeshStandardMaterial({ color: 0xc2cbd6, roughness: 0.2, metalness: 0.94, side: THREE.BackSide })
