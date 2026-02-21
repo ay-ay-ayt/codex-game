@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 69;
+const DEBUG_BUILD_NUMBER = 70;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -888,8 +888,10 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLipInner.position.copy(nozzleLip.position);
 
   const nozzleInnerHoleLength = 8.5;
-  const nozzleInnerHoleMidRadius = 2.9781496;
-  const nozzleInnerHoleRearRadius = nozzleInnerHoleMidRadius * 0.8;
+  const nozzleInnerHoleThickness = 0.8;
+  const nozzleInnerHoleRearToMidRatio = 0.7;
+  const nozzleInnerHoleMidRadius = nozzleInnerHoleThickness / (1 - nozzleInnerHoleRearToMidRatio);
+  const nozzleInnerHoleRearRadius = nozzleInnerHoleMidRadius * nozzleInnerHoleRearToMidRatio;
   const nozzleInnerHoleProfile = [];
   const rearSteps = 12;
   const frontSteps = 8;
