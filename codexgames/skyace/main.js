@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 77;
+const DEBUG_BUILD_NUMBER = 78;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -908,7 +908,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
   const flamePlumeMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
+    color: 0xff4a2a,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -917,7 +917,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flameTrailMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
+    color: 0xff2618,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -928,16 +928,16 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const flamePlume = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 0.72, 5.4, 28, 1, true), flamePlumeMat);
   flamePlume.rotation.z = -Math.PI * 0.5;
-  flamePlume.position.set(-39.6, 1.15, 0);
+  flamePlume.position.set(-38.4, 1.15, 0);
 
   const flameTrail = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.46, 6.2, 24, 1, true), flameTrailMat);
   flameTrail.rotation.z = -Math.PI * 0.5;
-  flameTrail.position.set(-41.8, 1.15, 0);
+  flameTrail.position.set(-40.5, 1.15, 0);
 
   const flameNeedle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.24, 2.4, 16),
     new THREE.MeshBasicMaterial({
-      color: isPlayer ? 0xffd8c6 : 0xffd0bc,
+      color: isPlayer ? 0xff8e6e : 0xff7a5f,
       transparent: true,
       opacity: 0.0,
       blending: THREE.AdditiveBlending,
@@ -945,7 +945,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     })
   );
   flameNeedle.rotation.z = -Math.PI * 0.5;
-  flameNeedle.position.set(-36.9, 1.15, 0);
+  flameNeedle.position.set(-35.8, 1.15, 0);
 
   flamePlume.userData.baseX = flamePlume.position.x;
   flameTrail.userData.baseX = flameTrail.position.x;
