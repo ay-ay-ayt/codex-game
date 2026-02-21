@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 87;
+const DEBUG_BUILD_NUMBER = 88;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1037,11 +1037,11 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerRadiusBoost = 1 + boostLevel * 0.32 + shimmer * 1.3;
   const outerRadius = THREE.MathUtils.lerp(outerRadiusIdle, outerRadiusBoost, boostMix);
 
-  const glowScaleIdle = 0.8 + boostLevel * 0.28 + pulse * 0.03;
+  const glowScaleIdle = 0.84 + boostLevel * 0.28 + pulse * 0.03;
   const glowScaleBoost = 0.9 + boostLevel * 0.58 + pulse * 0.06;
   plane.exhaust.nozzleGlow.scale.setScalar(THREE.MathUtils.lerp(glowScaleIdle, glowScaleBoost, boostMix));
 
-  const glowOpacityIdle = clamp(0.14 + boostLevel * 0.38 + pulse * 0.03, 0.08, 0.56);
+  const glowOpacityIdle = clamp(0.18 + boostLevel * 0.38 + pulse * 0.03, 0.1, 0.56);
   const glowOpacityBoost = clamp(0.44 + boostLevel * 0.42 + pulse * 0.06, 0.24, 0.9);
   plane.exhaust.nozzleGlow.material.opacity = THREE.MathUtils.lerp(glowOpacityIdle, glowOpacityBoost, boostMix);
 
