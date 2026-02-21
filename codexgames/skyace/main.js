@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 57;
+const DEBUG_BUILD_NUMBER = 72;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -857,10 +857,10 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
   const finShape = [
-    [-37.0, 3.4], // rear-lower trimmed upward so lower section does not protrude into nozzle interior
-    [-31.1, -0.2], // front-lower requested x, trimmed upward from previous lower edge
-    [-34.2, 10.2], // front-upper (top height unchanged)
-    [-37.0, 10.2], // rear-upper (top height unchanged)
+    [-34.5, 3.4], // moved 1.0 forward; lower edge is horizontal/parallel to upper edge
+    [-28.6, 3.4],
+    [-31.7, 10.2],
+    [-34.5, 10.2],
   ];
   const finCenter = new THREE.Mesh(buildVerticalSurface(finShape, 0.8), wingMat);
   finCenter.position.set(0, 0, 0);
@@ -872,32 +872,54 @@ function createFighter(colorOrPalette, isPlayer = false) {
   engineCore.rotation.z = -Math.PI * 0.5;
   engineCore.position.set(-23.0, 1.15, 0);
 
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(2.75692375, 3.38401875, 5.0, 28, 1, true), nozzleMetalMat);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.1, 6.0, 28, 1, true), nozzleMetalMat);
   nozzle.rotation.z = Math.PI * 0.5;
-  nozzle.position.set(-32.2, 1.15, 0);
+  nozzle.position.set(-32.7, 1.15, 0);
 
-  const nozzleLip = new THREE.Mesh(new THREE.RingGeometry(2.808295, 3.38401875, 28), nozzleMetalMat);
-  nozzleLip.rotation.y = -Math.PI * 0.5;
+  const nozzleInner = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.85, 2.945, 6.0, 28, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0xa8b0ba, roughness: 0.24, metalness: 0.95, side: THREE.BackSide })
+  );
+  nozzleInner.rotation.z = Math.PI * 0.5;
+  nozzleInner.position.copy(nozzle.position);
+
+  const nozzleLip = new THREE.Mesh(new THREE.CylinderGeometry(2.85, 2.945, 4.0, 28, 1, true), nozzleMetalMat);
+  nozzleLip.rotation.z = Math.PI * 0.5;
   nozzleLip.position.set(-34.7, 1.15, 0);
 
+  const nozzleLipInner = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.565, 2.6505, 4.0, 28, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0xa8b0ba, roughness: 0.24, metalness: 0.95, side: THREE.BackSide })
+  );
+  nozzleLipInner.rotation.z = Math.PI * 0.5;
+  nozzleLipInner.position.copy(nozzleLip.position);
+
+  const nozzleInnerHoleLength = 8.5;
+  const nozzleInnerHoleRearToMidRatio = 0.3;
+  const nozzleInnerHoleMidRadius = 2.5333333333;
+  const nozzleInnerHoleRearRadius = nozzleInnerHoleMidRadius * nozzleInnerHoleRearToMidRatio;
+  const nozzleInnerHoleProfile = [];
+  const rearSteps = 12;
+  const frontSteps = 8;
+  for (let i = 0; i <= frontSteps; i += 1) {
+    const t = i / frontSteps;
+    const y = -nozzleInnerHoleLength * 0.5 + (nozzleInnerHoleLength * 0.5) * t;
+    nozzleInnerHoleProfile.push(new THREE.Vector2(nozzleInnerHoleMidRadius, y));
+  }
+  for (let i = 1; i <= rearSteps; i += 1) {
+    const t = i / rearSteps;
+    const smoothT = t * t * (3 - 2 * t);
+    const radius = THREE.MathUtils.lerp(nozzleInnerHoleMidRadius, nozzleInnerHoleRearRadius, smoothT);
+    const y = (nozzleInnerHoleLength * 0.5) * t;
+    nozzleInnerHoleProfile.push(new THREE.Vector2(radius, y));
+  }
   const nozzleInnerHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.78, 2.08, 2.8, 24, 1, true),
-    new THREE.MeshStandardMaterial({ color: 0x070b11, roughness: 0.4, metalness: 0.62, side: THREE.BackSide })
+    new THREE.LatheGeometry(nozzleInnerHoleProfile, 36),
+    new THREE.MeshStandardMaterial({ color: 0xc2cbd6, roughness: 0.2, metalness: 0.94, side: THREE.BackSide })
   );
   nozzleInnerHole.rotation.z = Math.PI * 0.5;
-  nozzleInnerHole.position.set(-36.6, 1.15, 0);
+  nozzleInnerHole.position.set(-33.1, 1.15, 0);
 
-  const nozzleInnerLiner = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.74, 2.04, 2.6, 24, 1, true),
-    new THREE.MeshStandardMaterial({
-      color: 0xc1c9d2,
-      roughness: 0.22,
-      metalness: 0.92,
-      side: THREE.BackSide,
-    })
-  );
-  nozzleInnerLiner.rotation.z = Math.PI * 0.5;
-  nozzleInnerLiner.position.copy(nozzleInnerHole.position);
 
   // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
   const flamePlumeMat = new THREE.MeshBasicMaterial({
@@ -948,7 +970,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
-    engineCore, nozzle, nozzleLip, nozzleInnerHole, nozzleInnerLiner,
+    engineCore, nozzle, nozzleInner, nozzleLip, nozzleLipInner, nozzleInnerHole,
     // flamePlume, flameTrail, flameNeedle
   );
 
