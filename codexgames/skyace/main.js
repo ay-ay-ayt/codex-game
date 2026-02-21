@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 78;
+const DEBUG_BUILD_NUMBER = 79;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -934,8 +934,23 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameTrail.rotation.z = -Math.PI * 0.5;
   flameTrail.position.set(-40.5, 1.15, 0);
 
+  const flameBridge = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.52, 0.36, 3.2, 20, 1, true),
+    new THREE.MeshBasicMaterial({
+      color: isPlayer ? 0xff6f3a : 0xff5d33,
+      map: exhaustAlphaTex,
+      alphaMap: exhaustAlphaTex,
+      transparent: true,
+      opacity: 0.0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+  );
+  flameBridge.rotation.z = -Math.PI * 0.5;
+  flameBridge.position.set(-36.9, 1.15, 0);
+
   const flameNeedle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.24, 2.4, 16),
+    new THREE.CylinderGeometry(0.12, 0.24, 3.0, 16),
     new THREE.MeshBasicMaterial({
       color: isPlayer ? 0xff8e6e : 0xff7a5f,
       transparent: true,
@@ -945,10 +960,11 @@ function createFighter(colorOrPalette, isPlayer = false) {
     })
   );
   flameNeedle.rotation.z = -Math.PI * 0.5;
-  flameNeedle.position.set(-35.8, 1.15, 0);
+  flameNeedle.position.set(-35.5, 1.15, 0);
 
   flamePlume.userData.baseX = flamePlume.position.x;
   flameTrail.userData.baseX = flameTrail.position.x;
+  flameBridge.userData.baseX = flameBridge.position.x;
   flameNeedle.userData.baseX = flameNeedle.position.x;
 
   g.add(
@@ -956,7 +972,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
     engineCore, nozzle, nozzleInner, nozzleLip,
-    flamePlume, flameTrail, flameNeedle
+    flamePlume, flameTrail, flameBridge, flameNeedle
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -988,7 +1004,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     hpLabel: null,
     exhaust: {
       burners: [],
-      outerFlames: [flamePlume, flameTrail, flameNeedle],
+      outerFlames: [flamePlume, flameTrail, flameBridge, flameNeedle],
       heatRings: [],
     },
   };
