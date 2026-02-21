@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 70;
+const DEBUG_BUILD_NUMBER = 71;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -876,21 +876,27 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzle.rotation.z = Math.PI * 0.5;
   nozzle.position.set(-32.7, 1.15, 0);
 
+  const nozzleInner = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.85, 2.945, 6.0, 28, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0xa8b0ba, roughness: 0.24, metalness: 0.95, side: THREE.BackSide })
+  );
+  nozzleInner.rotation.z = Math.PI * 0.5;
+  nozzleInner.position.copy(nozzle.position);
+
   const nozzleLip = new THREE.Mesh(new THREE.CylinderGeometry(2.85, 2.945, 4.0, 28, 1, true), nozzleMetalMat);
   nozzleLip.rotation.z = Math.PI * 0.5;
   nozzleLip.position.set(-34.7, 1.15, 0);
 
   const nozzleLipInner = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.7, 2.79, 4.0, 28, 1, true),
+    new THREE.CylinderGeometry(2.565, 2.6505, 4.0, 28, 1, true),
     new THREE.MeshStandardMaterial({ color: 0xa8b0ba, roughness: 0.24, metalness: 0.95, side: THREE.BackSide })
   );
   nozzleLipInner.rotation.z = Math.PI * 0.5;
   nozzleLipInner.position.copy(nozzleLip.position);
 
   const nozzleInnerHoleLength = 8.5;
-  const nozzleInnerHoleThickness = 0.8;
-  const nozzleInnerHoleRearToMidRatio = 0.7;
-  const nozzleInnerHoleMidRadius = nozzleInnerHoleThickness / (1 - nozzleInnerHoleRearToMidRatio);
+  const nozzleInnerHoleRearToMidRatio = 0.3;
+  const nozzleInnerHoleMidRadius = 2.5333333333;
   const nozzleInnerHoleRearRadius = nozzleInnerHoleMidRadius * nozzleInnerHoleRearToMidRatio;
   const nozzleInnerHoleProfile = [];
   const rearSteps = 12;
@@ -964,7 +970,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
-    engineCore, nozzle, nozzleLip, nozzleLipInner, nozzleInnerHole,
+    engineCore, nozzle, nozzleInner, nozzleLip, nozzleLipInner, nozzleInnerHole,
     // flamePlume, flameTrail, flameNeedle
   );
 
