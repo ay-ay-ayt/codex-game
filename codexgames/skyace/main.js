@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 80;
+const DEBUG_BUILD_NUMBER = 81;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -890,7 +890,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const nozzleLipLength = 4.0;
   const nozzleLipOuterFrontRadius = 2.85;
   const nozzleLipOuterRearRadius = 2.945;
-  const nozzleLipThickness = 1.3;
+  const nozzleLipThickness = 1.1;
   const nozzleLipInnerFrontRadius = nozzleLipOuterFrontRadius - nozzleLipThickness;
   const nozzleLipInnerRearRadius = nozzleLipOuterRearRadius - nozzleLipThickness;
   const nozzleLipProfile = [
@@ -1025,8 +1025,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     ? [1.0, 1.0, 1.08, 0.9]
     : [1.0, 1.08, 1.2, 0.9];
   const opacityByLayer = plane.isPlayer
-    ? [0.66, 0.28, 0.18, 0.46]
-    : [0.58, 0.32, 0.16, 0.42];
+    ? [0.72, 0.34, 0.22, 0.52]
+    : [0.64, 0.38, 0.2, 0.48];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
     const flameLengthScale = pulseA * lengthGain * depthByLayer[i];
