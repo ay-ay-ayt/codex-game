@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 85;
+const DEBUG_BUILD_NUMBER = 86;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -905,23 +905,23 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Afterburner rebuilt from scratch: bright nozzle bloom + dense flame cone + long cool plume + shock-diamond rings.
   const nozzleGlow = new THREE.Mesh(
-    new THREE.SphereGeometry(1.92, 18, 14),
+    new THREE.SphereGeometry(1.62, 18, 14),
     new THREE.MeshBasicMaterial({
       color: 0xfff0b0,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.28,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     })
   );
-  nozzleGlow.position.set(-35.6, 1.15, 0);
+  nozzleGlow.position.set(-35.72, 1.15, 0);
 
   const flameCore = new THREE.Mesh(
     new THREE.CylinderGeometry(0.82, 0.18, 12.6, 28, 1, true),
     new THREE.MeshBasicMaterial({
       color: 0xffc28b,
       transparent: true,
-      opacity: 0.62,
+      opacity: 0.42,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
@@ -935,7 +935,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     new THREE.MeshBasicMaterial({
       color: 0x7fb7ff,
       transparent: true,
-      opacity: 0.36,
+      opacity: 0.2,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
@@ -1020,32 +1020,32 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const shimmer = Math.sin(t * 21 + plane.mesh.id * 0.31) * 0.05;
   const turbulence = Math.sin(t * 17 + plane.mesh.id * 0.42) * 0.12;
 
-  const coreLength = (1.02 + boostLevel * 0.72) * pulse;
-  const outerLength = (1.08 + boostLevel * 1.45) * (pulse + 0.03);
-  const coreRadius = 1 + boostLevel * 0.24 + shimmer;
-  const outerRadius = 1 + boostLevel * 0.32 + shimmer * 1.3;
+  const coreLength = (0.88 + boostLevel * 0.56) * pulse;
+  const outerLength = (0.92 + boostLevel * 1.1) * (pulse + 0.02);
+  const coreRadius = 0.86 + boostLevel * 0.16 + shimmer * 0.8;
+  const outerRadius = 0.8 + boostLevel * 0.2 + shimmer;
 
-  plane.exhaust.nozzleGlow.scale.setScalar(0.9 + boostLevel * 0.58 + pulse * 0.06);
-  plane.exhaust.nozzleGlow.material.opacity = clamp(0.44 + boostLevel * 0.42 + pulse * 0.06, 0.24, 0.9);
+  plane.exhaust.nozzleGlow.scale.setScalar(0.8 + boostLevel * 0.28 + pulse * 0.03);
+  plane.exhaust.nozzleGlow.material.opacity = clamp(0.14 + boostLevel * 0.38 + pulse * 0.03, 0.08, 0.56);
 
   plane.exhaust.flameCore.scale.set(coreRadius, coreLength, coreRadius);
-  plane.exhaust.flameCore.position.x = (plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x) - (coreLength - 1) * 3.8;
-  plane.exhaust.flameCore.material.opacity = clamp(0.5 + boostLevel * 0.24 + pulse * 0.06, 0.3, 0.92);
+  plane.exhaust.flameCore.position.x = (plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x) - (coreLength - 1) * 3.1;
+  plane.exhaust.flameCore.material.opacity = clamp(0.24 + boostLevel * 0.3 + pulse * 0.04, 0.14, 0.62);
 
   plane.exhaust.flameOuter.scale.set(outerRadius, outerLength, outerRadius);
-  plane.exhaust.flameOuter.position.x = (plane.exhaust.flameOuter.userData.baseX ?? plane.exhaust.flameOuter.position.x) - (outerLength - 1) * 6.3;
-  plane.exhaust.flameOuter.position.z = turbulence * 0.42;
-  plane.exhaust.flameOuter.material.opacity = clamp(0.28 + boostLevel * 0.2 + pulse * 0.04, 0.15, 0.68);
+  plane.exhaust.flameOuter.position.x = (plane.exhaust.flameOuter.userData.baseX ?? plane.exhaust.flameOuter.position.x) - (outerLength - 1) * 4.9;
+  plane.exhaust.flameOuter.position.z = turbulence * 0.34;
+  plane.exhaust.flameOuter.material.opacity = clamp(0.12 + boostLevel * 0.16 + pulse * 0.03, 0.06, 0.42);
 
   plane.exhaust.shockRings.forEach((ring) => {
     const phase = t * 19 - ring.userData.offset * 0.85;
     const travel = (phase % 1 + 1) % 1;
     const fade = 1 - travel;
     const baseX = ring.userData.baseX ?? ring.position.x;
-    ring.position.x = baseX - travel * (2.9 + boostLevel * 5.1);
-    const ringScale = 0.9 + travel * (1.2 + boostLevel * 0.7);
+    ring.position.x = baseX - travel * (2.3 + boostLevel * 3.8);
+    const ringScale = 0.8 + travel * (1.0 + boostLevel * 0.45);
     ring.scale.setScalar(ringScale);
-    ring.material.opacity = clamp((0.24 + boostLevel * 0.32) * fade, 0, 0.7);
+    ring.material.opacity = clamp((0.12 + boostLevel * 0.22) * fade, 0, 0.4);
     ring.material.color.setHex(travel < 0.38 ? 0xffd6b1 : 0x9ac2ff);
   });
 
