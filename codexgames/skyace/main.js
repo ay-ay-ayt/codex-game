@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 79;
+const DEBUG_BUILD_NUMBER = 80;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1016,8 +1016,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   if (!plane?.exhaust) return;
   const t = performance.now() * 0.02;
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
-  const radiusGain = 1 + boostLevel * 0.28;
-  const lengthGain = 1 + boostLevel * 1.5;
+  const radiusGain = 1 + boostLevel * 0.44;
+  const lengthGain = 1 + boostLevel * 2.25;
   const radiusByLayer = plane.isPlayer
     ? [0.72, 0.46, 0.3, 0.24]
     : [0.92, 0.68, 0.46, 0.28];
@@ -1025,8 +1025,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     ? [1.0, 1.0, 1.08, 0.9]
     : [1.0, 1.08, 1.2, 0.9];
   const opacityByLayer = plane.isPlayer
-    ? [0.62, 0.24, 0.12, 0.4]
-    : [0.52, 0.28, 0.12, 0.36];
+    ? [0.66, 0.28, 0.18, 0.46]
+    : [0.58, 0.32, 0.16, 0.42];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
     const flameLengthScale = pulseA * lengthGain * depthByLayer[i];
@@ -1037,12 +1037,12 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
       radiusLayer
     );
     const baseX = flame.userData.baseX ?? flame.position.x;
-    flame.position.x = baseX - (flameLengthScale - 1) * (1.2 + i * 0.35);
-    flame.material.opacity = clamp((opacityByLayer[i] ?? 0.3) + boostLevel * (i === 2 ? 0.08 : 0.06), 0.08, 0.72);
+    flame.position.x = baseX - (flameLengthScale - 1) * (1.45 + i * 0.45);
+    flame.material.opacity = clamp((opacityByLayer[i] ?? 0.3) + boostLevel * (i === 2 ? 0.12 : 0.1), 0.08, 0.82);
   });
 
   plane.exhaust.burners.forEach((burner) => {
-    burner.material.emissiveIntensity = 0.66 + boostLevel * 2.1;
+    burner.material.emissiveIntensity = 0.8 + boostLevel * 3.1;
   });
 
 }
