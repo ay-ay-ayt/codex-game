@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 71;
+const DEBUG_BUILD_NUMBER = 72;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -901,17 +901,17 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const nozzleInnerHoleProfile = [];
   const rearSteps = 12;
   const frontSteps = 8;
-  for (let i = 0; i <= rearSteps; i += 1) {
+  for (let i = 0; i <= frontSteps; i += 1) {
+    const t = i / frontSteps;
+    const y = -nozzleInnerHoleLength * 0.5 + (nozzleInnerHoleLength * 0.5) * t;
+    nozzleInnerHoleProfile.push(new THREE.Vector2(nozzleInnerHoleMidRadius, y));
+  }
+  for (let i = 1; i <= rearSteps; i += 1) {
     const t = i / rearSteps;
     const smoothT = t * t * (3 - 2 * t);
-    const radius = THREE.MathUtils.lerp(nozzleInnerHoleRearRadius, nozzleInnerHoleMidRadius, smoothT);
-    const y = -nozzleInnerHoleLength * 0.5 + (nozzleInnerHoleLength * 0.5) * t;
-    nozzleInnerHoleProfile.push(new THREE.Vector2(radius, y));
-  }
-  for (let i = 1; i <= frontSteps; i += 1) {
-    const t = i / frontSteps;
+    const radius = THREE.MathUtils.lerp(nozzleInnerHoleMidRadius, nozzleInnerHoleRearRadius, smoothT);
     const y = (nozzleInnerHoleLength * 0.5) * t;
-    nozzleInnerHoleProfile.push(new THREE.Vector2(nozzleInnerHoleMidRadius, y));
+    nozzleInnerHoleProfile.push(new THREE.Vector2(radius, y));
   }
   const nozzleInnerHole = new THREE.Mesh(
     new THREE.LatheGeometry(nozzleInnerHoleProfile, 36),
