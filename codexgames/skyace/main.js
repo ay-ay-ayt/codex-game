@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 83;
+const DEBUG_BUILD_NUMBER = 84;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -920,7 +920,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
   });
   const flameCoreMat = new THREE.MeshBasicMaterial({
-    color: 0xffb08a,
+    color: 0xff8a66,
     map: exhaustAlphaTex,
     alphaMap: exhaustAlphaTex,
     transparent: true,
@@ -989,11 +989,11 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   if (!plane?.exhaust) return;
   const t = performance.now() * 0.02;
   const pulseA = 0.95 + Math.sin(t + plane.mesh.id * 0.31) * 0.1;
-  const radiusGain = 1 + boostLevel * 0.44;
-  const lengthGain = 1 + boostLevel * 2.25;
-  const radiusByLayer = plane.isPlayer ? [0.92, 0.56] : [0.98, 0.62];
-  const depthByLayer = plane.isPlayer ? [1.12, 1.2] : [1.16, 1.24];
-  const opacityByLayer = plane.isPlayer ? [0.52, 0.66] : [0.48, 0.6];
+  const radiusGain = 1 + boostLevel * 0.34;
+  const lengthGain = 1 + boostLevel * 1.6;
+  const radiusByLayer = plane.isPlayer ? [0.88, 0.48] : [0.94, 0.54];
+  const depthByLayer = plane.isPlayer ? [1.04, 1.1] : [1.08, 1.14];
+  const opacityByLayer = plane.isPlayer ? [0.38, 0.42] : [0.34, 0.38];
 
   plane.exhaust.outerFlames.forEach((flame, i) => {
     const flameLengthScale = pulseA * lengthGain * depthByLayer[i];
@@ -1004,8 +1004,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
       radiusLayer
     );
     const baseX = flame.userData.baseX ?? flame.position.x;
-    flame.position.x = baseX - (flameLengthScale - 1) * (1.45 + i * 0.45);
-    flame.material.opacity = clamp((opacityByLayer[i] ?? 0.3) + boostLevel * (i === 0 ? 0.12 : 0.14), 0.08, 0.86);
+    flame.position.x = baseX - (flameLengthScale - 1) * (1.2 + i * 0.28);
+    flame.material.opacity = clamp((opacityByLayer[i] ?? 0.3) + boostLevel * (i === 0 ? 0.08 : 0.09), 0.06, 0.72);
   });
 
   plane.exhaust.burners.forEach((burner) => {
