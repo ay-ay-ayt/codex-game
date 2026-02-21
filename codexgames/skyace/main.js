@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 73;
+const DEBUG_BUILD_NUMBER = 74;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -894,34 +894,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLipInner.rotation.z = Math.PI * 0.5;
   nozzleLipInner.position.copy(nozzleLip.position);
 
-  const nozzleInnerHoleLength = 8.5;
-  const nozzleInnerHoleThickness = 3.0;
-  const nozzleInnerHoleRearToMidRatio = 0.3;
-  const nozzleInnerHoleMidRadius = nozzleInnerHoleThickness / (1 - nozzleInnerHoleRearToMidRatio);
-  const nozzleInnerHoleRearRadius = nozzleInnerHoleMidRadius * nozzleInnerHoleRearToMidRatio;
-  const nozzleInnerHoleProfile = [];
-  const rearSteps = 12;
-  const frontSteps = 8;
-  for (let i = 0; i <= frontSteps; i += 1) {
-    const t = i / frontSteps;
-    const y = -nozzleInnerHoleLength * 0.5 + (nozzleInnerHoleLength * 0.5) * t;
-    nozzleInnerHoleProfile.push(new THREE.Vector2(nozzleInnerHoleMidRadius, y));
-  }
-  for (let i = 1; i <= rearSteps; i += 1) {
-    const t = i / rearSteps;
-    const smoothT = t * t * (3 - 2 * t);
-    const radius = THREE.MathUtils.lerp(nozzleInnerHoleMidRadius, nozzleInnerHoleRearRadius, smoothT);
-    const y = (nozzleInnerHoleLength * 0.5) * t;
-    nozzleInnerHoleProfile.push(new THREE.Vector2(radius, y));
-  }
-  const nozzleInnerHole = new THREE.Mesh(
-    new THREE.LatheGeometry(nozzleInnerHoleProfile, 36),
-    new THREE.MeshStandardMaterial({ color: 0xc2cbd6, roughness: 0.2, metalness: 0.94, side: THREE.BackSide })
-  );
-  nozzleInnerHole.rotation.z = Math.PI * 0.5;
-  nozzleInnerHole.position.set(-33.1, 1.15, 0);
-
-
   // NOTE: Exhaust flame layers can visually mask nozzle inner-diameter changes at gameplay camera distance. Also, nozzleInnerHole must stay open-ended; capped geometry visually closes the hole.
   const flamePlumeMat = new THREE.MeshBasicMaterial({
     color: 0xffffff,
@@ -971,7 +943,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
-    engineCore, nozzle, nozzleInner, nozzleLip, nozzleLipInner, nozzleInnerHole,
+    engineCore, nozzle, nozzleInner, nozzleLip, nozzleLipInner,
     // flamePlume, flameTrail, flameNeedle
   );
 
