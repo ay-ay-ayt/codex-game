@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 104;
+const DEBUG_BUILD_NUMBER = 105;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -947,7 +947,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const redWisps = [];
   for (let i = 0; i < 2; i++) {
     const wisp = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.34, 0.05, 7.4, 18, 1, true),
+      new THREE.CylinderGeometry(0.42, 0.07, 7.6, 18, 1, true),
       new THREE.MeshBasicMaterial({
         color: 0xff6f4a,
         transparent: true,
@@ -958,7 +958,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
       })
     );
     wisp.rotation.z = -Math.PI * 0.5;
-    wisp.position.set(-38.9 - i * 1.25, 1.23 + i * 0.08, (i === 0 ? 0.26 : -0.22));
+    wisp.position.set(-38.7 - i * 1.35, 1.24 + i * 0.1, (i === 0 ? 0.56 : -0.52));
     wisp.userData.offset = i;
     redWisps.push(wisp);
   }
@@ -1086,22 +1086,22 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
   plane.exhaust.flameCore.material.color.setHex(0xff8a4c);
-  const outerRedTrace = clamp(0.042 + (1 - boostMix) * 0.022 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.008, 0.02, 0.075);
+  const outerRedTrace = clamp(0.056 + (1 - boostMix) * 0.03 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.009, 0.028, 0.1);
   const outerBlueBoost = clamp(0.24 + boostMix * 0.5, 0.24, 0.66);
   plane.exhaust.flameOuter.material.color.setRGB(0.28 + outerRedTrace * 0.7, 0.5 - outerRedTrace * 0.08, Math.min(1.0, 0.76 + outerBlueBoost));
 
   plane.exhaust.redWisps.forEach((wisp) => {
     const phase = t * 10 + plane.mesh.id * 0.23 + wisp.userData.offset * 1.7;
     const burst = Math.pow(Math.max(0, Math.sin(phase)), 2.2);
-    const wispMix = clamp(0.34 + boostMix * 1.05, 0.34, 1.24);
-    const wispLen = 0.88 + wispMix * 0.78 + burst * 0.3;
-    const wispRad = 0.8 + wispMix * 0.3;
+    const wispMix = clamp(0.38 + boostMix * 1.08, 0.38, 1.32);
+    const wispLen = 0.9 + wispMix * 0.84 + burst * 0.32;
+    const wispRad = 0.86 + wispMix * 0.34;
     wisp.scale.set(wispRad, wispLen, wispRad);
     const baseX = wisp.userData.baseX ?? wisp.position.x;
     wisp.position.x = baseX - (wispLen - 1) * 2.1;
     wisp.position.z = (wisp.userData.baseZ ?? wisp.position.z) + Math.sin(phase * 1.4) * 0.05;
     const boostRedGain = 0.95 + boostMix * 0.65;
-    wisp.material.opacity = clamp((0.05 + burst * 0.13) * wispMix * boostRedGain, 0.024, 0.32);
+    wisp.material.opacity = clamp((0.055 + burst * 0.14) * wispMix * boostRedGain, 0.03, 0.38);
     wisp.material.color.setRGB(1.0, 0.45 + burst * 0.1, 0.27 + (1 - boostMix) * 0.06);
   });
 
