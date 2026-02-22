@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 92;
+const DEBUG_BUILD_NUMBER = 95;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1047,15 +1047,15 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const coreLength = THREE.MathUtils.lerp(coreLengthIdle, coreLengthBoost, boostMix);
 
   const outerLengthIdle = (0.92 + boostLevel * 1.1) * (pulse + 0.02);
-  const outerLengthBoost = (1.08 + boostLevel * 1.45) * (pulse + 0.03);
+  const outerLengthBoost = (1.16 + boostLevel * 1.58) * (pulse + 0.03);
   const outerLength = THREE.MathUtils.lerp(outerLengthIdle, outerLengthBoost, boostMix);
 
   const coreRadiusIdle = 0.78 + boostLevel * 0.11 + shimmer * 0.55;
-  const coreRadiusBoost = 1 + boostLevel * 0.24 + shimmer;
+  const coreRadiusBoost = 0.9 + boostLevel * 0.16 + shimmer * 0.85;
   const coreRadius = THREE.MathUtils.lerp(coreRadiusIdle, coreRadiusBoost, boostMix);
 
   const outerRadiusIdle = 0.8 + boostLevel * 0.2 + shimmer;
-  const outerRadiusBoost = 1 + boostLevel * 0.32 + shimmer * 1.3;
+  const outerRadiusBoost = 1.12 + boostLevel * 0.4 + shimmer * 1.35;
   const outerRadius = THREE.MathUtils.lerp(outerRadiusIdle, outerRadiusBoost, boostMix);
 
   const glowScaleIdle = 0.84 + boostLevel * 0.28 + pulse * 0.03;
@@ -1072,7 +1072,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const coreShiftBoost = (coreLength - 1) * 3.8;
   plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
   const coreOpacityIdle = clamp(0.16 + boostLevel * 0.2 + pulse * 0.03, 0.08, 0.46);
-  const coreOpacityBoost = clamp(0.5 + boostLevel * 0.24 + pulse * 0.06, 0.3, 0.92);
+  const coreOpacityBoost = clamp(0.34 + boostLevel * 0.14 + pulse * 0.04, 0.22, 0.66);
   plane.exhaust.flameCore.material.opacity = THREE.MathUtils.lerp(coreOpacityIdle, coreOpacityBoost, Math.pow(boostMix, 1.18));
 
   plane.exhaust.flameOuter.scale.set(outerRadius, outerLength, outerRadius);
@@ -1082,12 +1082,13 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameOuter.position.x = outerBaseX - THREE.MathUtils.lerp(outerShiftIdle, outerShiftBoost, boostMix);
   plane.exhaust.flameOuter.position.z = THREE.MathUtils.lerp(turbulence * 0.34, turbulence * 0.42, boostMix);
   const outerOpacityIdle = clamp(0.16 + boostLevel * 0.2 + pulse * 0.03, 0.08, 0.5);
-  const outerOpacityBoost = clamp(0.28 + boostLevel * 0.2 + pulse * 0.04, 0.15, 0.68);
+  const outerOpacityBoost = clamp(0.42 + boostLevel * 0.28 + pulse * 0.05, 0.24, 0.9);
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
   plane.exhaust.flameCore.material.color.setHex(0xffb07a);
-  const outerRedTrace = clamp(0.045 + boostMix * 0.05 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.012, 0.03, 0.11);
-  plane.exhaust.flameOuter.material.color.setRGB(0.50 + outerRedTrace, 0.72 - outerRedTrace * 0.18, 1.0 - outerRedTrace * 0.32);
+  const outerRedTrace = clamp(0.042 + (1 - boostMix) * 0.022 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.008, 0.02, 0.075);
+  const outerBlueBoost = clamp(0.12 + boostMix * 0.34, 0.12, 0.42);
+  plane.exhaust.flameOuter.material.color.setRGB(0.42 + outerRedTrace, 0.64 - outerRedTrace * 0.1, Math.min(1.0, 0.84 + outerBlueBoost));
 
   plane.exhaust.redWisps.forEach((wisp) => {
     const phase = t * 10 + plane.mesh.id * 0.23 + wisp.userData.offset * 1.7;
