@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 89;
+const DEBUG_BUILD_NUMBER = 91;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -944,6 +944,25 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameOuter.rotation.z = -Math.PI * 0.5;
   flameOuter.position.set(-42.4, 1.15, 0);
 
+  const redWisps = [];
+  for (let i = 0; i < 2; i++) {
+    const wisp = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.34, 0.05, 7.4, 18, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: 0xff6a46,
+        transparent: true,
+        opacity: 0.0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      })
+    );
+    wisp.rotation.z = -Math.PI * 0.5;
+    wisp.position.set(-38.9 - i * 1.25, 1.23 + i * 0.08, (i === 0 ? 0.26 : -0.22));
+    wisp.userData.offset = i;
+    redWisps.push(wisp);
+  }
+
   const shockRings = [];
   for (let i = 0; i < 5; i++) {
     const ring = new THREE.Mesh(
@@ -966,13 +985,14 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameCore.userData.baseX = flameCore.position.x;
   flameOuter.userData.baseX = flameOuter.position.x;
   shockRings.forEach((ring) => { ring.userData.baseX = ring.position.x; });
+  redWisps.forEach((wisp) => { wisp.userData.baseX = wisp.position.x; wisp.userData.baseZ = wisp.position.z; });
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
     engineCore, nozzle, nozzleInner, nozzleLip,
-    nozzleGlow, flameCore, flameOuter, ...shockRings
+    nozzleGlow, flameCore, flameOuter, ...redWisps, ...shockRings
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -1006,6 +1026,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
       nozzleGlow,
       flameCore,
       flameOuter,
+      redWisps,
       shockRings,
     },
   };
@@ -1063,6 +1084,22 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerOpacityIdle = clamp(0.16 + boostLevel * 0.2 + pulse * 0.03, 0.08, 0.5);
   const outerOpacityBoost = clamp(0.28 + boostLevel * 0.2 + pulse * 0.04, 0.15, 0.68);
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
+
+  plane.exhaust.flameCore.material.color.setHex(0xffb07a);
+  plane.exhaust.flameOuter.material.color.setHex(0x7fb7ff);
+
+  plane.exhaust.redWisps.forEach((wisp) => {
+    const phase = t * 10 + plane.mesh.id * 0.23 + wisp.userData.offset * 1.7;
+    const burst = Math.pow(Math.max(0, Math.sin(phase)), 2.2);
+    const wispMix = clamp(0.3 + boostMix * 0.85, 0.3, 1);
+    const wispLen = 0.88 + wispMix * 0.66 + burst * 0.22;
+    const wispRad = 0.8 + wispMix * 0.24;
+    wisp.scale.set(wispRad, wispLen, wispRad);
+    const baseX = wisp.userData.baseX ?? wisp.position.x;
+    wisp.position.x = baseX - (wispLen - 1) * 2.1;
+    wisp.position.z = (wisp.userData.baseZ ?? wisp.position.z) + Math.sin(phase * 1.4) * 0.05;
+    wisp.material.opacity = clamp((0.035 + burst * 0.09) * wispMix, 0.015, 0.16);
+  });
 
   plane.exhaust.shockRings.forEach((ring) => {
     const phase = t * 19 - ring.userData.offset * 0.85;
