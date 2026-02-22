@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 100;
+const DEBUG_BUILD_NUMBER = 101;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -921,7 +921,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     new THREE.MeshBasicMaterial({
       color: 0xff9a62,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.22,
       blending: THREE.NormalBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
@@ -1043,7 +1043,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const boostMix = clamp(boostLevel, 0, 1);
 
   const coreLengthIdle = (0.88 + boostLevel * 0.56) * pulse;
-  const coreLengthBoost = (0.62 + boostLevel * 0.24) * pulse;
+  const coreLengthBoost = (0.52 + boostLevel * 0.18) * pulse;
   const coreLength = THREE.MathUtils.lerp(coreLengthIdle, coreLengthBoost, boostMix);
 
   const outerLengthIdle = (0.92 + boostLevel * 1.1) * (pulse + 0.02);
@@ -1063,7 +1063,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.nozzleGlow.scale.setScalar(THREE.MathUtils.lerp(glowScaleIdle, glowScaleBoost, boostMix));
 
   const glowOpacityIdle = clamp(0.18 + boostLevel * 0.38 + pulse * 0.03, 0.1, 0.56);
-  const glowOpacityBoost = clamp(0.32 + boostLevel * 0.28 + pulse * 0.05, 0.18, 0.68);
+  const glowOpacityBoost = clamp(0.44 + boostLevel * 0.42 + pulse * 0.06, 0.24, 0.9);
   plane.exhaust.nozzleGlow.material.opacity = THREE.MathUtils.lerp(glowOpacityIdle, glowOpacityBoost, boostMix);
 
   plane.exhaust.flameCore.scale.set(coreRadius, coreLength, coreRadius);
@@ -1072,7 +1072,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const coreShiftBoost = (coreLength - 1) * 1.2;
   plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
   const coreOpacityIdle = clamp(0.16 + boostLevel * 0.2 + pulse * 0.03, 0.08, 0.46);
-  const coreOpacityBoost = clamp(0.12 + boostLevel * 0.05 + pulse * 0.02, 0.06, 0.24);
+  const coreOpacityBoost = clamp(0.06 + boostLevel * 0.03 + pulse * 0.015, 0.03, 0.12);
   plane.exhaust.flameCore.material.opacity = THREE.MathUtils.lerp(coreOpacityIdle, coreOpacityBoost, Math.pow(boostMix, 1.18));
 
   plane.exhaust.flameOuter.scale.set(outerRadius, outerLength, outerRadius);
@@ -1115,7 +1115,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const ringScaleBoost = 0.9 + travel * (1.2 + boostLevel * 0.7);
     ring.scale.setScalar(THREE.MathUtils.lerp(ringScaleIdle, ringScaleBoost, boostMix));
     const ringOpacityIdle = clamp((0.12 + boostLevel * 0.22) * fade, 0, 0.4);
-    const ringOpacityBoost = clamp((0.24 + boostLevel * 0.32) * fade, 0, 0.7);
+    const ringOpacityBoost = clamp((0.12 + boostLevel * 0.16) * fade, 0, 0.35);
     ring.material.opacity = THREE.MathUtils.lerp(ringOpacityIdle, ringOpacityBoost, boostMix);
     ring.material.color.setHex(travel < 0.38 ? 0xffd6b1 : 0x9ac2ff);
   });
