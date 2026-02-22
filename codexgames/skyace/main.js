@@ -25,7 +25,11 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
+<<<<<<< codex/2026-02-22-14-54-57-redesign-jet-flame-for-skyace
+const DEBUG_BUILD_NUMBER = 106;
+=======
 const DEBUG_BUILD_NUMBER = 105;
+>>>>>>> main
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1086,22 +1090,22 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
   plane.exhaust.flameCore.material.color.setHex(0xff8a4c);
-  const outerRedTrace = clamp(0.056 + (1 - boostMix) * 0.03 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.009, 0.028, 0.1);
+  const outerRedTrace = clamp(0.07 + boostMix * 0.11 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.012, 0.04, 0.24);
   const outerBlueBoost = clamp(0.24 + boostMix * 0.5, 0.24, 0.66);
   plane.exhaust.flameOuter.material.color.setRGB(0.28 + outerRedTrace * 0.7, 0.5 - outerRedTrace * 0.08, Math.min(1.0, 0.76 + outerBlueBoost));
 
   plane.exhaust.redWisps.forEach((wisp) => {
     const phase = t * 10 + plane.mesh.id * 0.23 + wisp.userData.offset * 1.7;
     const burst = Math.pow(Math.max(0, Math.sin(phase)), 2.2);
-    const wispMix = clamp(0.38 + boostMix * 1.08, 0.38, 1.32);
+    const wispMix = clamp(0.45 + boostMix * 1.75, 0.45, 2.2);
     const wispLen = 0.9 + wispMix * 0.84 + burst * 0.32;
     const wispRad = 0.86 + wispMix * 0.34;
     wisp.scale.set(wispRad, wispLen, wispRad);
     const baseX = wisp.userData.baseX ?? wisp.position.x;
     wisp.position.x = baseX - (wispLen - 1) * 2.1;
     wisp.position.z = (wisp.userData.baseZ ?? wisp.position.z) + Math.sin(phase * 1.4) * 0.05;
-    const boostRedGain = 0.95 + boostMix * 0.65;
-    wisp.material.opacity = clamp((0.055 + burst * 0.14) * wispMix * boostRedGain, 0.03, 0.38);
+    const boostRedGain = 1.2 + boostMix * 2.1;
+    wisp.material.opacity = clamp((0.065 + burst * 0.2) * wispMix * boostRedGain, 0.04, 0.9);
     wisp.material.color.setRGB(1.0, 0.45 + burst * 0.1, 0.27 + (1 - boostMix) * 0.06);
   });
 
