@@ -25,11 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-<<<<<<< codex/2026-02-22-14-54-57-redesign-jet-flame-for-skyace
-const DEBUG_BUILD_NUMBER = 106;
-=======
-const DEBUG_BUILD_NUMBER = 105;
->>>>>>> main
+const DEBUG_BUILD_NUMBER = 85;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -637,15 +633,15 @@ function createFighter(colorOrPalette, isPlayer = false) {
     roughnessMap: isPlayer ? fighterTextures.bodyRoughness : null,
     metalnessMap: isPlayer ? fighterTextures.bodyMetalness : null,
     normalScale: new THREE.Vector2(0.22, 0.22),
-    roughness: isPlayer ? 0.3 : 0.22,
-    metalness: isPlayer ? 0.76 : 0.68,
+    roughness: isPlayer ? 0.26 : 0.22,
+    metalness: isPlayer ? 0.82 : 0.68,
     clearcoat: 0.48,
     clearcoatRoughness: 0.24,
     emissive: isPlayer ? 0x000000 : new THREE.Color(palette.wing).multiplyScalar(0.18),
     emissiveIntensity: isPlayer ? 0 : 0.32,
   });
   const nozzleMetalMat = new THREE.MeshPhysicalMaterial({
-    color: 0x5a1a22,
+    color: 0x3a0a0f,
     roughnessMap: fighterTextures.bodyRoughness,
     normalMap: fighterTextures.bodyNormal,
     metalnessMap: fighterTextures.bodyMetalness,
@@ -909,24 +905,24 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Afterburner rebuilt from scratch: bright nozzle bloom + dense flame cone + long cool plume + shock-diamond rings.
   const nozzleGlow = new THREE.Mesh(
-    new THREE.SphereGeometry(1.62, 18, 14),
+    new THREE.SphereGeometry(1.92, 18, 14),
     new THREE.MeshBasicMaterial({
       color: 0xfff0b0,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.55,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     })
   );
-  nozzleGlow.position.set(-35.72, 1.15, 0);
+  nozzleGlow.position.set(-35.6, 1.15, 0);
 
   const flameCore = new THREE.Mesh(
     new THREE.CylinderGeometry(0.82, 0.18, 12.6, 28, 1, true),
     new THREE.MeshBasicMaterial({
-      color: 0xff9a62,
+      color: 0xffc28b,
       transparent: true,
-      opacity: 0.3,
-      blending: THREE.NormalBlending,
+      opacity: 0.62,
+      blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
     })
@@ -939,7 +935,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     new THREE.MeshBasicMaterial({
       color: 0x7fb7ff,
       transparent: true,
-      opacity: 0.24,
+      opacity: 0.36,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
@@ -947,25 +943,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   );
   flameOuter.rotation.z = -Math.PI * 0.5;
   flameOuter.position.set(-42.4, 1.15, 0);
-
-  const redWisps = [];
-  for (let i = 0; i < 2; i++) {
-    const wisp = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.42, 0.07, 7.6, 18, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: 0xff6f4a,
-        transparent: true,
-        opacity: 0.0,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      })
-    );
-    wisp.rotation.z = -Math.PI * 0.5;
-    wisp.position.set(-38.7 - i * 1.35, 1.24 + i * 0.1, (i === 0 ? 0.56 : -0.52));
-    wisp.userData.offset = i;
-    redWisps.push(wisp);
-  }
 
   const shockRings = [];
   for (let i = 0; i < 5; i++) {
@@ -989,14 +966,13 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameCore.userData.baseX = flameCore.position.x;
   flameOuter.userData.baseX = flameOuter.position.x;
   shockRings.forEach((ring) => { ring.userData.baseX = ring.position.x; });
-  redWisps.forEach((wisp) => { wisp.userData.baseX = wisp.position.x; wisp.userData.baseZ = wisp.position.z; });
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
     engineCore, nozzle, nozzleInner, nozzleLip,
-    nozzleGlow, flameCore, flameOuter, ...redWisps, ...shockRings
+    nozzleGlow, flameCore, flameOuter, ...shockRings
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -1030,7 +1006,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
       nozzleGlow,
       flameCore,
       flameOuter,
-      redWisps,
       shockRings,
     },
   };
@@ -1044,85 +1019,33 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const pulse = 1 + Math.sin(t * 32 + plane.mesh.id * 0.73) * 0.07;
   const shimmer = Math.sin(t * 21 + plane.mesh.id * 0.31) * 0.05;
   const turbulence = Math.sin(t * 17 + plane.mesh.id * 0.42) * 0.12;
-  const boostMix = clamp(boostLevel, 0, 1);
 
-  const coreLengthIdle = (0.88 + boostLevel * 0.56) * pulse;
-  const coreLengthBoost = (0.33 + boostLevel * 0.105) * pulse;
-  const coreLength = THREE.MathUtils.lerp(coreLengthIdle, coreLengthBoost, boostMix);
+  const coreLength = (1.02 + boostLevel * 0.72) * pulse;
+  const outerLength = (1.08 + boostLevel * 1.45) * (pulse + 0.03);
+  const coreRadius = 1 + boostLevel * 0.24 + shimmer;
+  const outerRadius = 1 + boostLevel * 0.32 + shimmer * 1.3;
 
-  const outerLengthIdle = (0.92 + boostLevel * 1.1) * (pulse + 0.02);
-  const outerLengthBoost = (1.16 + boostLevel * 1.58) * (pulse + 0.03);
-  const outerLength = THREE.MathUtils.lerp(outerLengthIdle, outerLengthBoost, boostMix);
-
-  const coreRadiusIdle = 0.78 + boostLevel * 0.11 + shimmer * 0.55;
-  const coreRadiusBoost = 0.78 + boostLevel * 0.1 + shimmer * 0.7;
-  const coreRadius = THREE.MathUtils.lerp(coreRadiusIdle, coreRadiusBoost, boostMix);
-
-  const outerRadiusIdle = 0.8 + boostLevel * 0.2 + shimmer;
-  const outerRadiusBoost = 1.12 + boostLevel * 0.4 + shimmer * 1.35;
-  const outerRadius = THREE.MathUtils.lerp(outerRadiusIdle, outerRadiusBoost, boostMix);
-
-  const glowScaleIdle = 0.84 + boostLevel * 0.28 + pulse * 0.03;
-  const glowScaleBoost = 0.98 + boostLevel * 0.56 + pulse * 0.05;
-  plane.exhaust.nozzleGlow.scale.setScalar(THREE.MathUtils.lerp(glowScaleIdle, glowScaleBoost, boostMix));
-
-  const glowOpacityIdle = clamp(0.18 + boostLevel * 0.38 + pulse * 0.03, 0.1, 0.56);
-  const glowOpacityBoost = clamp(0.56 + boostLevel * 0.46 + pulse * 0.06, 0.3, 1.0);
-  plane.exhaust.nozzleGlow.material.opacity = THREE.MathUtils.lerp(glowOpacityIdle, glowOpacityBoost, boostMix);
+  plane.exhaust.nozzleGlow.scale.setScalar(0.9 + boostLevel * 0.58 + pulse * 0.06);
+  plane.exhaust.nozzleGlow.material.opacity = clamp(0.44 + boostLevel * 0.42 + pulse * 0.06, 0.24, 0.9);
 
   plane.exhaust.flameCore.scale.set(coreRadius, coreLength, coreRadius);
-  const coreBaseX = plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x;
-  const coreShiftIdle = (coreLength - 1) * 3.1;
-  const coreShiftBoost = (coreLength - 1) * 0.675;
-  plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
-  const coreOpacityIdle = clamp(0.16 + boostLevel * 0.2 + pulse * 0.03, 0.08, 0.46);
-  const coreOpacityBoost = clamp(0.026 + boostLevel * 0.015 + pulse * 0.0075, 0.015, 0.0525);
-  plane.exhaust.flameCore.material.opacity = THREE.MathUtils.lerp(coreOpacityIdle, coreOpacityBoost, Math.pow(boostMix, 1.18));
+  plane.exhaust.flameCore.position.x = (plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x) - (coreLength - 1) * 3.8;
+  plane.exhaust.flameCore.material.opacity = clamp(0.5 + boostLevel * 0.24 + pulse * 0.06, 0.3, 0.92);
 
   plane.exhaust.flameOuter.scale.set(outerRadius, outerLength, outerRadius);
-  const outerBaseX = plane.exhaust.flameOuter.userData.baseX ?? plane.exhaust.flameOuter.position.x;
-  const outerShiftIdle = (outerLength - 1) * 4.9;
-  const outerShiftBoost = (outerLength - 1) * 6.3;
-  plane.exhaust.flameOuter.position.x = outerBaseX - THREE.MathUtils.lerp(outerShiftIdle, outerShiftBoost, boostMix);
-  plane.exhaust.flameOuter.position.z = THREE.MathUtils.lerp(turbulence * 0.34, turbulence * 0.42, boostMix);
-  const outerOpacityIdle = clamp(0.16 + boostLevel * 0.2 + pulse * 0.03, 0.08, 0.5);
-  const outerOpacityBoost = clamp(0.34 + boostLevel * 0.2 + pulse * 0.04, 0.22, 0.62);
-  plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
-
-  plane.exhaust.flameCore.material.color.setHex(0xff8a4c);
-  const outerRedTrace = clamp(0.07 + boostMix * 0.11 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.012, 0.04, 0.24);
-  const outerBlueBoost = clamp(0.24 + boostMix * 0.5, 0.24, 0.66);
-  plane.exhaust.flameOuter.material.color.setRGB(0.28 + outerRedTrace * 0.7, 0.5 - outerRedTrace * 0.08, Math.min(1.0, 0.76 + outerBlueBoost));
-
-  plane.exhaust.redWisps.forEach((wisp) => {
-    const phase = t * 10 + plane.mesh.id * 0.23 + wisp.userData.offset * 1.7;
-    const burst = Math.pow(Math.max(0, Math.sin(phase)), 2.2);
-    const wispMix = clamp(0.45 + boostMix * 1.75, 0.45, 2.2);
-    const wispLen = 0.9 + wispMix * 0.84 + burst * 0.32;
-    const wispRad = 0.86 + wispMix * 0.34;
-    wisp.scale.set(wispRad, wispLen, wispRad);
-    const baseX = wisp.userData.baseX ?? wisp.position.x;
-    wisp.position.x = baseX - (wispLen - 1) * 2.1;
-    wisp.position.z = (wisp.userData.baseZ ?? wisp.position.z) + Math.sin(phase * 1.4) * 0.05;
-    const boostRedGain = 1.2 + boostMix * 2.1;
-    wisp.material.opacity = clamp((0.065 + burst * 0.2) * wispMix * boostRedGain, 0.04, 0.9);
-    wisp.material.color.setRGB(1.0, 0.45 + burst * 0.1, 0.27 + (1 - boostMix) * 0.06);
-  });
+  plane.exhaust.flameOuter.position.x = (plane.exhaust.flameOuter.userData.baseX ?? plane.exhaust.flameOuter.position.x) - (outerLength - 1) * 6.3;
+  plane.exhaust.flameOuter.position.z = turbulence * 0.42;
+  plane.exhaust.flameOuter.material.opacity = clamp(0.28 + boostLevel * 0.2 + pulse * 0.04, 0.15, 0.68);
 
   plane.exhaust.shockRings.forEach((ring) => {
     const phase = t * 19 - ring.userData.offset * 0.85;
     const travel = (phase % 1 + 1) % 1;
     const fade = 1 - travel;
     const baseX = ring.userData.baseX ?? ring.position.x;
-    const ringTravelIdle = travel * (2.3 + boostLevel * 3.8);
-    const ringTravelBoost = travel * (2.9 + boostLevel * 5.1);
-    ring.position.x = baseX - THREE.MathUtils.lerp(ringTravelIdle, ringTravelBoost, boostMix);
-    const ringScaleIdle = 0.8 + travel * (1.0 + boostLevel * 0.45);
-    const ringScaleBoost = 0.9 + travel * (1.2 + boostLevel * 0.7);
-    ring.scale.setScalar(THREE.MathUtils.lerp(ringScaleIdle, ringScaleBoost, boostMix));
-    const ringOpacityIdle = clamp((0.12 + boostLevel * 0.22) * fade, 0, 0.4);
-    const ringOpacityBoost = clamp((0.09 + boostLevel * 0.12) * fade, 0, 0.2625);
-    ring.material.opacity = THREE.MathUtils.lerp(ringOpacityIdle, ringOpacityBoost, boostMix);
+    ring.position.x = baseX - travel * (2.9 + boostLevel * 5.1);
+    const ringScale = 0.9 + travel * (1.2 + boostLevel * 0.7);
+    ring.scale.setScalar(ringScale);
+    ring.material.opacity = clamp((0.24 + boostLevel * 0.32) * fade, 0, 0.7);
     ring.material.color.setHex(travel < 0.38 ? 0xffd6b1 : 0x9ac2ff);
   });
 
