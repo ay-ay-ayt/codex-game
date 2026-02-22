@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 91;
+const DEBUG_BUILD_NUMBER = 92;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -949,7 +949,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     const wisp = new THREE.Mesh(
       new THREE.CylinderGeometry(0.34, 0.05, 7.4, 18, 1, true),
       new THREE.MeshBasicMaterial({
-        color: 0xff6a46,
+        color: 0xff6f4a,
         transparent: true,
         opacity: 0.0,
         blending: THREE.AdditiveBlending,
@@ -1086,19 +1086,20 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
   plane.exhaust.flameCore.material.color.setHex(0xffb07a);
-  plane.exhaust.flameOuter.material.color.setHex(0x7fb7ff);
+  const outerRedTrace = clamp(0.045 + boostMix * 0.05 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.012, 0.03, 0.11);
+  plane.exhaust.flameOuter.material.color.setRGB(0.50 + outerRedTrace, 0.72 - outerRedTrace * 0.18, 1.0 - outerRedTrace * 0.32);
 
   plane.exhaust.redWisps.forEach((wisp) => {
     const phase = t * 10 + plane.mesh.id * 0.23 + wisp.userData.offset * 1.7;
     const burst = Math.pow(Math.max(0, Math.sin(phase)), 2.2);
-    const wispMix = clamp(0.3 + boostMix * 0.85, 0.3, 1);
-    const wispLen = 0.88 + wispMix * 0.66 + burst * 0.22;
-    const wispRad = 0.8 + wispMix * 0.24;
+    const wispMix = clamp(0.36 + boostMix * 0.9, 0.36, 1.08);
+    const wispLen = 0.9 + wispMix * 0.72 + burst * 0.24;
+    const wispRad = 0.82 + wispMix * 0.28;
     wisp.scale.set(wispRad, wispLen, wispRad);
     const baseX = wisp.userData.baseX ?? wisp.position.x;
     wisp.position.x = baseX - (wispLen - 1) * 2.1;
     wisp.position.z = (wisp.userData.baseZ ?? wisp.position.z) + Math.sin(phase * 1.4) * 0.05;
-    wisp.material.opacity = clamp((0.035 + burst * 0.09) * wispMix, 0.015, 0.16);
+    wisp.material.opacity = clamp((0.045 + burst * 0.105) * wispMix, 0.022, 0.21);
   });
 
   plane.exhaust.shockRings.forEach((ring) => {
