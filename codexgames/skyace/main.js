@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 101;
+const DEBUG_BUILD_NUMBER = 102;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -921,7 +921,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     new THREE.MeshBasicMaterial({
       color: 0xff9a62,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.3,
       blending: THREE.NormalBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
@@ -1043,7 +1043,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const boostMix = clamp(boostLevel, 0, 1);
 
   const coreLengthIdle = (0.88 + boostLevel * 0.56) * pulse;
-  const coreLengthBoost = (0.52 + boostLevel * 0.18) * pulse;
+  const coreLengthBoost = (0.44 + boostLevel * 0.14) * pulse;
   const coreLength = THREE.MathUtils.lerp(coreLengthIdle, coreLengthBoost, boostMix);
 
   const outerLengthIdle = (0.92 + boostLevel * 1.1) * (pulse + 0.02);
@@ -1059,20 +1059,20 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerRadius = THREE.MathUtils.lerp(outerRadiusIdle, outerRadiusBoost, boostMix);
 
   const glowScaleIdle = 0.84 + boostLevel * 0.28 + pulse * 0.03;
-  const glowScaleBoost = 0.82 + boostLevel * 0.38 + pulse * 0.04;
+  const glowScaleBoost = 0.98 + boostLevel * 0.56 + pulse * 0.05;
   plane.exhaust.nozzleGlow.scale.setScalar(THREE.MathUtils.lerp(glowScaleIdle, glowScaleBoost, boostMix));
 
   const glowOpacityIdle = clamp(0.18 + boostLevel * 0.38 + pulse * 0.03, 0.1, 0.56);
-  const glowOpacityBoost = clamp(0.44 + boostLevel * 0.42 + pulse * 0.06, 0.24, 0.9);
+  const glowOpacityBoost = clamp(0.56 + boostLevel * 0.46 + pulse * 0.06, 0.3, 1.0);
   plane.exhaust.nozzleGlow.material.opacity = THREE.MathUtils.lerp(glowOpacityIdle, glowOpacityBoost, boostMix);
 
   plane.exhaust.flameCore.scale.set(coreRadius, coreLength, coreRadius);
   const coreBaseX = plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x;
   const coreShiftIdle = (coreLength - 1) * 3.1;
-  const coreShiftBoost = (coreLength - 1) * 1.2;
+  const coreShiftBoost = (coreLength - 1) * 0.9;
   plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
   const coreOpacityIdle = clamp(0.16 + boostLevel * 0.2 + pulse * 0.03, 0.08, 0.46);
-  const coreOpacityBoost = clamp(0.06 + boostLevel * 0.03 + pulse * 0.015, 0.03, 0.12);
+  const coreOpacityBoost = clamp(0.035 + boostLevel * 0.02 + pulse * 0.01, 0.02, 0.07);
   plane.exhaust.flameCore.material.opacity = THREE.MathUtils.lerp(coreOpacityIdle, coreOpacityBoost, Math.pow(boostMix, 1.18));
 
   plane.exhaust.flameOuter.scale.set(outerRadius, outerLength, outerRadius);
@@ -1082,13 +1082,13 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameOuter.position.x = outerBaseX - THREE.MathUtils.lerp(outerShiftIdle, outerShiftBoost, boostMix);
   plane.exhaust.flameOuter.position.z = THREE.MathUtils.lerp(turbulence * 0.34, turbulence * 0.42, boostMix);
   const outerOpacityIdle = clamp(0.16 + boostLevel * 0.2 + pulse * 0.03, 0.08, 0.5);
-  const outerOpacityBoost = clamp(0.58 + boostLevel * 0.36 + pulse * 0.05, 0.38, 1.0);
+  const outerOpacityBoost = clamp(0.34 + boostLevel * 0.2 + pulse * 0.04, 0.22, 0.62);
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
   plane.exhaust.flameCore.material.color.setHex(0xff8a4c);
   const outerRedTrace = clamp(0.042 + (1 - boostMix) * 0.022 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.008, 0.02, 0.075);
-  const outerBlueBoost = clamp(0.2 + boostMix * 0.44, 0.2, 0.56);
-  plane.exhaust.flameOuter.material.color.setRGB(0.38 + outerRedTrace, 0.58 - outerRedTrace * 0.08, Math.min(1.0, 0.82 + outerBlueBoost));
+  const outerBlueBoost = clamp(0.24 + boostMix * 0.5, 0.24, 0.66);
+  plane.exhaust.flameOuter.material.color.setRGB(0.28 + outerRedTrace * 0.7, 0.5 - outerRedTrace * 0.08, Math.min(1.0, 0.76 + outerBlueBoost));
 
   plane.exhaust.redWisps.forEach((wisp) => {
     const phase = t * 10 + plane.mesh.id * 0.23 + wisp.userData.offset * 1.7;
