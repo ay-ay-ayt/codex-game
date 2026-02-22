@@ -25,11 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-<<<<<<< codex/2026-02-22-14-54-57-redesign-jet-flame-for-skyace
-const DEBUG_BUILD_NUMBER = 106;
-=======
-const DEBUG_BUILD_NUMBER = 105;
->>>>>>> main
+const DEBUG_BUILD_NUMBER = 107;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
