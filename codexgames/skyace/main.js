@@ -907,7 +907,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const nozzleGlow = new THREE.Mesh(
     new THREE.SphereGeometry(1.62, 18, 14),
     new THREE.MeshBasicMaterial({
-      color: 0xfff0b0,
+      color: 0xff9068,
       transparent: true,
       opacity: 0.28,
       blending: THREE.AdditiveBlending,
