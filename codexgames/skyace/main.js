@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 113;
+const DEBUG_BUILD_NUMBER = 114;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -182,8 +182,8 @@ const worldTextures = {
 };
 
 const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
-scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
-const sun = new THREE.DirectionalLight(0xffffff, 1.15);
+scene.add(new THREE.HemisphereLight(0xe8f6ff, 0x78966f, 1.12));
+const sun = new THREE.DirectionalLight(0xffffff, 1.32);
 sun.position.set(700, 900, 300);
 sun.castShadow = !isMobile;
 sun.shadow.mapSize.set(2048, 2048);
@@ -376,11 +376,11 @@ function buildWorld(mapType) {
   staticObstacles.length = 0;
 
   const isForest = mapType === "forest";
-  const skyColor = isForest ? 0x89b992 : 0x7594ba;
+  const skyColor = isForest ? 0xa7cfb1 : 0x95b4d8;
   scene.background = new THREE.Color(skyColor);
   scene.fog = isForest
-    ? new THREE.FogExp2(skyColor, 0.0001)
-    : new THREE.FogExp2(skyColor, 0.000075);
+    ? new THREE.FogExp2(skyColor, 0.000072)
+    : new THREE.FogExp2(skyColor, 0.000054);
 
   buildArenaBoundary();
 
@@ -417,7 +417,7 @@ function buildWorld(mapType) {
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
       new THREE.MeshStandardMaterial({
-        color: 0x5f8550,
+        color: 0x8fb67d,
         map: worldTextures.forestGroundColor,
         normalMap: worldTextures.forestGroundNormal,
         roughnessMap: worldTextures.forestGroundRoughness,
@@ -431,7 +431,7 @@ function buildWorld(mapType) {
     world.add(ground);
 
     const hillMat = new THREE.MeshStandardMaterial({
-      color: 0x6e9561,
+      color: 0xa4ca96,
       map: worldTextures.forestGroundColor,
       normalMap: worldTextures.forestGroundNormal,
       roughnessMap: worldTextures.forestGroundRoughness,
@@ -447,7 +447,7 @@ function buildWorld(mapType) {
     }
 
     const rockMat = new THREE.MeshStandardMaterial({
-      color: 0x8f9792,
+      color: 0xb4bbb6,
       map: worldTextures.rockColor,
       normalMap: worldTextures.rockNormal,
       roughnessMap: worldTextures.rockRoughness,
@@ -475,7 +475,7 @@ function buildWorld(mapType) {
     }
 
     const trunkMat = new THREE.MeshStandardMaterial({
-      color: 0x7d5c3f,
+      color: 0x9a7350,
       map: worldTextures.trunkColor,
       normalMap: worldTextures.trunkNormal,
       roughnessMap: worldTextures.trunkRoughness,
@@ -523,7 +523,7 @@ function buildWorld(mapType) {
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
     new THREE.MeshStandardMaterial({
-      color: 0x89909a,
+      color: 0xc6ccd4,
       map: worldTextures.cityGroundColor,
       normalMap: worldTextures.cityGroundNormal,
       roughnessMap: worldTextures.cityGroundRoughness,
@@ -537,7 +537,7 @@ function buildWorld(mapType) {
   world.add(ground);
 
   const roadMat = new THREE.MeshStandardMaterial({
-    color: 0x40464e,
+    color: 0x7a8189,
     map: worldTextures.cityRoadColor,
     normalMap: worldTextures.cityRoadNormal,
     roughnessMap: worldTextures.cityRoadRoughness,
@@ -579,7 +579,7 @@ function buildWorld(mapType) {
     const tower = new THREE.Mesh(
       new THREE.BoxGeometry(w, h, d),
       new THREE.MeshStandardMaterial({
-        color: new THREE.Color(baseColor).lerp(new THREE.Color(0xbcc5ce), 0.2),
+        color: new THREE.Color(baseColor).lerp(new THREE.Color(0xe8edf4), 0.46),
         map: worldTextures.cityBuildingColor,
         normalMap: worldTextures.cityBuildingNormal,
         roughnessMap: worldTextures.cityBuildingRoughness,
@@ -1156,7 +1156,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerBlueGlow = clamp(0.82 + boostMix * 0.14 + pulse * 0.02, 0.78, 1.0);
   plane.exhaust.flameOuter.material.color.setRGB(0.34, 0.62 + boostMix * 0.08, outerBlueGlow);
 
-  plane.exhaust.nozzleGlow.material.color.setHex(0xfff0b0);
+  plane.exhaust.nozzleGlow.material.color.setRGB(0.92, 0.28 + boostMix * 0.06, 0.44 + boostMix * 0.18);
 
   const tailRadiusIdle = outerRadius * 0.58;
   const tailRadiusBoost = outerRadius * 0.72;
@@ -1175,9 +1175,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const tailOpacityBoost = clamp(0.15 + boostLevel * 0.12 + pulse * 0.022, 0.08, 0.32);
   plane.exhaust.flameOuterTail.material.opacity = THREE.MathUtils.lerp(tailOpacityIdle, tailOpacityBoost, Math.pow(boostMix, 0.72));
 
-  const tailRed = clamp(0.9 + boostMix * 0.09 + pulse * 0.03, 0.82, 1.0);
-  const tailGreen = clamp(0.34 + boostMix * 0.12 + pulse * 0.02, 0.26, 0.52);
-  const tailBlue = clamp(0.22 + boostMix * 0.03 + pulse * 0.01, 0.16, 0.32);
+  const tailRed = clamp(0.82 + boostMix * 0.12 + pulse * 0.03, 0.72, 0.98);
+  const tailGreen = clamp(0.18 + boostMix * 0.04 + pulse * 0.02, 0.1, 0.28);
+  const tailBlue = clamp(0.56 + boostMix * 0.16 + pulse * 0.03, 0.46, 0.84);
   plane.exhaust.flameOuterTail.material.color.setRGB(tailRed, tailGreen, tailBlue);
 
   plane.exhaust.shockRings.forEach((ring) => {
@@ -1194,7 +1194,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const ringOpacityIdle = clamp((0.12 + boostLevel * 0.22) * fade, 0, 0.4);
     const ringOpacityBoost = clamp((0.09 + boostLevel * 0.12) * fade, 0, 0.2625);
     ring.material.opacity = THREE.MathUtils.lerp(ringOpacityIdle, ringOpacityBoost, boostMix);
-    ring.material.color.setHex(travel < 0.38 ? 0xffd6b1 : 0x9ac2ff);
+    ring.material.color.setHex(travel < 0.38 ? 0xd777c0 : 0x7aaeff);
   });
 
 }
