@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 111;
+const DEBUG_BUILD_NUMBER = 112;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -945,18 +945,18 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameOuter.position.set(-42.4, 1.15, 0);
 
   const flameOuterTail = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.96, 0.08, 7.2, 26, 1, true),
+    new THREE.CylinderGeometry(0.68, 0.05, 6.4, 26, 1, true),
     new THREE.MeshBasicMaterial({
       color: 0xff9a6a,
       transparent: true,
-      opacity: 0.16,
+      opacity: 0.13,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
     })
   );
   flameOuterTail.rotation.z = -Math.PI * 0.5;
-  flameOuterTail.position.set(-48.2, 1.15, 0);
+  flameOuterTail.position.set(-50.8, 1.15, 0);
 
   const shockRings = [];
   for (let i = 0; i < 5; i++) {
@@ -1088,20 +1088,21 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
 
   plane.exhaust.nozzleGlow.material.color.setHex(0xfff0b0);
 
-  const tailRadiusIdle = outerRadius * 0.86;
-  const tailRadiusBoost = outerRadius * 0.98;
+  const tailRadiusIdle = outerRadius * 0.58;
+  const tailRadiusBoost = outerRadius * 0.72;
   const tailRadius = THREE.MathUtils.lerp(tailRadiusIdle, tailRadiusBoost, boostMix);
-  const tailLengthIdle = (0.62 + boostLevel * 0.58) * (pulse + 0.01);
-  const tailLengthBoost = (0.92 + boostLevel * 1.15) * (pulse + 0.02);
+  const tailLengthIdle = (0.56 + boostLevel * 0.5) * (pulse + 0.01);
+  const tailLengthBoost = (0.84 + boostLevel * 0.98) * (pulse + 0.02);
   const tailLength = THREE.MathUtils.lerp(tailLengthIdle, tailLengthBoost, boostMix);
   plane.exhaust.flameOuterTail.scale.set(tailRadius, tailLength, tailRadius);
   const tailBaseX = plane.exhaust.flameOuterTail.userData.baseX ?? plane.exhaust.flameOuterTail.position.x;
-  const tailOverlapShift = (outerLength - 1) * 5.8;
-  const tailStretchShift = (tailLength - 1) * 6.4;
-  plane.exhaust.flameOuterTail.position.x = tailBaseX - tailOverlapShift - tailStretchShift;
-  plane.exhaust.flameOuterTail.position.z = THREE.MathUtils.lerp(turbulence * 0.44, turbulence * 0.58, boostMix);
-  const tailOpacityIdle = clamp(0.08 + boostLevel * 0.11 + pulse * 0.018, 0.04, 0.24);
-  const tailOpacityBoost = clamp(0.2 + boostLevel * 0.15 + pulse * 0.03, 0.11, 0.44);
+  const tailRearOffset = THREE.MathUtils.lerp(2.8, 4.6, boostMix);
+  const tailOverlapShift = (outerLength - 1) * 6.4;
+  const tailStretchShift = (tailLength - 1) * 7.2;
+  plane.exhaust.flameOuterTail.position.x = tailBaseX - tailRearOffset - tailOverlapShift - tailStretchShift;
+  plane.exhaust.flameOuterTail.position.z = THREE.MathUtils.lerp(turbulence * 0.24, turbulence * 0.32, boostMix);
+  const tailOpacityIdle = clamp(0.06 + boostLevel * 0.09 + pulse * 0.014, 0.03, 0.18);
+  const tailOpacityBoost = clamp(0.15 + boostLevel * 0.12 + pulse * 0.022, 0.08, 0.32);
   plane.exhaust.flameOuterTail.material.opacity = THREE.MathUtils.lerp(tailOpacityIdle, tailOpacityBoost, Math.pow(boostMix, 0.72));
 
   const tailRed = clamp(0.9 + boostMix * 0.09 + pulse * 0.03, 0.82, 1.0);
