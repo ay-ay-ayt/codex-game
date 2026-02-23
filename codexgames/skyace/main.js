@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 109;
+const DEBUG_BUILD_NUMBER = 110;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -907,7 +907,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const nozzleGlow = new THREE.Mesh(
     new THREE.SphereGeometry(1.62, 18, 14),
     new THREE.MeshBasicMaterial({
-      color: 0xfff0b0,
+      color: 0xff9068,
       transparent: true,
       opacity: 0.28,
       blending: THREE.AdditiveBlending,
@@ -919,7 +919,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const flameCore = new THREE.Mesh(
     new THREE.CylinderGeometry(0.82, 0.18, 12.6, 28, 1, true),
     new THREE.MeshBasicMaterial({
-      color: 0xff9a62,
+      color: 0x4f8ee8,
       transparent: true,
       opacity: 0.3,
       blending: THREE.NormalBlending,
@@ -1064,14 +1064,16 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerOpacityBoost = clamp(0.34 + boostLevel * 0.2 + pulse * 0.04, 0.22, 0.62);
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
-  plane.exhaust.flameCore.material.color.setHex(0xff8a4c);
-  const boostOnly = THREE.MathUtils.smoothstep(boostMix, 0.4, 0.94);
-  const flickerA = Math.max(0, Math.sin(t * 9.5 + plane.mesh.id * 0.37));
-  const flickerB = Math.max(0, Math.sin(t * 13.2 + plane.mesh.id * 0.21 + 1.7));
-  const localizedRedFlicker = (flickerA * 0.55 + flickerB * 0.45) * boostOnly * 3.0;
-  const outerRedTrace = clamp(0.03 + boostMix * 0.07 + localizedRedFlicker * 0.24, 0.02, 0.28);
-  const outerBlueBoost = clamp(0.26 + boostMix * 0.52 - localizedRedFlicker * 0.06, 0.2, 0.68);
-  plane.exhaust.flameOuter.material.color.setRGB(0.24 + outerRedTrace * 0.72, 0.47 - outerRedTrace * 0.06, Math.min(1.0, 0.76 + outerBlueBoost));
+  const innerBlueDepth = clamp(0.58 + boostMix * 0.12 + pulse * 0.02, 0.56, 0.74);
+  plane.exhaust.flameCore.material.color.setRGB(0.2, 0.44 + boostMix * 0.08, innerBlueDepth + 0.18);
+
+  const outerBlueGlow = clamp(0.82 + boostMix * 0.14 + pulse * 0.02, 0.78, 1.0);
+  plane.exhaust.flameOuter.material.color.setRGB(0.34, 0.62 + boostMix * 0.08, outerBlueGlow);
+
+  const nozzleRed = clamp(0.96 + boostMix * 0.05 + pulse * 0.02, 0.9, 1.0);
+  const nozzleGreen = clamp(0.48 - boostMix * 0.18 + pulse * 0.03, 0.25, 0.55);
+  const nozzleBlue = clamp(0.34 - boostMix * 0.2 + pulse * 0.02, 0.12, 0.38);
+  plane.exhaust.nozzleGlow.material.color.setRGB(nozzleRed, nozzleGreen, nozzleBlue);
 
   plane.exhaust.shockRings.forEach((ring) => {
     const phase = t * 19 - ring.userData.offset * 0.85;
