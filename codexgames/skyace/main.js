@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 108;
+const DEBUG_BUILD_NUMBER = 109;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1065,12 +1065,12 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
   plane.exhaust.flameCore.material.color.setHex(0xff8a4c);
-  const boostOnly = THREE.MathUtils.smoothstep(boostMix, 0.52, 0.98);
+  const boostOnly = THREE.MathUtils.smoothstep(boostMix, 0.4, 0.94);
   const flickerA = Math.max(0, Math.sin(t * 9.5 + plane.mesh.id * 0.37));
   const flickerB = Math.max(0, Math.sin(t * 13.2 + plane.mesh.id * 0.21 + 1.7));
-  const localizedRedFlicker = (flickerA * 0.55 + flickerB * 0.45) * boostOnly;
-  const outerRedTrace = clamp(0.03 + boostMix * 0.055 + localizedRedFlicker * 0.14, 0.02, 0.13);
-  const outerBlueBoost = clamp(0.26 + boostMix * 0.52 - localizedRedFlicker * 0.03, 0.24, 0.68);
+  const localizedRedFlicker = (flickerA * 0.55 + flickerB * 0.45) * boostOnly * 3.0;
+  const outerRedTrace = clamp(0.03 + boostMix * 0.07 + localizedRedFlicker * 0.24, 0.02, 0.28);
+  const outerBlueBoost = clamp(0.26 + boostMix * 0.52 - localizedRedFlicker * 0.06, 0.2, 0.68);
   plane.exhaust.flameOuter.material.color.setRGB(0.24 + outerRedTrace * 0.72, 0.47 - outerRedTrace * 0.06, Math.min(1.0, 0.76 + outerBlueBoost));
 
   plane.exhaust.shockRings.forEach((ring) => {
