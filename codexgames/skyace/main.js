@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 115;
+const DEBUG_BUILD_NUMBER = 116;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1156,7 +1156,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerBlueGlow = clamp(0.82 + boostMix * 0.14 + pulse * 0.02, 0.78, 1.0);
   plane.exhaust.flameOuter.material.color.setRGB(0.34, 0.62 + boostMix * 0.08, outerBlueGlow);
 
-  plane.exhaust.nozzleGlow.material.color.setRGB(0.92, 0.28 + boostMix * 0.06, 0.44 + boostMix * 0.18);
+  plane.exhaust.nozzleGlow.material.color.setRGB(0.98, 0.5 + boostMix * 0.12, 0.12 + boostMix * 0.08);
 
   const tailRadiusIdle = outerRadius * 0.58;
   const tailRadiusBoost = outerRadius * 0.72;
