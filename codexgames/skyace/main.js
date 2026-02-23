@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 114;
+const DEBUG_BUILD_NUMBER = 115;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1175,9 +1175,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const tailOpacityBoost = clamp(0.15 + boostLevel * 0.12 + pulse * 0.022, 0.08, 0.32);
   plane.exhaust.flameOuterTail.material.opacity = THREE.MathUtils.lerp(tailOpacityIdle, tailOpacityBoost, Math.pow(boostMix, 0.72));
 
-  const tailRed = clamp(0.82 + boostMix * 0.12 + pulse * 0.03, 0.72, 0.98);
-  const tailGreen = clamp(0.18 + boostMix * 0.04 + pulse * 0.02, 0.1, 0.28);
-  const tailBlue = clamp(0.56 + boostMix * 0.16 + pulse * 0.03, 0.46, 0.84);
+  const tailRed = clamp(0.9 + boostMix * 0.08 + pulse * 0.03, 0.8, 1.0);
+  const tailGreen = clamp(0.24 + boostMix * 0.08 + pulse * 0.02, 0.16, 0.38);
+  const tailBlue = clamp(0.1 + boostMix * 0.06 + pulse * 0.02, 0.05, 0.24);
   plane.exhaust.flameOuterTail.material.color.setRGB(tailRed, tailGreen, tailBlue);
 
   plane.exhaust.shockRings.forEach((ring) => {
@@ -1194,7 +1194,10 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const ringOpacityIdle = clamp((0.12 + boostLevel * 0.22) * fade, 0, 0.4);
     const ringOpacityBoost = clamp((0.09 + boostLevel * 0.12) * fade, 0, 0.2625);
     ring.material.opacity = THREE.MathUtils.lerp(ringOpacityIdle, ringOpacityBoost, boostMix);
-    ring.material.color.setHex(travel < 0.38 ? 0xd777c0 : 0x7aaeff);
+    const ringRed = THREE.MathUtils.lerp(0.4, 0.98, travel);
+    const ringGreen = THREE.MathUtils.lerp(0.62, 0.28, travel);
+    const ringBlue = THREE.MathUtils.lerp(1.0, 0.08, travel);
+    ring.material.color.setRGB(ringRed, ringGreen, ringBlue);
   });
 
 }
