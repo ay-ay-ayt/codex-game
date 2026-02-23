@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 112;
+const DEBUG_BUILD_NUMBER = 116;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -160,9 +160,30 @@ const fighterTextures = {
   trimRoughness: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough_2k.jpg", [1.8, 1]),
 };
 
+const worldTextures = {
+  cityGroundColor: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_diff_2k.jpg", [26, 26], THREE.SRGBColorSpace),
+  cityGroundNormal: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_2k.jpg", [26, 26]),
+  cityGroundRoughness: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough_2k.jpg", [26, 26]),
+  cityRoadColor: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff_2k.jpg", [20, 8], THREE.SRGBColorSpace),
+  cityRoadNormal: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl_2k.jpg", [20, 8]),
+  cityRoadRoughness: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough_2k.jpg", [20, 8]),
+  cityBuildingColor: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff_2k.jpg", [2.4, 3.4], THREE.SRGBColorSpace),
+  cityBuildingNormal: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl_2k.jpg", [2.4, 3.4]),
+  cityBuildingRoughness: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough_2k.jpg", [2.4, 3.4]),
+  forestGroundColor: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff_2k.jpg", [18, 18], THREE.SRGBColorSpace),
+  forestGroundNormal: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl_2k.jpg", [18, 18]),
+  forestGroundRoughness: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough_2k.jpg", [18, 18]),
+  rockColor: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_diff_2k.jpg", [1.4, 1.4], THREE.SRGBColorSpace),
+  rockNormal: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_2k.jpg", [1.4, 1.4]),
+  rockRoughness: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough_2k.jpg", [1.4, 1.4]),
+  trunkColor: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_diff_2k.jpg", [1.1, 3.2], THREE.SRGBColorSpace),
+  trunkNormal: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_nor_gl_2k.jpg", [1.1, 3.2]),
+  trunkRoughness: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough_2k.jpg", [1.1, 3.2]),
+};
+
 const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
-scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
-const sun = new THREE.DirectionalLight(0xffffff, 1.15);
+scene.add(new THREE.HemisphereLight(0xe8f6ff, 0x78966f, 1.12));
+const sun = new THREE.DirectionalLight(0xffffff, 1.32);
 sun.position.set(700, 900, 300);
 sun.castShadow = !isMobile;
 sun.shadow.mapSize.set(2048, 2048);
@@ -355,11 +376,11 @@ function buildWorld(mapType) {
   staticObstacles.length = 0;
 
   const isForest = mapType === "forest";
-  const skyColor = isForest ? 0x89b992 : 0x7594ba;
+  const skyColor = isForest ? 0xa7cfb1 : 0x95b4d8;
   scene.background = new THREE.Color(skyColor);
   scene.fog = isForest
-    ? new THREE.FogExp2(skyColor, 0.0001)
-    : new THREE.FogExp2(skyColor, 0.000075);
+    ? new THREE.FogExp2(skyColor, 0.000072)
+    : new THREE.FogExp2(skyColor, 0.000054);
 
   buildArenaBoundary();
 
@@ -395,14 +416,28 @@ function buildWorld(mapType) {
   if (isForest) {
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
-      new THREE.MeshStandardMaterial({ color: 0x49643f, roughness: 0.98, metalness: 0.02 })
+      new THREE.MeshStandardMaterial({
+        color: 0x8fb67d,
+        map: worldTextures.forestGroundColor,
+        normalMap: worldTextures.forestGroundNormal,
+        roughnessMap: worldTextures.forestGroundRoughness,
+        roughness: 0.96,
+        metalness: 0.02,
+      })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = FLOOR_Y;
     ground.receiveShadow = true;
     world.add(ground);
 
-    const hillMat = new THREE.MeshStandardMaterial({ color: 0x5d7f57, roughness: 0.95 });
+    const hillMat = new THREE.MeshStandardMaterial({
+      color: 0xa4ca96,
+      map: worldTextures.forestGroundColor,
+      normalMap: worldTextures.forestGroundNormal,
+      roughnessMap: worldTextures.forestGroundRoughness,
+      roughness: 0.94,
+      metalness: 0.03,
+    });
     for (let i = 0; i < worldDetail.hills; i++) {
       const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(90, 260), 16, 12), hillMat);
       hill.scale.y = rand(0.24, 0.55);
@@ -411,7 +446,14 @@ function buildWorld(mapType) {
       world.add(hill);
     }
 
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x6f7668, roughness: 0.96, metalness: 0.03 });
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: 0xb4bbb6,
+      map: worldTextures.rockColor,
+      normalMap: worldTextures.rockNormal,
+      roughnessMap: worldTextures.rockRoughness,
+      roughness: 0.92,
+      metalness: 0.04,
+    });
     for (let i = 0; i < worldDetail.forestRocks; i++) {
       const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(8, 26), 0), rockMat);
       rock.scale.y = rand(0.45, 1.0);
@@ -432,7 +474,14 @@ function buildWorld(mapType) {
       world.add(shrub);
     }
 
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
+    const trunkMat = new THREE.MeshStandardMaterial({
+      color: 0x9a7350,
+      map: worldTextures.trunkColor,
+      normalMap: worldTextures.trunkNormal,
+      roughnessMap: worldTextures.trunkRoughness,
+      roughness: 0.9,
+      metalness: 0.05,
+    });
     const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
     const forestCenters = Array.from({ length: worldDetail.forestCenters }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
 
@@ -473,14 +522,28 @@ function buildWorld(mapType) {
 
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
-    new THREE.MeshStandardMaterial({ color: 0x42464d, roughness: 0.98, metalness: 0.05 })
+    new THREE.MeshStandardMaterial({
+      color: 0xc6ccd4,
+      map: worldTextures.cityGroundColor,
+      normalMap: worldTextures.cityGroundNormal,
+      roughnessMap: worldTextures.cityGroundRoughness,
+      roughness: 0.92,
+      metalness: 0.08,
+    })
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = FLOOR_Y;
   ground.receiveShadow = true;
   world.add(ground);
 
-  const roadMat = new THREE.MeshStandardMaterial({ color: 0x2d3137, roughness: 0.96 });
+  const roadMat = new THREE.MeshStandardMaterial({
+    color: 0x7a8189,
+    map: worldTextures.cityRoadColor,
+    normalMap: worldTextures.cityRoadNormal,
+    roughnessMap: worldTextures.cityRoadRoughness,
+    roughness: 0.86,
+    metalness: 0.08,
+  });
   const laneMat = new THREE.MeshStandardMaterial({ color: 0xa8aeb6, roughness: 0.85 });
   for (let i = -8; i <= 8; i++) {
     const roadX = new THREE.Mesh(new THREE.BoxGeometry(ARENA * 2.7, 0.2, 42), roadMat);
@@ -515,7 +578,14 @@ function buildWorld(mapType) {
 
     const tower = new THREE.Mesh(
       new THREE.BoxGeometry(w, h, d),
-      new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.78, metalness: 0.1 })
+      new THREE.MeshStandardMaterial({
+        color: new THREE.Color(baseColor).lerp(new THREE.Color(0xe8edf4), 0.46),
+        map: worldTextures.cityBuildingColor,
+        normalMap: worldTextures.cityBuildingNormal,
+        roughnessMap: worldTextures.cityBuildingRoughness,
+        roughness: 0.72,
+        metalness: 0.12,
+      })
     );
     tower.position.set(px, FLOOR_Y + h / 2, pz);
     tower.castShadow = true;
@@ -1086,7 +1156,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerBlueGlow = clamp(0.82 + boostMix * 0.14 + pulse * 0.02, 0.78, 1.0);
   plane.exhaust.flameOuter.material.color.setRGB(0.34, 0.62 + boostMix * 0.08, outerBlueGlow);
 
-  plane.exhaust.nozzleGlow.material.color.setHex(0xfff0b0);
+  plane.exhaust.nozzleGlow.material.color.setRGB(0.98, 0.5 + boostMix * 0.12, 0.12 + boostMix * 0.08);
 
   const tailRadiusIdle = outerRadius * 0.58;
   const tailRadiusBoost = outerRadius * 0.72;
@@ -1105,9 +1175,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const tailOpacityBoost = clamp(0.15 + boostLevel * 0.12 + pulse * 0.022, 0.08, 0.32);
   plane.exhaust.flameOuterTail.material.opacity = THREE.MathUtils.lerp(tailOpacityIdle, tailOpacityBoost, Math.pow(boostMix, 0.72));
 
-  const tailRed = clamp(0.9 + boostMix * 0.09 + pulse * 0.03, 0.82, 1.0);
-  const tailGreen = clamp(0.34 + boostMix * 0.12 + pulse * 0.02, 0.26, 0.52);
-  const tailBlue = clamp(0.22 + boostMix * 0.03 + pulse * 0.01, 0.16, 0.32);
+  const tailRed = clamp(0.9 + boostMix * 0.08 + pulse * 0.03, 0.8, 1.0);
+  const tailGreen = clamp(0.24 + boostMix * 0.08 + pulse * 0.02, 0.16, 0.38);
+  const tailBlue = clamp(0.1 + boostMix * 0.06 + pulse * 0.02, 0.05, 0.24);
   plane.exhaust.flameOuterTail.material.color.setRGB(tailRed, tailGreen, tailBlue);
 
   plane.exhaust.shockRings.forEach((ring) => {
@@ -1124,7 +1194,10 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const ringOpacityIdle = clamp((0.12 + boostLevel * 0.22) * fade, 0, 0.4);
     const ringOpacityBoost = clamp((0.09 + boostLevel * 0.12) * fade, 0, 0.2625);
     ring.material.opacity = THREE.MathUtils.lerp(ringOpacityIdle, ringOpacityBoost, boostMix);
-    ring.material.color.setHex(travel < 0.38 ? 0xffd6b1 : 0x9ac2ff);
+    const ringRed = THREE.MathUtils.lerp(0.4, 0.98, travel);
+    const ringGreen = THREE.MathUtils.lerp(0.62, 0.28, travel);
+    const ringBlue = THREE.MathUtils.lerp(1.0, 0.08, travel);
+    ring.material.color.setRGB(ringRed, ringGreen, ringBlue);
   });
 
 }
