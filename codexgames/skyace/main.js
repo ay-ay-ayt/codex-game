@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 107;
+const DEBUG_BUILD_NUMBER = 108;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -944,25 +944,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameOuter.rotation.z = -Math.PI * 0.5;
   flameOuter.position.set(-42.4, 1.15, 0);
 
-  const redWisps = [];
-  for (let i = 0; i < 2; i++) {
-    const wisp = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.42, 0.07, 7.6, 18, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: 0xff6f4a,
-        transparent: true,
-        opacity: 0.0,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      })
-    );
-    wisp.rotation.z = -Math.PI * 0.5;
-    wisp.position.set(-38.7 - i * 1.35, 1.24 + i * 0.1, (i === 0 ? 0.56 : -0.52));
-    wisp.userData.offset = i;
-    redWisps.push(wisp);
-  }
-
   const shockRings = [];
   for (let i = 0; i < 5; i++) {
     const ring = new THREE.Mesh(
@@ -985,14 +966,13 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameCore.userData.baseX = flameCore.position.x;
   flameOuter.userData.baseX = flameOuter.position.x;
   shockRings.forEach((ring) => { ring.userData.baseX = ring.position.x; });
-  redWisps.forEach((wisp) => { wisp.userData.baseX = wisp.position.x; wisp.userData.baseZ = wisp.position.z; });
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
     engineCore, nozzle, nozzleInner, nozzleLip,
-    nozzleGlow, flameCore, flameOuter, ...redWisps, ...shockRings
+    nozzleGlow, flameCore, flameOuter, ...shockRings
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -1026,7 +1006,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
       nozzleGlow,
       flameCore,
       flameOuter,
-      redWisps,
       shockRings,
     },
   };
@@ -1086,24 +1065,13 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
   plane.exhaust.flameCore.material.color.setHex(0xff8a4c);
-  const outerRedTrace = clamp(0.07 + boostMix * 0.11 + Math.sin(t * 6 + plane.mesh.id * 0.29) * 0.012, 0.04, 0.24);
-  const outerBlueBoost = clamp(0.24 + boostMix * 0.5, 0.24, 0.66);
-  plane.exhaust.flameOuter.material.color.setRGB(0.28 + outerRedTrace * 0.7, 0.5 - outerRedTrace * 0.08, Math.min(1.0, 0.76 + outerBlueBoost));
-
-  plane.exhaust.redWisps.forEach((wisp) => {
-    const phase = t * 10 + plane.mesh.id * 0.23 + wisp.userData.offset * 1.7;
-    const burst = Math.pow(Math.max(0, Math.sin(phase)), 2.2);
-    const wispMix = clamp(0.45 + boostMix * 1.75, 0.45, 2.2);
-    const wispLen = 0.9 + wispMix * 0.84 + burst * 0.32;
-    const wispRad = 0.86 + wispMix * 0.34;
-    wisp.scale.set(wispRad, wispLen, wispRad);
-    const baseX = wisp.userData.baseX ?? wisp.position.x;
-    wisp.position.x = baseX - (wispLen - 1) * 2.1;
-    wisp.position.z = (wisp.userData.baseZ ?? wisp.position.z) + Math.sin(phase * 1.4) * 0.05;
-    const boostRedGain = 1.2 + boostMix * 2.1;
-    wisp.material.opacity = clamp((0.065 + burst * 0.2) * wispMix * boostRedGain, 0.04, 0.9);
-    wisp.material.color.setRGB(1.0, 0.45 + burst * 0.1, 0.27 + (1 - boostMix) * 0.06);
-  });
+  const boostOnly = THREE.MathUtils.smoothstep(boostMix, 0.52, 0.98);
+  const flickerA = Math.max(0, Math.sin(t * 9.5 + plane.mesh.id * 0.37));
+  const flickerB = Math.max(0, Math.sin(t * 13.2 + plane.mesh.id * 0.21 + 1.7));
+  const localizedRedFlicker = (flickerA * 0.55 + flickerB * 0.45) * boostOnly;
+  const outerRedTrace = clamp(0.03 + boostMix * 0.055 + localizedRedFlicker * 0.14, 0.02, 0.13);
+  const outerBlueBoost = clamp(0.26 + boostMix * 0.52 - localizedRedFlicker * 0.03, 0.24, 0.68);
+  plane.exhaust.flameOuter.material.color.setRGB(0.24 + outerRedTrace * 0.72, 0.47 - outerRedTrace * 0.06, Math.min(1.0, 0.76 + outerBlueBoost));
 
   plane.exhaust.shockRings.forEach((ring) => {
     const phase = t * 19 - ring.userData.offset * 0.85;
