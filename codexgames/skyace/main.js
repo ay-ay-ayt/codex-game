@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 112;
+const DEBUG_BUILD_NUMBER = 113;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -949,7 +949,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     new THREE.MeshBasicMaterial({
       color: 0xff9a6a,
       transparent: true,
-      opacity: 0.13,
+      opacity: 0.65,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
@@ -1101,8 +1101,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const tailStretchShift = (tailLength - 1) * 7.2;
   plane.exhaust.flameOuterTail.position.x = tailBaseX - tailRearOffset - tailOverlapShift - tailStretchShift;
   plane.exhaust.flameOuterTail.position.z = THREE.MathUtils.lerp(turbulence * 0.24, turbulence * 0.32, boostMix);
-  const tailOpacityIdle = clamp(0.06 + boostLevel * 0.09 + pulse * 0.014, 0.03, 0.18);
-  const tailOpacityBoost = clamp(0.15 + boostLevel * 0.12 + pulse * 0.022, 0.08, 0.32);
+  const tailOpacityIdle = clamp(0.30 + boostLevel * 0.45 + pulse * 0.07, 0.15, 0.9);
+  const tailOpacityBoost = clamp(0.75 + boostLevel * 0.6 + pulse * 0.11, 0.4, 1.0);
   plane.exhaust.flameOuterTail.material.opacity = THREE.MathUtils.lerp(tailOpacityIdle, tailOpacityBoost, Math.pow(boostMix, 0.72));
 
   const tailRed = clamp(0.9 + boostMix * 0.09 + pulse * 0.03, 0.82, 1.0);
