@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 133;
+const DEBUG_BUILD_NUMBER = 134;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -987,7 +987,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleGlow.position.set(-35.72, 1.15, 0);
 
   const flameCore = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.82, 0.18, 12.6, 28, 1, true),
+    new THREE.CylinderGeometry(1.26, 0.06, 13.4, 30, 1, true),
     new THREE.MeshBasicMaterial({
       color: 0x4f8ee8,
       transparent: true,
@@ -1030,7 +1030,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const nozzleHeatLines = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const streak = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.045, 0.075, 2.65, 10),
+      new THREE.CylinderGeometry(0.032, 0.055, 2.0, 8),
       new THREE.MeshBasicMaterial({
         color: 0xff4328,
         transparent: true,
@@ -1041,9 +1041,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
       })
     );
     streak.rotation.x = (Math.PI * i) / 3;
-    streak.rotation.z = ((i % 2) - 0.5) * 0.14;
-    const wallReach = 0.62;
-    streak.position.set(0, Math.sin((Math.PI * i) / 3) * 0.08, Math.cos((Math.PI * i) / 3) * wallReach);
+    streak.rotation.z = ((i % 2) - 0.5) * 0.1;
+    streak.position.set(0, 0, 0);
     nozzleHeatLines.add(streak);
   }
   nozzleHeatLines.position.set(-34.45, 1.15, 0);
@@ -1137,9 +1136,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerLengthBoost = (1.16 + boostLevel * 1.58) * (pulse + 0.03);
   const outerLength = THREE.MathUtils.lerp(outerLengthIdle, outerLengthBoost, boostMix);
 
-  const coreRadiusIdle = 0.76 + boostLevel * 0.1 + shimmer * 0.5;
-  const coreRadiusBoost = 1.38 + boostLevel * 0.62 + shimmer * 0.9;
-  const coreRadius = THREE.MathUtils.lerp(coreRadiusIdle, coreRadiusBoost, Math.pow(boostMix, 0.72));
+  const coreRadiusIdle = 0.92 + boostLevel * 0.14 + shimmer * 0.45;
+  const coreRadiusBoost = 1.86 + boostLevel * 0.78 + shimmer * 0.98;
+  const coreRadius = THREE.MathUtils.lerp(coreRadiusIdle, coreRadiusBoost, Math.pow(boostMix, 0.66));
 
   const outerRadiusIdle = 0.8 + boostLevel * 0.2 + shimmer;
   const outerRadiusBoost = 1.12 + boostLevel * 0.4 + shimmer * 1.35;
@@ -1202,11 +1201,11 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   });
 
   plane.exhaust.shockRings.forEach((ring) => {
-    const phase = t * 6.2 - ring.userData.offset * 0.42;
+    const phase = t * 3.4 - ring.userData.offset * 0.34;
     const travel = (phase % 1 + 1) % 1;
     const baseX = ring.userData.baseX ?? ring.position.x;
-    ring.position.x = baseX - travel * THREE.MathUtils.lerp(2.1, 4.7, boostMix);
-    const ringScale = 1.08 + travel * (0.78 + boostMix * 0.58);
+    ring.position.x = baseX - travel * THREE.MathUtils.lerp(1.0, 2.6, boostMix);
+    const ringScale = 1.02 + travel * (0.38 + boostMix * 0.26);
     const rearRingScaleBias = 1 + ring.userData.offset * 0.22;
     ring.scale.setScalar(ringScale * rearRingScaleBias);
     ring.material.opacity = clamp((0.2 + boostMix * 0.25) * (1 - travel), 0, 0.44);
