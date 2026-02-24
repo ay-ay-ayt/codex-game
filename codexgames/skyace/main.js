@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 132;
+const DEBUG_BUILD_NUMBER = 133;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1138,8 +1138,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerLength = THREE.MathUtils.lerp(outerLengthIdle, outerLengthBoost, boostMix);
 
   const coreRadiusIdle = 0.76 + boostLevel * 0.1 + shimmer * 0.5;
-  const coreRadiusBoost = 1.04 + boostLevel * 0.34 + shimmer * 0.7;
-  const coreRadius = THREE.MathUtils.lerp(coreRadiusIdle, coreRadiusBoost, Math.pow(boostMix, 0.82));
+  const coreRadiusBoost = 1.38 + boostLevel * 0.62 + shimmer * 0.9;
+  const coreRadius = THREE.MathUtils.lerp(coreRadiusIdle, coreRadiusBoost, Math.pow(boostMix, 0.72));
 
   const outerRadiusIdle = 0.8 + boostLevel * 0.2 + shimmer;
   const outerRadiusBoost = 1.12 + boostLevel * 0.4 + shimmer * 1.35;
