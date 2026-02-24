@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 116;
+const DEBUG_BUILD_NUMBER = 117;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -977,7 +977,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const nozzleGlow = new THREE.Mesh(
     new THREE.SphereGeometry(1.62, 18, 14),
     new THREE.MeshBasicMaterial({
-      color: 0xff9068,
+      color: 0xff5b4d,
       transparent: true,
       opacity: 0.28,
       blending: THREE.AdditiveBlending,
@@ -989,7 +989,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const flameCore = new THREE.Mesh(
     new THREE.CylinderGeometry(0.82, 0.18, 12.6, 28, 1, true),
     new THREE.MeshBasicMaterial({
-      color: 0x4f8ee8,
+      color: 0xff5446,
       transparent: true,
       opacity: 0.3,
       blending: THREE.NormalBlending,
@@ -1003,7 +1003,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const flameOuter = new THREE.Mesh(
     new THREE.CylinderGeometry(1.44, 0.22, 16.8, 34, 1, true),
     new THREE.MeshBasicMaterial({
-      color: 0x7fb7ff,
+      color: 0xff7a52,
       transparent: true,
       opacity: 0.24,
       blending: THREE.AdditiveBlending,
@@ -1017,7 +1017,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const flameOuterTail = new THREE.Mesh(
     new THREE.CylinderGeometry(0.68, 0.05, 6.4, 26, 1, true),
     new THREE.MeshBasicMaterial({
-      color: 0xff9a6a,
+      color: 0xff6f48,
       transparent: true,
       opacity: 0.13,
       blending: THREE.AdditiveBlending,
@@ -1150,13 +1150,20 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerOpacityBoost = clamp(0.34 + boostLevel * 0.2 + pulse * 0.04, 0.22, 0.62);
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
-  const innerBlueDepth = clamp(0.58 + boostMix * 0.12 + pulse * 0.02, 0.56, 0.74);
-  plane.exhaust.flameCore.material.color.setRGB(0.2, 0.44 + boostMix * 0.08, innerBlueDepth + 0.18);
+  const coreRed = clamp(0.9 + boostMix * 0.08 + pulse * 0.03, 0.82, 1.0);
+  const coreGreen = clamp(0.2 + boostMix * 0.05 + pulse * 0.02, 0.12, 0.34);
+  const coreBlue = clamp(0.12 + boostMix * 0.03 + pulse * 0.015, 0.07, 0.2);
+  plane.exhaust.flameCore.material.color.setRGB(coreRed, coreGreen, coreBlue);
 
-  const outerBlueGlow = clamp(0.82 + boostMix * 0.14 + pulse * 0.02, 0.78, 1.0);
-  plane.exhaust.flameOuter.material.color.setRGB(0.34, 0.62 + boostMix * 0.08, outerBlueGlow);
+  const outerRed = clamp(0.98 + boostMix * 0.04 + pulse * 0.02, 0.9, 1.0);
+  const outerGreen = clamp(0.3 + boostMix * 0.08 + pulse * 0.03, 0.18, 0.5);
+  const outerBlue = clamp(0.14 + boostMix * 0.04 + pulse * 0.02, 0.08, 0.28);
+  plane.exhaust.flameOuter.material.color.setRGB(outerRed, outerGreen, outerBlue);
 
-  plane.exhaust.nozzleGlow.material.color.setRGB(0.98, 0.5 + boostMix * 0.12, 0.12 + boostMix * 0.08);
+  const glowRed = clamp(0.98 + pulse * 0.02, 0.9, 1.0);
+  const glowGreen = clamp(0.26 + boostMix * 0.08 + pulse * 0.02, 0.18, 0.42);
+  const glowBlue = clamp(0.08 + boostMix * 0.04 + pulse * 0.015, 0.04, 0.18);
+  plane.exhaust.nozzleGlow.material.color.setRGB(glowRed, glowGreen, glowBlue);
 
   const tailRadiusIdle = outerRadius * 0.58;
   const tailRadiusBoost = outerRadius * 0.72;
