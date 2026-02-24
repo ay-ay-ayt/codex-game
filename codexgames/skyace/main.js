@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 116;
+const DEBUG_BUILD_NUMBER = 117;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -974,10 +974,17 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleLip.position.set(-33.7, 1.15, 0);
 
   // Afterburner rebuilt from scratch: bright nozzle bloom + dense flame cone + long cool plume + shock-diamond rings.
+<<<<<<< codex/2026-02-24-12-54-25
   const nozzleGlow = new THREE.Mesh(
     new THREE.SphereGeometry(1.62, 18, 14),
     new THREE.MeshBasicMaterial({
       color: 0xc5e6ff,
+=======
+  const nozzleGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(1.62, 18, 14),
+    new THREE.MeshBasicMaterial({
+      color: 0xc5e6ff,
+>>>>>>> main
       transparent: true,
       opacity: 0.28,
       blending: THREE.AdditiveBlending,
@@ -1153,13 +1160,20 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const innerBlueDepth = clamp(0.58 + boostMix * 0.12 + pulse * 0.02, 0.56, 0.74);
   plane.exhaust.flameCore.material.color.setRGB(0.2, 0.44 + boostMix * 0.08, innerBlueDepth + 0.18);
 
-  const outerBlueGlow = clamp(0.82 + boostMix * 0.14 + pulse * 0.02, 0.78, 1.0);
-  plane.exhaust.flameOuter.material.color.setRGB(0.34, 0.62 + boostMix * 0.08, outerBlueGlow);
+  const outerBlueGlow = clamp(0.9 + boostMix * 0.08 + pulse * 0.015, 0.86, 1.0);
+  plane.exhaust.flameOuter.material.color.setRGB(0.12, 0.34 + boostMix * 0.06, outerBlueGlow);
 
+<<<<<<< codex/2026-02-24-12-54-25
   const nozzleCoolR = clamp(0.72 + boostMix * 0.09 + pulse * 0.012, 0.68, 0.84);
   const nozzleCoolG = clamp(0.88 + boostMix * 0.07 + pulse * 0.01, 0.84, 0.98);
   const nozzleCoolB = clamp(1.0 + boostMix * 0.02 + pulse * 0.01, 0.94, 1.0);
   plane.exhaust.nozzleGlow.material.color.setRGB(nozzleCoolR, nozzleCoolG, nozzleCoolB);
+=======
+  const nozzleCoolR = clamp(0.72 + boostMix * 0.09 + pulse * 0.012, 0.68, 0.84);
+  const nozzleCoolG = clamp(0.88 + boostMix * 0.07 + pulse * 0.01, 0.84, 0.98);
+  const nozzleCoolB = clamp(1.0 + boostMix * 0.02 + pulse * 0.01, 0.94, 1.0);
+  plane.exhaust.nozzleGlow.material.color.setRGB(nozzleCoolR, nozzleCoolG, nozzleCoolB);
+>>>>>>> main
 
   const tailRadiusIdle = outerRadius * 0.58;
   const tailRadiusBoost = outerRadius * 0.72;
