@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 123;
+const DEBUG_BUILD_NUMBER = 126;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1001,7 +1001,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameCore.position.set(-39.8, 1.15, 0);
 
   const flameOuter = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.44, 0.22, 16.8, 34, 1, true),
+    new THREE.CylinderGeometry(1.44, 0.22, 16.8, 34, 1, false),
     new THREE.MeshBasicMaterial({
       color: 0x7fb7ff,
       transparent: true,
@@ -1014,50 +1014,16 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameOuter.rotation.z = -Math.PI * 0.5;
   flameOuter.position.set(-42.4, 1.15, 0);
 
-  const flameOuterTail = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.68, 0.05, 6.4, 26, 1, true),
-    new THREE.MeshBasicMaterial({
-      color: 0xff9a6a,
-      transparent: true,
-      opacity: 0.13,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    })
-  );
-  flameOuterTail.rotation.z = -Math.PI * 0.5;
-  flameOuterTail.position.set(-50.8, 1.15, 0);
-
-  const shockRings = [];
-  for (let i = 0; i < 5; i++) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.88 + i * 0.12, 0.08, 10, 26),
-      new THREE.MeshBasicMaterial({
-        color: 0xffcfa0,
-        transparent: true,
-        opacity: 0.38,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      })
-    );
-    ring.rotation.y = Math.PI * 0.5;
-    ring.position.set(-37.8 - i * 2.04, 1.15, 0);
-    ring.userData.offset = i;
-    shockRings.push(ring);
-  }
-
   nozzleGlow.userData.baseX = nozzleGlow.position.x;
   flameCore.userData.baseX = flameCore.position.x;
   flameOuter.userData.baseX = flameOuter.position.x;
-  flameOuterTail.userData.baseX = flameOuterTail.position.x;
-  shockRings.forEach((ring) => { ring.userData.baseX = ring.position.x; });
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
     tailplaneL, tailplaneR, finCenter,
     engineCore, nozzle, nozzleInner, nozzleLip,
-    nozzleGlow, flameCore, flameOuter, flameOuterTail, ...shockRings
+    nozzleGlow, flameCore, flameOuter
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -1091,8 +1057,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
       nozzleGlow,
       flameCore,
       flameOuter,
-      flameOuterTail,
-      shockRings,
     },
   };
 
@@ -1157,42 +1121,6 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameOuter.material.color.setRGB(0.12, 0.34 + boostMix * 0.06, outerBlueGlow);
 
   plane.exhaust.nozzleGlow.material.color.setHex(0xbfe7ff);
-
-  const tailRadiusIdle = outerRadius * 0.58;
-  const tailRadiusBoost = outerRadius * 0.72;
-  const tailRadius = THREE.MathUtils.lerp(tailRadiusIdle, tailRadiusBoost, boostMix);
-  const tailLengthIdle = (0.56 + boostLevel * 0.5) * (pulse + 0.01);
-  const tailLengthBoost = (0.84 + boostLevel * 0.98) * (pulse + 0.02);
-  const tailLength = THREE.MathUtils.lerp(tailLengthIdle, tailLengthBoost, boostMix);
-  plane.exhaust.flameOuterTail.scale.set(tailRadius, tailLength, tailRadius);
-  const tailBaseX = plane.exhaust.flameOuterTail.userData.baseX ?? plane.exhaust.flameOuterTail.position.x;
-  const tailRearOffset = THREE.MathUtils.lerp(2.8, 4.6, boostMix);
-  const tailOverlapShift = (outerLength - 1) * 6.4;
-  const tailStretchShift = (tailLength - 1) * 7.2;
-  plane.exhaust.flameOuterTail.position.x = tailBaseX - tailRearOffset - tailOverlapShift - tailStretchShift;
-  plane.exhaust.flameOuterTail.position.z = THREE.MathUtils.lerp(turbulence * 0.24, turbulence * 0.32, boostMix);
-  const tailOpacityIdle = clamp(0.3 + boostLevel * 0.24 + pulse * 0.03, 0.2, 0.65);
-  const tailOpacityBoost = clamp(0.62 + boostLevel * 0.28 + pulse * 0.04, 0.45, 1.0);
-  plane.exhaust.flameOuterTail.material.opacity = THREE.MathUtils.lerp(tailOpacityIdle, tailOpacityBoost, Math.pow(boostMix, 0.72));
-
-  plane.exhaust.flameOuterTail.material.color.setHex(0x8ec8ff);
-
-  plane.exhaust.shockRings.forEach((ring) => {
-    const phase = t * 19 - ring.userData.offset * 0.85;
-    const travel = (phase % 1 + 1) % 1;
-    const fade = 1 - travel;
-    const baseX = ring.userData.baseX ?? ring.position.x;
-    const ringTravelIdle = travel * (2.3 + boostLevel * 3.8);
-    const ringTravelBoost = travel * (2.9 + boostLevel * 5.1);
-    ring.position.x = baseX - THREE.MathUtils.lerp(ringTravelIdle, ringTravelBoost, boostMix);
-    const ringScaleIdle = 0.8 + travel * (1.0 + boostLevel * 0.45);
-    const ringScaleBoost = 0.9 + travel * (1.2 + boostLevel * 0.7);
-    ring.scale.setScalar(THREE.MathUtils.lerp(ringScaleIdle, ringScaleBoost, boostMix));
-    const ringOpacityIdle = clamp((0.12 + boostLevel * 0.22) * fade, 0, 0.4);
-    const ringOpacityBoost = clamp((0.09 + boostLevel * 0.12) * fade, 0, 0.2625);
-    ring.material.opacity = THREE.MathUtils.lerp(ringOpacityIdle, ringOpacityBoost, boostMix);
-    ring.material.color.setHex(0x9ac2ff);
-  });
 
 }
 
