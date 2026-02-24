@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 115;
+const DEBUG_BUILD_NUMBER = 116;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1174,15 +1174,15 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const tailStretchShift = (tailLength - 1) * 7.2;
   plane.exhaust.flameOuterTail.position.x = tailBaseX - tailRearOffset - tailOverlapShift - tailStretchShift;
   plane.exhaust.flameOuterTail.position.z = THREE.MathUtils.lerp(turbulence * 0.24, turbulence * 0.32, boostMix);
-  const tailOpacityIdle = clamp(0.09 + boostLevel * 0.1 + pulse * 0.016, 0.05, 0.24);
-  const tailOpacityBoost = clamp(0.2 + boostLevel * 0.14 + pulse * 0.026, 0.12, 0.4);
+  const tailOpacityIdle = clamp(0.3 + boostLevel * 0.24 + pulse * 0.03, 0.2, 0.65);
+  const tailOpacityBoost = clamp(0.62 + boostLevel * 0.28 + pulse * 0.04, 0.45, 1.0);
   plane.exhaust.flameOuterTail.material.opacity = THREE.MathUtils.lerp(tailOpacityIdle, tailOpacityBoost, Math.pow(boostMix, 0.72));
 
-  const tailWarmBlend = THREE.MathUtils.smoothstep(boostMix, 0.0, 1.0) * 0.34;
-  const tailPulseBlend = clamp((pulse - 0.9) * 0.32, 0, 0.1);
-  const tailBlend = clamp(0.12 + tailWarmBlend + tailPulseBlend, 0.12, 0.46);
-  const tailBaseColor = new THREE.Color(0.64, 0.77, 0.98);
-  const tailWarmTint = new THREE.Color(0.98, 0.4, 0.42);
+  const tailWarmBlend = THREE.MathUtils.smoothstep(boostMix, 0.0, 1.0) * 0.62;
+  const tailPulseBlend = clamp((pulse - 0.88) * 0.48, 0, 0.16);
+  const tailBlend = clamp(0.45 + tailWarmBlend + tailPulseBlend, 0.45, 1.0);
+  const tailBaseColor = new THREE.Color(0.58, 0.72, 0.98);
+  const tailWarmTint = new THREE.Color(1.0, 0.18, 0.22);
   tailBaseColor.lerp(tailWarmTint, tailBlend);
   plane.exhaust.flameOuterTail.material.color.copy(tailBaseColor);
 
