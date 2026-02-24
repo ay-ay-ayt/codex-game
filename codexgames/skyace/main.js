@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 122;
+const DEBUG_BUILD_NUMBER = 123;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1156,10 +1156,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerBlueGlow = clamp(0.9 + boostMix * 0.08 + pulse * 0.015, 0.86, 1.0);
   plane.exhaust.flameOuter.material.color.setRGB(0.12, 0.34 + boostMix * 0.06, outerBlueGlow);
 
-  const nozzleCoolR = clamp(0.72 + boostMix * 0.09 + pulse * 0.012, 0.68, 0.84);
-  const nozzleCoolG = clamp(0.88 + boostMix * 0.07 + pulse * 0.01, 0.84, 0.98);
-  const nozzleCoolB = clamp(1.0 + boostMix * 0.02 + pulse * 0.01, 0.94, 1.0);
-  plane.exhaust.nozzleGlow.material.color.setRGB(nozzleCoolR, nozzleCoolG, nozzleCoolB);
+  plane.exhaust.nozzleGlow.material.color.setHex(0xbfe7ff);
 
   const tailRadiusIdle = outerRadius * 0.58;
   const tailRadiusBoost = outerRadius * 0.72;
@@ -1178,13 +1175,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const tailOpacityBoost = clamp(0.62 + boostLevel * 0.28 + pulse * 0.04, 0.45, 1.0);
   plane.exhaust.flameOuterTail.material.opacity = THREE.MathUtils.lerp(tailOpacityIdle, tailOpacityBoost, Math.pow(boostMix, 0.72));
 
-  const tailWarmBlend = THREE.MathUtils.smoothstep(boostMix, 0.0, 1.0) * 0.62;
-  const tailPulseBlend = clamp((pulse - 0.88) * 0.48, 0, 0.16);
-  const tailBlend = clamp(0.45 + tailWarmBlend + tailPulseBlend, 0.45, 1.0);
-  const tailBaseColor = new THREE.Color(0.58, 0.72, 0.98);
-  const tailWarmTint = new THREE.Color(1.0, 0.18, 0.22);
-  tailBaseColor.lerp(tailWarmTint, tailBlend);
-  plane.exhaust.flameOuterTail.material.color.copy(tailBaseColor);
+  plane.exhaust.flameOuterTail.material.color.setHex(0x8ec8ff);
 
   plane.exhaust.shockRings.forEach((ring) => {
     const phase = t * 19 - ring.userData.offset * 0.85;
@@ -1200,7 +1191,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const ringOpacityIdle = clamp((0.12 + boostLevel * 0.22) * fade, 0, 0.4);
     const ringOpacityBoost = clamp((0.09 + boostLevel * 0.12) * fade, 0, 0.2625);
     ring.material.opacity = THREE.MathUtils.lerp(ringOpacityIdle, ringOpacityBoost, boostMix);
-    ring.material.color.setHex(travel < 0.38 ? 0xffd6b1 : 0x9ac2ff);
+    ring.material.color.setHex(0x9ac2ff);
   });
 
 }
