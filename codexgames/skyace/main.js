@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 130;
+const DEBUG_BUILD_NUMBER = 131;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1049,7 +1049,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const shockRings = [];
   for (let i = 0; i < 3; i++) {
     const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.74 + i * 0.14, 0.07, 10, 24),
+      new THREE.TorusGeometry(0.9 + i * 0.16, 0.08, 10, 24),
       new THREE.MeshBasicMaterial({
         color: 0x8fc3ff,
         transparent: true,
@@ -1059,7 +1059,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
       })
     );
     ring.rotation.y = Math.PI * 0.5;
-    ring.position.set(-38.4 - i * 2.25, 1.15, 0);
+    ring.position.set(-37.4 - i * 1.95, 1.15, 0);
     ring.userData.offset = i;
     shockRings.push(ring);
   }
@@ -1203,8 +1203,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const phase = t * 6.2 - ring.userData.offset * 0.42;
     const travel = (phase % 1 + 1) % 1;
     const baseX = ring.userData.baseX ?? ring.position.x;
-    ring.position.x = baseX - travel * THREE.MathUtils.lerp(2.2, 5.1, boostMix);
-    const ringScale = 0.88 + travel * (0.62 + boostMix * 0.46);
+    ring.position.x = baseX - travel * THREE.MathUtils.lerp(2.0, 4.5, boostMix);
+    const ringScale = 1.02 + travel * (0.74 + boostMix * 0.52);
     ring.scale.setScalar(ringScale);
     ring.material.opacity = clamp((0.2 + boostMix * 0.25) * (1 - travel), 0, 0.44);
     ring.material.color.setRGB(0.5 + boostMix * 0.3, 0.72 + boostMix * 0.18, 1.0);
