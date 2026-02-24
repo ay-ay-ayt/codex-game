@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 131;
+const DEBUG_BUILD_NUMBER = 132;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1030,7 +1030,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const nozzleHeatLines = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const streak = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035, 0.06, 1.7, 8),
+      new THREE.CylinderGeometry(0.045, 0.075, 2.65, 10),
       new THREE.MeshBasicMaterial({
         color: 0xff4328,
         transparent: true,
@@ -1041,7 +1041,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
       })
     );
     streak.rotation.x = (Math.PI * i) / 3;
-    streak.rotation.z = ((i % 2) - 0.5) * 0.18;
+    streak.rotation.z = ((i % 2) - 0.5) * 0.14;
+    const wallReach = 0.62;
+    streak.position.set(0, Math.sin((Math.PI * i) / 3) * 0.08, Math.cos((Math.PI * i) / 3) * wallReach);
     nozzleHeatLines.add(streak);
   }
   nozzleHeatLines.position.set(-34.45, 1.15, 0);
@@ -1049,7 +1051,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const shockRings = [];
   for (let i = 0; i < 3; i++) {
     const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.9 + i * 0.16, 0.08, 10, 24),
+      new THREE.TorusGeometry(1.12 + i * 0.28, 0.09, 10, 24),
       new THREE.MeshBasicMaterial({
         color: 0x8fc3ff,
         transparent: true,
@@ -1059,7 +1061,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
       })
     );
     ring.rotation.y = Math.PI * 0.5;
-    ring.position.set(-37.4 - i * 1.95, 1.15, 0);
+    ring.position.set(-37.2 - i * 2.05, 1.15, 0);
     ring.userData.offset = i;
     shockRings.push(ring);
   }
@@ -1191,7 +1193,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.nozzleHeatLines.rotation.z = Math.sin(t * 2.8 + plane.mesh.id * 0.13) * 0.12;
   plane.exhaust.nozzleHeatLines.children.forEach((streak, index) => {
     const streakPulse = 0.9 + Math.sin(t * 7.2 + index * 0.9 + plane.mesh.id * 0.17) * 0.1;
-    streak.material.opacity = clamp(0.28 + boostMix * 0.68 + streakPulse * 0.12, 0.22, 1.0);
+    streak.material.opacity = clamp(0.22 + boostMix * 6.8 + streakPulse * 0.18, 0.22, 3.5);
     streak.material.color.setRGB(
       clamp(0.92 + boostMix * 0.08, 0.88, 1.0),
       clamp(0.05 + boostMix * 0.11, 0.05, 0.2),
@@ -1203,9 +1205,10 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const phase = t * 6.2 - ring.userData.offset * 0.42;
     const travel = (phase % 1 + 1) % 1;
     const baseX = ring.userData.baseX ?? ring.position.x;
-    ring.position.x = baseX - travel * THREE.MathUtils.lerp(2.0, 4.5, boostMix);
-    const ringScale = 1.02 + travel * (0.74 + boostMix * 0.52);
-    ring.scale.setScalar(ringScale);
+    ring.position.x = baseX - travel * THREE.MathUtils.lerp(2.1, 4.7, boostMix);
+    const ringScale = 1.08 + travel * (0.78 + boostMix * 0.58);
+    const rearRingScaleBias = 1 + ring.userData.offset * 0.22;
+    ring.scale.setScalar(ringScale * rearRingScaleBias);
     ring.material.opacity = clamp((0.2 + boostMix * 0.25) * (1 - travel), 0, 0.44);
     ring.material.color.setRGB(0.5 + boostMix * 0.3, 0.72 + boostMix * 0.18, 1.0);
   });
