@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 138;
+const DEBUG_BUILD_NUMBER = 139;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1048,7 +1048,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleHeatLines.position.set(-34.45, 1.15, 0);
 
   const shockRings = [];
-  const shockRingRadii = [1.28, 1.54, 1.68];
+  const shockRingRadii = [1.45, 1.55, 1.65];
   const shockRingBaseX = [-37.2, -39.95, -42.2];
   for (let i = 0; i < 3; i++) {
     const ring = new THREE.Mesh(
@@ -1206,16 +1206,22 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     );
   });
 
+  const shockRingBoostScaleByOffset = {
+    0: 1.70 / 1.45,
+    1: 1.80 / 1.55,
+    2: 1.90 / 1.65,
+  };
   plane.exhaust.shockRings.forEach((ring) => {
-    const phase = t * 2.4 - ring.userData.offset * 0.28;
-    const travel = (phase % 1 + 1) % 1;
+    const offset = ring.userData.offset ?? 0;
     const baseX = ring.userData.baseX ?? ring.position.x;
-    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.45, 1.85, boostMix);
-    const ringScale = 0.84 + travel * (0.22 + boostMix * 0.2);
-    const rearRingScaleBias = 1 + ring.userData.offset * 0.16;
-    ring.scale.setScalar(ringScale * rearRingScaleBias);
-    ring.material.opacity = clamp((0.2 + boostMix * 0.25) * (1 - travel), 0, 0.44);
-    ring.material.color.setRGB(0.5 + boostMix * 0.3, 0.72 + boostMix * 0.18, 1.0);
+    const ringPulse = 0.97 + Math.sin(t * 1.8 + offset * 0.9 + plane.mesh.id * 0.11) * 0.03;
+    const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
+    const boostScale = THREE.MathUtils.lerp(1, boostScaleTarget, boostMix);
+    ring.position.x = baseX - THREE.MathUtils.lerp(0.12, 0.62, boostMix);
+    ring.scale.setScalar(boostScale * ringPulse);
+    const ringOpacityBase = 0.2 + boostMix * 0.06;
+    ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * 1.8 + offset * 0.9) * 0.045, 0.14, 0.34);
+    ring.material.color.setRGB(0.5 + boostMix * 0.2, 0.72 + boostMix * 0.12, 1.0);
   });
 
   plane.exhaust.nozzleGlow.material.color.setHex(0xbfe7ff);
