@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 146;
+const DEBUG_BUILD_NUMBER = 147;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1207,7 +1207,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   });
 
   const shockRingBoostScaleByOffset = {
-    0: (2.45 * 0.85) / 1.45,
+    0: (2.45 * 0.85 * 1.1) / 1.45,
     1: (2.88 * 0.85) / 1.7,
   };
   const shockRingSizeMultiplier = 1.2;
