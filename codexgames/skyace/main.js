@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 140;
+const DEBUG_BUILD_NUMBER = 141;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1048,15 +1048,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleHeatLines.position.set(-34.45, 1.15, 0);
 
   const shockRings = [];
-<<<<<<< codex/2026-02-25-10-25-29-remove-boost-for-skyace-jet
   const shockRingRadii = [1.45, 1.55];
   const shockRingBaseX = [-37.2, -39.95];
   for (let i = 0; i < shockRingRadii.length; i++) {
-=======
-  const shockRingRadii = [1.45, 1.55, 1.65];
-  const shockRingBaseX = [-37.2, -39.95, -42.2];
-  for (let i = 0; i < 3; i++) {
->>>>>>> main
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(shockRingRadii[i], 0.09, 10, 24),
       new THREE.MeshBasicMaterial({
