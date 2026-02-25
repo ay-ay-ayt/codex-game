@@ -367,6 +367,7 @@ body {
   display: grid;
   grid-template-columns: max-content max-content max-content;
   align-items: end;
+  justify-items: end;
   gap: 4px;
 }
 
@@ -462,7 +463,6 @@ body {
   #hud {
     grid-template-columns: max-content max-content 1fr max-content;
   }
-  #missileStatus,
   #missileWarning {
     grid-column: 1 / 3;
     grid-row: 2 / 3;
@@ -495,10 +495,6 @@ body {
   pointer-events: none;
 }
 
-#missileStatus {
-  min-width: 126px;
-}
-
 #missileWarning {
   color: #ffd5b4;
   border-color: rgba(255, 164, 132, 0.88);
@@ -509,4 +505,23 @@ body {
 @keyframes missileAlertBlink {
   from { transform: scale(1); opacity: 0.72; }
   to { transform: scale(1.06); opacity: 1; }
+}
+
+
+#lockOnCue {
+  position: fixed;
+  left: 50%;
+  top: calc(50% - 62px);
+  transform: translateX(-50%);
+  z-index: 7;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 212, 148, 0.9);
+  background: rgba(47, 26, 8, 0.62);
+  color: #ffd9a8;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 12px rgba(255, 169, 77, 0.45);
+  pointer-events: none;
 }

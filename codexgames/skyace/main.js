@@ -22,13 +22,13 @@ const fireBtn = document.getElementById("fireBtn");
 const missileBtn = document.getElementById("missileBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
-const missileStatusEl = document.getElementById("missileStatus");
 const missileWarningEl = document.getElementById("missileWarning");
+const lockOnCueEl = document.getElementById("lockOnCue");
 const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 149;
+const DEBUG_BUILD_NUMBER = 150;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -286,6 +286,7 @@ const game = {
   missileLockTarget: null,
   missileIncomingTimer: 0,
   missileButtonLatch: false,
+  missileTapQueued: false,
 };
 
 let lastHitVibeAt = 0;
@@ -293,10 +294,10 @@ let lastHitVibeAt = 0;
 const MISSILE_MAX_AMMO = 2;
 const MISSILE_SPEED = 430;
 const MISSILE_TURN_RATE = 0.9;
-const MISSILE_LOCK_RANGE = 1800;
-const MISSILE_LOCK_DOT = 0.55;
-const MISSILE_LOCK_DROP_RANGE = 1920;
-const MISSILE_LOCK_DROP_DOT = 0.35;
+const MISSILE_LOCK_RANGE = 2200;
+const MISSILE_LOCK_DOT = 0.4;
+const MISSILE_LOCK_DROP_RANGE = 2400;
+const MISSILE_LOCK_DROP_DOT = 0.2;
 
 
 function clamp(v, a, b) {
@@ -1787,12 +1788,16 @@ function updateCamera(dt) {
 function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
   updateHudHealthPanel();
-  ammoEl.textContent = `AMMO ${Math.round(game.ammo)} | MSL ${game.player?.missileAmmo ?? 0}`;
+  ammoEl.textContent = `MSL ${game.player?.missileAmmo ?? 0} | AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
-  if (missileStatusEl) {
-    missileStatusEl.textContent = game.missileLockTarget ? `MSL LOCK EN${Math.max(1, game.bots.indexOf(game.missileLockTarget) + 1)}` : (game.player?.missileAmmo > 0 ? "MSL READY" : "MSL EMPTY");
+  if (lockOnCueEl) {
+    if (game.missileLockTarget?.alive && game.player?.missileAmmo > 0) {
+      lockOnCueEl.hidden = false;
+      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(game.missileLockTarget) + 1)}`;
+    } else {
+      lockOnCueEl.hidden = true;
+    }
   }
-
 
   if (!game.player.alive && !game.over) {
     game.over = true;
@@ -1839,6 +1844,7 @@ function resetMatch() {
   game.missileLockTarget = null;
   game.missileIncomingTimer = 0;
   game.missileButtonLatch = false;
+  game.missileTapQueued = false;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -1901,7 +1907,9 @@ function syncInput() {
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
   input.missile = keys.has("KeyM") || missileBtn?.classList.contains("active");
-  input.missilePressed = input.missile && !game.missileButtonLatch;
+  const keyEdgePress = input.missile && !game.missileButtonLatch;
+  input.missilePressed = keyEdgePress || game.missileTapQueued;
+  game.missileTapQueued = false;
   game.missileButtonLatch = input.missile;
 }
 
@@ -2051,10 +2059,11 @@ function setupBoostLever() {
 }
 
 
-function bindActionButton(btn) {
+function bindActionButton(btn, onPress = null) {
   const press = (e) => {
     e.preventDefault();
     btn.classList.add("active");
+    onPress?.();
     syncInput();
   };
   const release = (e) => {
@@ -2187,12 +2196,12 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
-bindActionButton(missileBtn);
+bindActionButton(missileBtn, () => { game.missileTapQueued = true; });
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
   keys.add(e.code);
-  if (["ArrowUp", "ArrowDown", "Space"].includes(e.code)) e.preventDefault();
+  if (["ArrowUp", "ArrowDown", "Space", "KeyM"].includes(e.code)) e.preventDefault();
 });
 window.addEventListener("keyup", (e) => {
   keys.delete(e.code);
