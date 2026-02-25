@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 148;
+const DEBUG_BUILD_NUMBER = 149;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -293,10 +293,10 @@ let lastHitVibeAt = 0;
 const MISSILE_MAX_AMMO = 2;
 const MISSILE_SPEED = 430;
 const MISSILE_TURN_RATE = 0.9;
-const MISSILE_LOCK_RANGE = 1400;
-const MISSILE_LOCK_DOT = 0.72;
-const MISSILE_LOCK_DROP_RANGE = 1520;
-const MISSILE_LOCK_DROP_DOT = 0.58;
+const MISSILE_LOCK_RANGE = 1800;
+const MISSILE_LOCK_DOT = 0.55;
+const MISSILE_LOCK_DROP_RANGE = 1920;
+const MISSILE_LOCK_DROP_DOT = 0.35;
 
 
 function clamp(v, a, b) {
@@ -1115,7 +1115,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     const finSideOpp = finSide.clone();
     finSideOpp.position.z = -0.34;
     missileGroup.add(body, nose, finTop, finBottom, finSide, finSideOpp);
-    missileGroup.position.set(-8.8, 1.64, side * 12.9);
+    missileGroup.position.set(-17.2, 1.2, side * 19.2);
     return missileGroup;
   }
 
