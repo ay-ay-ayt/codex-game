@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 134;
+const DEBUG_BUILD_NUMBER = 135;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1030,7 +1030,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const nozzleHeatLines = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const streak = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.032, 0.055, 2.0, 8),
+      new THREE.CylinderGeometry(0.04, 0.065, 2.3, 8),
       new THREE.MeshBasicMaterial({
         color: 0xff4328,
         transparent: true,
@@ -1154,8 +1154,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
 
   plane.exhaust.flameCore.scale.set(coreRadius, coreLength, coreRadius);
   const coreBaseX = plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x;
-  const coreShiftIdle = (coreLength - 1) * 3.1;
-  const coreShiftBoost = (coreLength - 1) * 0.675;
+  const coreShiftIdle = (coreLength - 1) * 3.5;
+  const coreShiftBoost = (coreLength - 1) * 4.8;
   plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
   const coreOpacityIdle = clamp(0.2 + boostLevel * 0.24 + pulse * 0.03, 0.1, 0.54);
   const coreOpacityBoost = clamp(0.44 + boostLevel * 0.4 + pulse * 0.05, 0.34, 0.94);
@@ -1201,12 +1201,12 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   });
 
   plane.exhaust.shockRings.forEach((ring) => {
-    const phase = t * 3.4 - ring.userData.offset * 0.34;
+    const phase = t * 2.4 - ring.userData.offset * 0.28;
     const travel = (phase % 1 + 1) % 1;
     const baseX = ring.userData.baseX ?? ring.position.x;
-    ring.position.x = baseX - travel * THREE.MathUtils.lerp(1.0, 2.6, boostMix);
-    const ringScale = 1.02 + travel * (0.38 + boostMix * 0.26);
-    const rearRingScaleBias = 1 + ring.userData.offset * 0.22;
+    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.45, 1.85, boostMix);
+    const ringScale = 0.84 + travel * (0.22 + boostMix * 0.2);
+    const rearRingScaleBias = 1 + ring.userData.offset * 0.16;
     ring.scale.setScalar(ringScale * rearRingScaleBias);
     ring.material.opacity = clamp((0.2 + boostMix * 0.25) * (1 - travel), 0, 0.44);
     ring.material.color.setRGB(0.5 + boostMix * 0.3, 0.72 + boostMix * 0.18, 1.0);
