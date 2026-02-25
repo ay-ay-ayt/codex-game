@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 137;
+const DEBUG_BUILD_NUMBER = 138;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1048,9 +1048,11 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleHeatLines.position.set(-34.45, 1.15, 0);
 
   const shockRings = [];
+  const shockRingRadii = [1.28, 1.54, 1.68];
+  const shockRingBaseX = [-37.2, -39.95, -42.2];
   for (let i = 0; i < 3; i++) {
     const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(1.12 + i * 0.28, 0.09, 10, 24),
+      new THREE.TorusGeometry(shockRingRadii[i], 0.09, 10, 24),
       new THREE.MeshBasicMaterial({
         color: 0x8fc3ff,
         transparent: true,
@@ -1060,7 +1062,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
       })
     );
     ring.rotation.y = Math.PI * 0.5;
-    ring.position.set(-37.2 - i * 2.05, 1.15, 0);
+    ring.position.set(shockRingBaseX[i], 1.15, 0);
     ring.userData.offset = i;
     shockRings.push(ring);
   }
