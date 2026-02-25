@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 140;
+const DEBUG_BUILD_NUMBER = 145;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1048,15 +1048,9 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleHeatLines.position.set(-34.45, 1.15, 0);
 
   const shockRings = [];
-<<<<<<< codex/2026-02-25-10-25-29-remove-boost-for-skyace-jet
-  const shockRingRadii = [1.45, 1.55];
-  const shockRingBaseX = [-37.2, -39.95];
+  const shockRingRadii = [1.45, 1.7];
+  const shockRingBaseX = [-37.2, -39.25];
   for (let i = 0; i < shockRingRadii.length; i++) {
-=======
-  const shockRingRadii = [1.45, 1.55, 1.65];
-  const shockRingBaseX = [-37.2, -39.95, -42.2];
-  for (let i = 0; i < 3; i++) {
->>>>>>> main
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(shockRingRadii[i], 0.09, 10, 24),
       new THREE.MeshBasicMaterial({
@@ -1213,21 +1207,25 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   });
 
   const shockRingBoostScaleByOffset = {
-    0: 1.70 / 1.45,
-    1: 1.80 / 1.55,
+    0: 2.45 / 1.45,
+    1: 2.88 / 1.7,
   };
+  const shockRingSizeMultiplier = 1.2;
   plane.exhaust.shockRings.forEach((ring) => {
     const offset = ring.userData.offset ?? 0;
-    const phase = t * 1.15 - offset * 0.36 + plane.mesh.id * 0.02;
-    const travel = (phase % 1 + 1) % 1;
+    const phase = t * 2.4 - offset * 0.72 + plane.mesh.id * 0.05;
+    const travel = (Math.sin(phase) + 1) * 0.5;
     const baseX = ring.userData.baseX ?? ring.position.x;
-    const ringPulse = 0.98 + Math.sin(t * 2.1 + offset * 0.9 + plane.mesh.id * 0.11) * 0.045;
+    const ringPulse = 0.94
+      + Math.sin(t * 4.1 + offset * 1.2 + plane.mesh.id * 0.11) * 0.08
+      + Math.sin(t * 1.9 + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
     const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
-    const boostScale = THREE.MathUtils.lerp(1, boostScaleTarget, Math.pow(boostMix, 0.9));
-    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.18, 1.18, boostMix);
-    ring.scale.setScalar(boostScale * ringPulse);
-    const ringOpacityBase = 0.21 + boostMix * 0.12;
-    ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * 2.1 + offset * 0.9) * 0.05, 0.14, 0.46);
+    const boostScale = THREE.MathUtils.lerp(0.9, boostScaleTarget, Math.pow(boostMix, 0.68));
+    const boostBackShift = THREE.MathUtils.lerp(0.04, 0.56, boostMix);
+    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.32, 1.7, boostMix) - boostBackShift;
+    ring.scale.setScalar(shockRingSizeMultiplier * boostScale * ringPulse);
+    const ringOpacityBase = 0.14 + boostMix * 0.22;
+    ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * 2.1 + offset * 0.9) * 0.04, 0.08, 0.5);
     ring.material.color.setRGB(0.52 + boostMix * 0.2, 0.74 + boostMix * 0.12, 1.0);
   });
 
