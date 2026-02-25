@@ -368,7 +368,14 @@ body {
   grid-template-columns: max-content max-content max-content;
   align-items: end;
   justify-items: end;
-  gap: 4px;
+  gap: 6px;
+}
+
+.weapon-buttons {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  align-items: end;
+  gap: 6px;
 }
 
 #fireBtn,
@@ -378,6 +385,7 @@ body {
 }
 
 .lever-wrap {
+  grid-column: 2;
   display: grid;
   gap: 6px;
   justify-items: center;
