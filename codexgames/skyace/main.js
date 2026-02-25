@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 141;
+const DEBUG_BUILD_NUMBER = 142;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1048,8 +1048,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleHeatLines.position.set(-34.45, 1.15, 0);
 
   const shockRings = [];
-  const shockRingRadii = [1.45, 1.55];
-  const shockRingBaseX = [-37.2, -39.95];
+  const shockRingRadii = [1.45, 1.7];
+  const shockRingBaseX = [-37.2, -39.25];
   for (let i = 0; i < shockRingRadii.length; i++) {
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(shockRingRadii[i], 0.09, 10, 24),
@@ -1207,18 +1207,18 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   });
 
   const shockRingBoostScaleByOffset = {
-    0: 1.70 / 1.45,
-    1: 1.80 / 1.55,
+    0: 2.05 / 1.45,
+    1: 2.45 / 1.7,
   };
   plane.exhaust.shockRings.forEach((ring) => {
     const offset = ring.userData.offset ?? 0;
     const phase = t * 1.15 - offset * 0.36 + plane.mesh.id * 0.02;
     const travel = (phase % 1 + 1) % 1;
     const baseX = ring.userData.baseX ?? ring.position.x;
-    const ringPulse = 0.98 + Math.sin(t * 2.1 + offset * 0.9 + plane.mesh.id * 0.11) * 0.045;
+    const ringPulse = 1.0 + Math.sin(t * 2.8 + offset * 1.1 + plane.mesh.id * 0.11) * 0.09;
     const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
-    const boostScale = THREE.MathUtils.lerp(1, boostScaleTarget, Math.pow(boostMix, 0.9));
-    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.18, 1.18, boostMix);
+    const boostScale = THREE.MathUtils.lerp(1, boostScaleTarget, Math.pow(boostMix, 0.72));
+    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.3, 1.95, boostMix);
     ring.scale.setScalar(boostScale * ringPulse);
     const ringOpacityBase = 0.21 + boostMix * 0.12;
     ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * 2.1 + offset * 0.9) * 0.05, 0.14, 0.46);
