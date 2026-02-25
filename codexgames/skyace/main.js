@@ -19,13 +19,16 @@ menuBtn.setAttribute("aria-expanded", "false");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
+const missileBtn = document.getElementById("missileBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
+const missileStatusEl = document.getElementById("missileStatus");
+const missileWarningEl = document.getElementById("missileWarning");
 const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 147;
+const DEBUG_BUILD_NUMBER = 149;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -256,6 +259,8 @@ const input = {
   boost: false,
   boostLevel: 0,
   fire: false,
+  missile: false,
+  missilePressed: false,
 };
 
 const boostLeverState = {
@@ -268,6 +273,7 @@ const game = {
   player: null,
   bots: [],
   bullets: [],
+  missiles: [],
   score: 0,
   over: false,
   initialBots: 0,
@@ -277,9 +283,21 @@ const game = {
   playerHitTimer: 0,
   hitConfirmTimer: 0,
   boostAutoDropAt: null,
+  missileLockTarget: null,
+  missileIncomingTimer: 0,
+  missileButtonLatch: false,
 };
 
 let lastHitVibeAt = 0;
+
+const MISSILE_MAX_AMMO = 2;
+const MISSILE_SPEED = 430;
+const MISSILE_TURN_RATE = 0.9;
+const MISSILE_LOCK_RANGE = 1800;
+const MISSILE_LOCK_DOT = 0.55;
+const MISSILE_LOCK_DROP_RANGE = 1920;
+const MISSILE_LOCK_DROP_DOT = 0.35;
+
 
 function clamp(v, a, b) {
   return Math.max(a, Math.min(b, v));
@@ -1074,9 +1092,40 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleHeatLines.userData.baseX = nozzleHeatLines.position.x;
   shockRings.forEach((ring) => { ring.userData.baseX = ring.position.x; });
 
+  const missileBodyGeo = new THREE.CylinderGeometry(0.38, 0.38, 6.6, 12);
+  missileBodyGeo.rotateZ(-Math.PI * 0.5);
+  const missileNoseGeo = new THREE.ConeGeometry(0.42, 1.3, 12);
+  missileNoseGeo.rotateZ(-Math.PI * 0.5);
+  missileNoseGeo.translate(3.95, 0, 0);
+  const missileMat = new THREE.MeshStandardMaterial({ color: isPlayer ? 0xd6e4f2 : 0xd4d6cf, emissive: isPlayer ? 0x243749 : 0x1f1f1f, emissiveIntensity: 0.2, roughness: 0.34, metalness: 0.72 });
+
+  function buildWingMissile(side = 1) {
+    const missileGroup = new THREE.Group();
+    const body = new THREE.Mesh(missileBodyGeo, missileMat);
+    const nose = new THREE.Mesh(missileNoseGeo, missileMat);
+    const finMat = accentMat.clone();
+    finMat.emissiveIntensity = 0.1;
+    const finGeo = new THREE.BoxGeometry(1.1, 0.06, 0.7);
+    const finTop = new THREE.Mesh(finGeo, finMat);
+    finTop.position.set(-1.1, 0.38, 0);
+    const finBottom = finTop.clone();
+    finBottom.position.y = -0.38;
+    const finSide = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.06), finMat);
+    finSide.position.set(-1.1, 0, 0.34);
+    const finSideOpp = finSide.clone();
+    finSideOpp.position.z = -0.34;
+    missileGroup.add(body, nose, finTop, finBottom, finSide, finSideOpp);
+    missileGroup.position.set(-17.2, 1.2, side * 19.2);
+    return missileGroup;
+  }
+
+  const wingMissileL = buildWingMissile(1);
+  const wingMissileR = buildWingMissile(-1);
+
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
+    wingMissileL, wingMissileR,
     tailplaneL, tailplaneR, finCenter,
     engineCore, nozzle, nozzleInner, nozzleLip,
     nozzleGlow, flameCore, flameOuter, nozzleHeatCore, nozzleHeatLines, ...shockRings
@@ -1117,6 +1166,10 @@ function createFighter(colorOrPalette, isPlayer = false) {
       nozzleHeatLines,
       shockRings,
     },
+    missiles: [wingMissileL, wingMissileR],
+    missileAmmo: MISSILE_MAX_AMMO,
+    missileCooldown: 0,
+    missileTarget: null,
   };
 
   return plane;
@@ -1259,11 +1312,82 @@ function spawnImpactFx(position, color) {
   game.effects.push({ mesh: fx, life: 0.24, scaleRate: 13 });
 }
 
+function spawnMissileExplosion(position) {
+  const flash = new THREE.Mesh(
+    new THREE.SphereGeometry(5, 14, 12),
+    new THREE.MeshBasicMaterial({ color: 0xffd58e, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  flash.position.copy(position);
+  world.add(flash);
+  game.effects.push({ mesh: flash, life: 0.34, scaleRate: 11 });
+
+  const smoke = new THREE.Mesh(
+    new THREE.SphereGeometry(4.2, 10, 8),
+    new THREE.MeshBasicMaterial({ color: 0x6d7988, transparent: true, opacity: 0.52, depthWrite: false })
+  );
+  smoke.position.copy(position);
+  world.add(smoke);
+  game.effects.push({ mesh: smoke, life: 0.62, scaleRate: 5.4 });
+}
+
+function getBestLockTarget(shooter, lockRange = MISSILE_LOCK_RANGE, lockDot = MISSILE_LOCK_DOT) {
+  const candidates = shooter.isPlayer ? game.bots : [game.player];
+  const shooterPos = shooter.mesh.position;
+  const shooterForward = new THREE.Vector3(1, 0, 0).applyQuaternion(shooter.mesh.quaternion).normalize();
+  let best = null;
+  let bestScore = -Infinity;
+
+  for (const target of candidates) {
+    if (!target || !target.alive || target === shooter) continue;
+    const toTarget = target.mesh.position.clone().sub(shooterPos);
+    const dist = toTarget.length();
+    if (dist > lockRange) continue;
+    const dot = shooterForward.dot(toTarget.normalize());
+    if (dot < lockDot) continue;
+    const score = dot * 4.2 - dist / lockRange;
+    if (score > bestScore) {
+      bestScore = score;
+      best = target;
+    }
+  }
+  return best;
+}
+
+function spawnMissile(owner, target) {
+  if (!owner.alive || owner.missileAmmo <= 0 || !target?.alive) return false;
+  const index = owner.missiles.findIndex((m) => m.visible);
+  if (index < 0) return false;
+  const attachedMesh = owner.missiles[index];
+  attachedMesh.visible = false;
+
+  const missile = attachedMesh.clone(true);
+  const launchPos = attachedMesh.getWorldPosition(new THREE.Vector3());
+  const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+  missile.position.copy(launchPos).addScaledVector(forward, 3.2);
+  missile.quaternion.copy(owner.mesh.quaternion);
+  missile.userData = {
+    owner,
+    team: owner.isPlayer ? "player" : "bot",
+    target,
+    velocity: forward.multiplyScalar(MISSILE_SPEED).addScaledVector(owner.velocity, 0.28),
+    life: 8.5,
+    smokeTick: 0,
+    motorTick: 0,
+  };
+  world.add(missile);
+  game.missiles.push(missile);
+  owner.missileAmmo -= 1;
+  owner.missileCooldown = 0.32;
+  return true;
+}
+
 function updateEffects(dt) {
   game.playerHitTimer = Math.max(0, game.playerHitTimer - dt);
   game.hitConfirmTimer = Math.max(0, game.hitConfirmTimer - dt);
+  game.missileIncomingTimer = Math.max(0, game.missileIncomingTimer - dt);
   healthEl.classList.toggle("flash", game.playerHitTimer > 0);
   crosshairEl.classList.toggle("hit", game.hitConfirmTimer > 0);
+  if (missileWarningEl) missileWarningEl.hidden = game.missileIncomingTimer <= 0;
 
   for (let i = game.effects.length - 1; i >= 0; i--) {
     const fx = game.effects[i];
@@ -1344,6 +1468,7 @@ function updatePlayer(dt) {
   if (!p.alive || game.over) return;
 
   p.cooldown -= dt;
+  p.missileCooldown -= dt;
   p.speed = clamp(p.speed + input.throttle * dt * 170, 150, 560);
 
   const rollTarget = clamp(input.roll, -1, 1) * MAX_BANK;
@@ -1418,6 +1543,22 @@ function updatePlayer(dt) {
     game.ammo = Math.max(0, game.ammo - 1);
     p.cooldown = 0.11;
   }
+
+  const currentLockValid = game.missileLockTarget?.alive && (() => {
+    const toTarget = game.missileLockTarget.mesh.position.clone().sub(p.mesh.position);
+    const dist = toTarget.length();
+    const dot = forward.dot(toTarget.normalize());
+    return dist <= MISSILE_LOCK_DROP_RANGE && dot >= MISSILE_LOCK_DROP_DOT;
+  })();
+  if (!currentLockValid) game.missileLockTarget = null;
+
+  if (input.missilePressed && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+    if (!game.missileLockTarget) {
+      game.missileLockTarget = getBestLockTarget(p);
+    } else if (spawnMissile(p, game.missileLockTarget)) {
+      game.missileLockTarget = null;
+    }
+  }
 }
 
 function updateBots(dt) {
@@ -1429,6 +1570,7 @@ function updateBots(dt) {
     if (!b.alive) continue;
 
     b.cooldown -= dt;
+    b.missileCooldown -= dt;
     b.target = player.alive ? player : game.bots.find((x) => x !== b && x.alive) || null;
     if (!b.target) continue;
 
@@ -1495,6 +1637,14 @@ function updateBots(dt) {
       spawnBullet(b, 0xffb67e);
       b.cooldown = 0.11;
     }
+
+    if (b.missileAmmo > 0 && b.missileCooldown <= 0) {
+      if (!b.missileTarget || !b.missileTarget.alive) b.missileTarget = getBestLockTarget(b);
+      if (b.missileTarget && dist < MISSILE_LOCK_RANGE * 0.96 && aimDot > 0.86 && Math.random() < dt * 1.4) {
+        spawnMissile(b, b.missileTarget);
+        b.missileTarget = null;
+      }
+    }
   }
 }
 
@@ -1551,6 +1701,79 @@ function updateBullets(dt) {
   }
 }
 
+function updateMissiles(dt) {
+  const playerPos = game.player?.mesh?.position;
+
+  for (let i = game.missiles.length - 1; i >= 0; i--) {
+    const m = game.missiles[i];
+    const data = m.userData;
+    data.life -= dt;
+
+    const target = data.target;
+    if (target?.alive) {
+      const toTarget = target.mesh.position.clone().sub(m.position);
+      const desiredDir = toTarget.normalize();
+      const currentDir = data.velocity.clone().normalize();
+      currentDir.lerp(desiredDir, clamp(MISSILE_TURN_RATE * dt, 0, 0.22)).normalize();
+      data.velocity.copy(currentDir.multiplyScalar(MISSILE_SPEED));
+      m.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), currentDir);
+    }
+
+    m.position.addScaledVector(data.velocity, dt);
+
+    data.motorTick += dt;
+    if (data.motorTick > 0.03) {
+      data.motorTick = 0;
+      const jet = new THREE.Mesh(
+        new THREE.SphereGeometry(0.45, 8, 6),
+        new THREE.MeshBasicMaterial({ color: 0xffb86d, transparent: true, opacity: 0.82, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      jet.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.9);
+      world.add(jet);
+      game.effects.push({ mesh: jet, life: 0.14, scaleRate: 6.8 });
+    }
+    data.smokeTick += dt;
+    if (data.smokeTick > 0.06) {
+      data.smokeTick = 0;
+      const smoke = new THREE.Mesh(
+        new THREE.SphereGeometry(0.72, 8, 6),
+        new THREE.MeshBasicMaterial({ color: 0x768190, transparent: true, opacity: 0.42, depthWrite: false })
+      );
+      smoke.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.4);
+      world.add(smoke);
+      game.effects.push({ mesh: smoke, life: 0.4, scaleRate: 3.6 });
+    }
+
+    let exploded = false;
+    if (intersectsObstacle(m.position, 3.4)) exploded = true;
+
+    const targets = data.team === "player" ? game.bots : [game.player];
+    for (const t of targets) {
+      if (!t?.alive) continue;
+      if (m.position.distanceToSquared(t.mesh.position) < 24 * 24) {
+        hitPlane(t, 30, data.team);
+        exploded = true;
+        break;
+      }
+    }
+
+    if (!exploded && (Math.abs(m.position.x) > ARENA * 1.02 || Math.abs(m.position.z) > ARENA * 1.02 || m.position.y < FLOOR_Y + 4 || m.position.y > 980)) exploded = true;
+
+    if (!exploded && playerPos && data.team === "bot") {
+      const toPlayer = playerPos.clone().sub(m.position).normalize();
+      const facingPlayer = data.velocity.clone().normalize().dot(toPlayer);
+      const distPlayer = m.position.distanceTo(playerPos);
+      if (facingPlayer > 0.7 && distPlayer < 620) game.missileIncomingTimer = 0.24;
+    }
+
+    if (exploded || data.life <= 0) {
+      spawnMissileExplosion(m.position);
+      world.remove(m);
+      game.missiles.splice(i, 1);
+    }
+  }
+}
+
 function updateCamera(dt) {
   const p = game.player;
   if (!p) return;
@@ -1564,8 +1787,11 @@ function updateCamera(dt) {
 function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
   updateHudHealthPanel();
-  ammoEl.textContent = `AMMO ${Math.round(game.ammo)}`;
+  ammoEl.textContent = `AMMO ${Math.round(game.ammo)} | MSL ${game.player?.missileAmmo ?? 0}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
+  if (missileStatusEl) {
+    missileStatusEl.textContent = game.missileLockTarget ? `MSL LOCK EN${Math.max(1, game.bots.indexOf(game.missileLockTarget) + 1)}` : (game.player?.missileAmmo > 0 ? "MSL READY" : "MSL EMPTY");
+  }
 
 
   if (!game.player.alive && !game.over) {
@@ -1591,6 +1817,8 @@ function clearPlaneHpLabel(plane) {
 function resetMatch() {
   for (const b of game.bullets) world.remove(b);
   game.bullets = [];
+  for (const m of game.missiles) world.remove(m);
+  game.missiles = [];
   if (game.player) {
     clearPlaneHpLabel(game.player);
     world.remove(game.player.mesh);
@@ -1608,6 +1836,9 @@ function resetMatch() {
   game.playerHitTimer = 0;
   game.hitConfirmTimer = 0;
   game.boostAutoDropAt = null;
+  game.missileLockTarget = null;
+  game.missileIncomingTimer = 0;
+  game.missileButtonLatch = false;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -1669,6 +1900,9 @@ function syncInput() {
   input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
+  input.missile = keys.has("KeyM") || missileBtn?.classList.contains("active");
+  input.missilePressed = input.missile && !game.missileButtonLatch;
+  game.missileButtonLatch = input.missile;
 }
 
 function setupJoystick(stickId, onMove) {
@@ -1953,6 +2187,7 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
+bindActionButton(missileBtn);
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
@@ -2028,6 +2263,7 @@ function tick(now) {
     updatePlayer(dt);
     updateBots(dt);
     updateBullets(dt);
+    updateMissiles(dt);
     updateEffects(dt);
     updateCamera(dt);
     updateState();
