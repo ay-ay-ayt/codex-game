@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 135;
+const DEBUG_BUILD_NUMBER = 136;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1192,11 +1192,11 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.nozzleHeatLines.rotation.z = Math.sin(t * 2.8 + plane.mesh.id * 0.13) * 0.12;
   plane.exhaust.nozzleHeatLines.children.forEach((streak, index) => {
     const streakPulse = 0.9 + Math.sin(t * 7.2 + index * 0.9 + plane.mesh.id * 0.17) * 0.1;
-    streak.material.opacity = clamp(0.22 + boostMix * 6.8 + streakPulse * 0.18, 0.22, 3.5);
+    streak.material.opacity = clamp(0.22 + streakPulse * 0.18, 0.22, 0.5);
     streak.material.color.setRGB(
-      clamp(0.92 + boostMix * 0.08, 0.88, 1.0),
-      clamp(0.05 + boostMix * 0.11, 0.05, 0.2),
-      clamp(0.03 + boostMix * 0.01, 0.03, 0.05)
+      0.92,
+      0.05,
+      0.03
     );
   });
 
