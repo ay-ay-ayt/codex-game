@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 135;
+const DEBUG_BUILD_NUMBER = 137;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1137,7 +1137,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerLength = THREE.MathUtils.lerp(outerLengthIdle, outerLengthBoost, boostMix);
 
   const coreRadiusIdle = 0.92 + boostLevel * 0.14 + shimmer * 0.45;
-  const coreRadiusBoost = 1.86 + boostLevel * 0.78 + shimmer * 0.98;
+  const coreRadiusBoost = 1.52 + boostLevel * 0.4 + shimmer * 0.72;
   const coreRadius = THREE.MathUtils.lerp(coreRadiusIdle, coreRadiusBoost, Math.pow(boostMix, 0.66));
 
   const outerRadiusIdle = 0.8 + boostLevel * 0.2 + shimmer;
@@ -1155,7 +1155,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameCore.scale.set(coreRadius, coreLength, coreRadius);
   const coreBaseX = plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x;
   const coreShiftIdle = (coreLength - 1) * 3.5;
-  const coreShiftBoost = (coreLength - 1) * 4.8;
+  const coreShiftBoost = (coreLength - 1) * 7.2;
   plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
   const coreOpacityIdle = clamp(0.2 + boostLevel * 0.24 + pulse * 0.03, 0.1, 0.54);
   const coreOpacityBoost = clamp(0.44 + boostLevel * 0.4 + pulse * 0.05, 0.34, 0.94);
@@ -1172,31 +1172,35 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
   const innerBlueDepth = clamp(0.74 + boostMix * 0.2 + pulse * 0.03, 0.72, 1.0);
-  const innerWarm = clamp(0.22 + boostMix * 0.5 + pulse * 0.03, 0.2, 0.84);
+  const innerWarm = clamp(0.22 + boostMix * 0.22 + pulse * 0.03, 0.2, 0.5);
   plane.exhaust.flameCore.material.color.setRGB(innerWarm, 0.36 + boostMix * 0.2, innerBlueDepth);
 
   const outerBlueGlow = clamp(0.9 + boostMix * 0.08 + pulse * 0.015, 0.86, 1.0);
   plane.exhaust.flameOuter.material.color.setRGB(0.12, 0.34 + boostMix * 0.06, outerBlueGlow);
 
   const nozzleHeatPulse = 0.86 + Math.sin(t * 24 + plane.mesh.id * 0.57) * 0.14;
-  const heatCoreScale = THREE.MathUtils.lerp(0.86, 1.18 + boostMix * 0.36, boostMix) * nozzleHeatPulse;
+  const heatCoreScale = THREE.MathUtils.lerp(0.82, 0.98 + boostMix * 0.2, boostMix) * nozzleHeatPulse;
   plane.exhaust.nozzleHeatCore.scale.setScalar(heatCoreScale);
-  plane.exhaust.nozzleHeatCore.material.opacity = clamp(0.22 + boostMix * 0.46 + nozzleHeatPulse * 0.1, 0.18, 0.9);
+  const heatCoreBaseX = plane.exhaust.nozzleHeatCore.userData.baseX ?? plane.exhaust.nozzleHeatCore.position.x;
+  plane.exhaust.nozzleHeatCore.position.x = heatCoreBaseX - THREE.MathUtils.lerp(0.25, 1.6, boostMix);
+  plane.exhaust.nozzleHeatCore.material.opacity = clamp(0.2 + boostMix * 0.18 + nozzleHeatPulse * 0.08, 0.14, 0.46);
   plane.exhaust.nozzleHeatCore.material.color.setRGB(
     clamp(0.84 + boostMix * 0.16, 0.72, 1.0),
     clamp(0.2 + boostMix * 0.24, 0.14, 0.56),
     clamp(0.12 + boostMix * 0.06, 0.08, 0.22)
   );
 
+  const heatLinesBaseX = plane.exhaust.nozzleHeatLines.userData.baseX ?? plane.exhaust.nozzleHeatLines.position.x;
+  plane.exhaust.nozzleHeatLines.position.x = heatLinesBaseX - THREE.MathUtils.lerp(0.2, 1.35, boostMix);
   plane.exhaust.nozzleHeatLines.rotation.x = Math.PI * 0.5 + Math.sin(t * 4.2 + plane.mesh.id * 0.19) * 0.1;
   plane.exhaust.nozzleHeatLines.rotation.z = Math.sin(t * 2.8 + plane.mesh.id * 0.13) * 0.12;
   plane.exhaust.nozzleHeatLines.children.forEach((streak, index) => {
     const streakPulse = 0.9 + Math.sin(t * 7.2 + index * 0.9 + plane.mesh.id * 0.17) * 0.1;
-    streak.material.opacity = clamp(0.22 + boostMix * 6.8 + streakPulse * 0.18, 0.22, 3.5);
+    streak.material.opacity = clamp(0.22 + streakPulse * 0.18, 0.22, 0.5);
     streak.material.color.setRGB(
-      clamp(0.92 + boostMix * 0.08, 0.88, 1.0),
-      clamp(0.05 + boostMix * 0.11, 0.05, 0.2),
-      clamp(0.03 + boostMix * 0.01, 0.03, 0.05)
+      0.92,
+      0.05,
+      0.03
     );
   });
 
