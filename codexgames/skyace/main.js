@@ -25,7 +25,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 143;
+const DEBUG_BUILD_NUMBER = 144;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1210,6 +1210,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     0: 2.45 / 1.45,
     1: 3.05 / 1.7,
   };
+  const shockRingSizeMultiplier = 1.2;
   plane.exhaust.shockRings.forEach((ring) => {
     const offset = ring.userData.offset ?? 0;
     const phase = t * 1.15 - offset * 0.36 + plane.mesh.id * 0.02;
@@ -1219,7 +1220,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
     const boostScale = THREE.MathUtils.lerp(0.9, boostScaleTarget, Math.pow(boostMix, 0.68));
     ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.3, 1.95, boostMix);
-    ring.scale.setScalar(boostScale * ringPulse);
+    ring.scale.setScalar(shockRingSizeMultiplier * boostScale * ringPulse);
     const ringOpacityBase = 0.14 + boostMix * 0.22;
     ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * 2.1 + offset * 0.9) * 0.04, 0.08, 0.5);
     ring.material.color.setRGB(0.52 + boostMix * 0.2, 0.74 + boostMix * 0.12, 1.0);
