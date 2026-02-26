@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 162;
+const DEBUG_BUILD_NUMBER = 163;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1687,7 +1687,7 @@ function updateBots(dt) {
 
       const noLaunchPhase = game.matchElapsed < 5;
       const missilesFired = MISSILE_MAX_AMMO - b.missileAmmo;
-      const launchChanceByShot = missilesFired <= 0 ? dt * 0.36 : dt * 0.2;
+      const launchChanceByShot = missilesFired <= 0 ? dt * 0.2 : dt * 0.1;
       const launchRangeFactor = missilesFired <= 0 ? 0.93 : 0.9;
 
       if (!noLaunchPhase
@@ -1864,7 +1864,7 @@ function updateState() {
   if (lockOnCueEl) {
     if (lockTarget?.alive) {
       lockOnCueEl.hidden = false;
-      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(lockTarget) + 1)}`;
+      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(lockTarget) + 1)} · TAP TO CANCEL`;
     } else {
       lockOnCueEl.hidden = true;
     }
