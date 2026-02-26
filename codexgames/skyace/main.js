@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 152;
+const DEBUG_BUILD_NUMBER = 153;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -292,12 +292,12 @@ const game = {
 let lastHitVibeAt = 0;
 
 const MISSILE_MAX_AMMO = 2;
-const MISSILE_SPEED = 440;
-const MISSILE_TURN_RATE = 1.08;
-const MISSILE_LOCK_RANGE = 2600;
-const MISSILE_LOCK_DOT = 0.2;
-const MISSILE_LOCK_DROP_RANGE = 2800;
-const MISSILE_LOCK_DROP_DOT = -0.08;
+const MISSILE_SPEED = 430;
+const MISSILE_TURN_RATE = 1.02;
+const MISSILE_LOCK_RANGE = 1700;
+const MISSILE_LOCK_DOT = 0.58;
+const MISSILE_LOCK_DROP_RANGE = 1900;
+const MISSILE_LOCK_DROP_DOT = 0.42;
 
 
 function clamp(v, a, b) {
@@ -1333,7 +1333,7 @@ function spawnMissileExplosion(position) {
 
 function getBestLockTarget(shooter, lockRange = MISSILE_LOCK_RANGE, lockDot = MISSILE_LOCK_DOT) {
   const candidates = shooter.isPlayer ? game.bots : [game.player];
-  const shooterPos = shooter.mesh.position;
+  const lockOrigin = shooter.isPlayer ? camera.position : shooter.mesh.position;
   const aimForward = shooter.isPlayer
     ? new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize()
     : new THREE.Vector3(1, 0, 0).applyQuaternion(shooter.mesh.quaternion).normalize();
@@ -1342,14 +1342,14 @@ function getBestLockTarget(shooter, lockRange = MISSILE_LOCK_RANGE, lockDot = MI
 
   for (const target of candidates) {
     if (!target || !target.alive || target === shooter) continue;
-    const toTarget = target.mesh.position.clone().sub(shooterPos);
+    const toTarget = target.mesh.position.clone().sub(lockOrigin);
     const dist = toTarget.length();
     if (dist > lockRange) continue;
     const dirToTarget = toTarget.normalize();
     const dot = aimForward.dot(dirToTarget);
     if (dot < lockDot) continue;
-    const lateral = 1 - Math.max(-1, Math.min(1, dot));
-    const score = dot * 5.2 - dist / lockRange - lateral * 0.45;
+    const centerBias = (1 - dot) * 0.9;
+    const score = dot * 5.1 - dist / lockRange - centerBias;
     if (score > bestScore) {
       bestScore = score;
       best = target;
@@ -1552,7 +1552,7 @@ function updatePlayer(dt) {
   }
 
   const currentLockValid = game.missileLockTarget?.alive && (() => {
-    const toTarget = game.missileLockTarget.mesh.position.clone().sub(p.mesh.position);
+    const toTarget = game.missileLockTarget.mesh.position.clone().sub(camera.position);
     const dist = toTarget.length();
     const aimForward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
     const dot = aimForward.dot(toTarget.normalize());
@@ -1716,16 +1716,17 @@ function updateMissiles(dt) {
     const m = game.missiles[i];
     const data = m.userData;
     data.life -= dt;
+    const prevPos = m.position.clone();
 
     const target = data.target;
     if (target?.alive) {
       const toTarget = target.mesh.position.clone().sub(m.position);
       const dist = Math.max(1, toTarget.length());
-      const leadTime = clamp(dist / Math.max(data.cruiseSpeed, 1), 0.08, 0.9);
-      const aimPoint = target.mesh.position.clone().addScaledVector(target.velocity, leadTime * 0.9);
+      const leadTime = clamp(dist / Math.max(data.cruiseSpeed, 1), 0.08, 0.8);
+      const aimPoint = target.mesh.position.clone().addScaledVector(target.velocity, leadTime * 0.88);
       const desiredDir = aimPoint.sub(m.position).normalize();
       const currentDir = data.velocity.clone().normalize();
-      currentDir.lerp(desiredDir, clamp(MISSILE_TURN_RATE * dt, 0, 0.28)).normalize();
+      currentDir.lerp(desiredDir, clamp(MISSILE_TURN_RATE * dt, 0, 0.24)).normalize();
       data.velocity.copy(currentDir.multiplyScalar(data.cruiseSpeed));
       m.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), currentDir);
     }
@@ -1761,7 +1762,12 @@ function updateMissiles(dt) {
     const targets = data.team === "player" ? game.bots : [game.player];
     for (const t of targets) {
       if (!t?.alive) continue;
-      if (m.position.distanceToSquared(t.mesh.position) < 34 * 34) {
+      const seg = tmpVecA.subVectors(m.position, prevPos);
+      const segLenSq = Math.max(1e-6, seg.lengthSq());
+      const toCenter = tmpVecB.subVectors(t.mesh.position, prevPos);
+      const proj = clamp(toCenter.dot(seg) / segLenSq, 0, 1);
+      const closest = tmpVecC.copy(prevPos).addScaledVector(seg, proj);
+      if (closest.distanceToSquared(t.mesh.position) < 32 * 32) {
         hitPlane(t, 30, data.team);
         exploded = true;
         break;
@@ -1774,7 +1780,7 @@ function updateMissiles(dt) {
       const toPlayer = playerPos.clone().sub(m.position).normalize();
       const facingPlayer = data.velocity.clone().normalize().dot(toPlayer);
       const distPlayer = m.position.distanceTo(playerPos);
-      if (facingPlayer > 0.52 && distPlayer < 920) game.missileIncomingTimer = 0.24;
+      if (facingPlayer > 0.66 && distPlayer < 760) game.missileIncomingTimer = 0.24;
     }
 
     if (exploded || data.life <= 0) {
