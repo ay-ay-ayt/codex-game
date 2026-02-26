@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 168;
+const DEBUG_BUILD_NUMBER = 171;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -260,8 +260,9 @@ const input = {
   boost: false,
   boostLevel: 0,
   fire: false,
-  missile: false,
-  missilePressed: false,
+  lockToggle: false,
+  lockTogglePressed: false,
+  missileLaunchPressed: false,
 };
 
 const boostLeverState = {
@@ -286,8 +287,9 @@ const game = {
   boostAutoDropAt: null,
   missileLockTarget: null,
   missileIncomingTimer: 0,
-  missileButtonLatch: false,
-  missileTapQueuedCount: 0,
+  lockToggleButtonLatch: false,
+  lockToggleTapQueuedCount: 0,
+  missileLaunchTapQueuedCount: 0,
   matchElapsed: 0,
 };
 
@@ -1148,17 +1150,19 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const lockOutline = new THREE.Group();
   const lockOutlineMat = new THREE.LineBasicMaterial({
-    color: 0xff2222,
+    color: 0xff3030,
     transparent: true,
     opacity: 1,
+    blending: THREE.AdditiveBlending,
     depthWrite: false,
     depthTest: false,
   });
   const lockShellMat = new THREE.MeshBasicMaterial({
-    color: 0xff2f2f,
+    color: 0xff3a3a,
     transparent: true,
-    opacity: 0.36,
+    opacity: 0.82,
     side: THREE.BackSide,
+    blending: THREE.AdditiveBlending,
     depthWrite: false,
     depthTest: false,
   });
@@ -1169,7 +1173,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     const shell = new THREE.Mesh(node.geometry, lockShellMat);
     shell.position.copy(node.position);
     shell.quaternion.copy(node.quaternion);
-    shell.scale.copy(node.scale).multiplyScalar(1.065);
+    shell.scale.copy(node.scale).multiplyScalar(1.2);
     shell.renderOrder = 119;
     shell.frustumCulled = false;
     shell.userData.baseScale = shell.scale.clone();
@@ -1178,7 +1182,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 30), lockOutlineMat);
     edges.position.copy(node.position);
     edges.quaternion.copy(node.quaternion);
-    edges.scale.copy(node.scale).multiplyScalar(1.07);
+    edges.scale.copy(node.scale).multiplyScalar(1.24);
     edges.renderOrder = 120;
     edges.frustumCulled = false;
     edges.userData.baseScale = edges.scale.clone();
@@ -1189,7 +1193,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   g.add(lockOutline);
 
   world.add(g);
-  world.add(lockOutline);
 
   const plane = {
     mesh: g,
@@ -1609,12 +1612,16 @@ function updatePlayer(dt) {
   })();
   if (!currentLockValid) game.missileLockTarget = null;
 
-  if (input.missilePressed) {
+  if (input.lockTogglePressed) {
     if (!game.missileLockTarget) {
       game.missileLockTarget = getBestLockTarget(p);
-    } else if (p.missileAmmo > 0 && p.missileCooldown <= 0 && spawnMissile(p, game.missileLockTarget)) {
+    } else {
       game.missileLockTarget = null;
     }
+  }
+
+  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+    if (spawnMissile(p, game.missileLockTarget)) game.missileLockTarget = null;
   }
 }
 
@@ -1900,11 +1907,13 @@ function updateState() {
 
     const dist = game.player?.mesh?.position?.distanceTo(bot.mesh.position) ?? 600;
     const emphasis = clamp((dist - 220) / 1500, 0, 1);
-    const lineOpacity = 0.78 + emphasis * 0.22;
-    const shellOpacity = 0.22 + emphasis * 0.36;
-    const scaleMul = 1.03 + emphasis * 0.08;
-    bot.lockOutline.userData?.lineMat?.opacity = lineOpacity;
-    bot.lockOutline.userData?.shellMat?.opacity = shellOpacity;
+    const lineOpacity = clamp((0.78 + emphasis * 0.22) * 30, 0, 1);
+    const shellOpacity = clamp((0.22 + emphasis * 0.36) * 30, 0, 0.96);
+    const scaleMul = 1.22 + emphasis * 0.42;
+    const lineMat = bot.lockOutline.userData?.lineMat;
+    const shellMat = bot.lockOutline.userData?.shellMat;
+    if (lineMat) lineMat.opacity = lineOpacity;
+    if (shellMat) shellMat.opacity = shellOpacity;
 
     bot.lockOutline.children.forEach((child) => {
       const base = child.userData.baseScale;
@@ -1915,7 +1924,7 @@ function updateState() {
   updateHudHealthPanel();
   ammoEl.textContent = `MSL ${game.player?.missileAmmo ?? 0} | AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
-  if (missileBtn) missileBtn.textContent = lockTarget ? "MISSILE" : "LOCK ON";
+  if (missileBtn) missileBtn.textContent = lockTarget ? "LOCK OFF" : "LOCK ON";
   if (lockOnCueEl) {
     if (lockTarget?.alive) {
       lockOnCueEl.hidden = false;
@@ -1924,7 +1933,10 @@ function updateState() {
       lockOnCueEl.hidden = true;
     }
   }
-  if (lockCancelBtn) lockCancelBtn.hidden = !lockTarget;
+  if (lockCancelBtn) {
+    lockCancelBtn.textContent = "LAUNCH";
+    lockCancelBtn.hidden = !lockTarget;
+  }
 
   if (!game.player.alive && !game.over) {
     game.over = true;
@@ -1975,8 +1987,9 @@ function resetMatch() {
   game.boostAutoDropAt = null;
   game.missileLockTarget = null;
   game.missileIncomingTimer = 0;
-  game.missileButtonLatch = false;
-  game.missileTapQueuedCount = 0;
+  game.lockToggleButtonLatch = false;
+  game.lockToggleTapQueuedCount = 0;
+  game.missileLaunchTapQueuedCount = 0;
   game.matchElapsed = 0;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
@@ -2039,13 +2052,17 @@ function syncInput() {
   input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
-  input.missile = keys.has("KeyM");
-  const keyEdgePress = input.missile && !game.missileButtonLatch;
-  input.missilePressed = keyEdgePress || game.missileTapQueuedCount > 0;
-  if (!keyEdgePress && game.missileTapQueuedCount > 0) {
-    game.missileTapQueuedCount = Math.max(0, game.missileTapQueuedCount - 1);
+  input.lockToggle = keys.has("KeyM");
+  const keyEdgePress = input.lockToggle && !game.lockToggleButtonLatch;
+  input.lockTogglePressed = keyEdgePress || game.lockToggleTapQueuedCount > 0;
+  if (!keyEdgePress && game.lockToggleTapQueuedCount > 0) {
+    game.lockToggleTapQueuedCount = Math.max(0, game.lockToggleTapQueuedCount - 1);
   }
-  game.missileButtonLatch = input.missile;
+  input.missileLaunchPressed = keys.has("KeyN") || game.missileLaunchTapQueuedCount > 0;
+  if (game.missileLaunchTapQueuedCount > 0) {
+    game.missileLaunchTapQueuedCount = Math.max(0, game.missileLaunchTapQueuedCount - 1);
+  }
+  game.lockToggleButtonLatch = input.lockToggle;
 }
 
 function setupJoystick(stickId, onMove) {
@@ -2330,18 +2347,13 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
-bindActionButton(missileBtn, () => { game.missileTapQueuedCount += 1; });
-if (lockCancelBtn) {
-  lockCancelBtn.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    game.missileLockTarget = null;
-  });
-}
+bindActionButton(missileBtn, () => { game.lockToggleTapQueuedCount += 1; });
+if (lockCancelBtn) bindActionButton(lockCancelBtn, () => { game.missileLaunchTapQueuedCount += 1; });
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
   keys.add(e.code);
-  if (["ArrowUp", "ArrowDown", "Space", "KeyM", "Escape", "KeyC"].includes(e.code)) e.preventDefault();
+  if (["ArrowUp", "ArrowDown", "Space", "KeyM", "KeyN", "Escape", "KeyC"].includes(e.code)) e.preventDefault();
   if (e.code === "Escape" || e.code === "KeyC") game.missileLockTarget = null;
 });
 window.addEventListener("keyup", (e) => {
