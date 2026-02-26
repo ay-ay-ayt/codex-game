@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 167;
+const DEBUG_BUILD_NUMBER = 168;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1172,6 +1172,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     shell.scale.copy(node.scale).multiplyScalar(1.065);
     shell.renderOrder = 119;
     shell.frustumCulled = false;
+    shell.userData.baseScale = shell.scale.clone();
     lockOutline.add(shell);
 
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 30), lockOutlineMat);
@@ -1180,9 +1181,11 @@ function createFighter(colorOrPalette, isPlayer = false) {
     edges.scale.copy(node.scale).multiplyScalar(1.07);
     edges.renderOrder = 120;
     edges.frustumCulled = false;
+    edges.userData.baseScale = edges.scale.clone();
     lockOutline.add(edges);
   });
   lockOutline.visible = false;
+  lockOutline.userData = { lineMat: lockOutlineMat, shellMat: lockShellMat };
   g.add(lockOutline);
 
   world.add(g);
@@ -1798,10 +1801,11 @@ function updateMissiles(dt) {
 
     const target = data.target;
     if (target?.alive) {
-      const toTarget = target.mesh.position.clone().sub(m.position);
+      const targetCenter = target.mesh.getWorldPosition(new THREE.Vector3());
+      const toTarget = targetCenter.clone().sub(m.position);
       const dist = Math.max(1, toTarget.length());
       const leadTime = clamp(dist / Math.max(data.cruiseSpeed, 1), 0.08, 0.8);
-      const aimPoint = target.mesh.position.clone().addScaledVector(target.velocity, leadTime * 0.88);
+      const aimPoint = targetCenter.clone().addScaledVector(target.velocity, leadTime * 0.88);
       const desiredDir = aimPoint.sub(m.position).normalize();
       const currentDir = data.velocity.clone().normalize();
       currentDir.lerp(desiredDir, clamp(MISSILE_TURN_RATE * dt, 0, 0.24)).normalize();
@@ -1841,17 +1845,23 @@ function updateMissiles(dt) {
       if (!t?.alive) continue;
       const seg = tmpVecA.subVectors(m.position, prevPos);
       const segLenSq = Math.max(1e-6, seg.lengthSq());
-      const toCenter = tmpVecB.subVectors(t.mesh.position, prevPos);
+      const targetCenter = t.mesh.getWorldPosition(new THREE.Vector3());
+      const toCenter = tmpVecB.subVectors(targetCenter, prevPos);
       const proj = clamp(toCenter.dot(seg) / segLenSq, 0, 1);
       const closest = tmpVecC.copy(prevPos).addScaledVector(seg, proj);
-      if (closest.distanceToSquared(t.mesh.position) < 32 * 32) {
+      if (closest.distanceToSquared(targetCenter) < 40 * 40) {
         hitPlane(t, 30, data.team);
         exploded = true;
         break;
       }
     }
 
-    if (!exploded && intersectsObstacle(m.position, 3.4)) exploded = true;
+    if (!exploded && intersectsObstacle(m.position, 3.4)) {
+      if (target?.alive && m.position.distanceToSquared(target.mesh.getWorldPosition(new THREE.Vector3())) < 95 * 95) {
+        hitPlane(target, 30, data.team);
+      }
+      exploded = true;
+    }
     if (!exploded && (Math.abs(m.position.x) > ARENA * 1.02 || Math.abs(m.position.z) > ARENA * 1.02 || m.position.y < FLOOR_Y + 4 || m.position.y > 980)) exploded = true;
 
     if (!exploded && playerPos && data.team === "bot") {
@@ -1886,6 +1896,20 @@ function updateState() {
     if (!bot.lockOutline) return;
     const visible = bot === lockTarget && bot.alive;
     bot.lockOutline.visible = visible;
+    if (!visible) return;
+
+    const dist = game.player?.mesh?.position?.distanceTo(bot.mesh.position) ?? 600;
+    const emphasis = clamp((dist - 220) / 1500, 0, 1);
+    const lineOpacity = 0.78 + emphasis * 0.22;
+    const shellOpacity = 0.22 + emphasis * 0.36;
+    const scaleMul = 1.03 + emphasis * 0.08;
+    bot.lockOutline.userData?.lineMat?.opacity = lineOpacity;
+    bot.lockOutline.userData?.shellMat?.opacity = shellOpacity;
+
+    bot.lockOutline.children.forEach((child) => {
+      const base = child.userData.baseScale;
+      if (base) child.scale.copy(base).multiplyScalar(scaleMul);
+    });
   });
 
   updateHudHealthPanel();
