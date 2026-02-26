@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 165;
+const DEBUG_BUILD_NUMBER = 166;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1146,13 +1146,27 @@ function createFighter(colorOrPalette, isPlayer = false) {
     }
   });
 
-  const lockOutline = new THREE.BoxHelper(g, 0xffb347);
+  const lockOutline = new THREE.Group();
+  const lockOutlineMat = new THREE.LineBasicMaterial({
+    color: 0xff3c3c,
+    transparent: true,
+    opacity: 0.92,
+    depthWrite: false,
+    depthTest: false,
+  });
+  g.traverse((node) => {
+    if (!node.isMesh) return;
+    if (!node.geometry) return;
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 36), lockOutlineMat);
+    edges.position.copy(node.position);
+    edges.quaternion.copy(node.quaternion);
+    edges.scale.copy(node.scale).multiplyScalar(1.015);
+    edges.renderOrder = 120;
+    edges.frustumCulled = false;
+    lockOutline.add(edges);
+  });
   lockOutline.visible = false;
-  lockOutline.material.transparent = true;
-  lockOutline.material.opacity = 0.92;
-  lockOutline.material.depthWrite = false;
-  lockOutline.material.depthTest = false;
-  lockOutline.renderOrder = 120;
+  g.add(lockOutline);
 
   world.add(g);
   world.add(lockOutline);
@@ -1784,23 +1798,23 @@ function updateMissiles(dt) {
     if (data.motorTick > 0.03) {
       data.motorTick = 0;
       const jet = new THREE.Mesh(
-        new THREE.SphereGeometry(0.45, 8, 6),
-        new THREE.MeshBasicMaterial({ color: 0xffb86d, transparent: true, opacity: 0.82, blending: THREE.AdditiveBlending, depthWrite: false })
+        new THREE.SphereGeometry(0.62, 10, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffb86d, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })
       );
       jet.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.9);
       world.add(jet);
-      game.effects.push({ mesh: jet, life: 0.14, scaleRate: 6.8 });
+      game.effects.push({ mesh: jet, life: 0.2, scaleRate: 8.8 });
     }
     data.smokeTick += dt;
     if (data.smokeTick > 0.06) {
       data.smokeTick = 0;
       const smoke = new THREE.Mesh(
-        new THREE.SphereGeometry(0.72, 8, 6),
-        new THREE.MeshBasicMaterial({ color: 0x768190, transparent: true, opacity: 0.42, depthWrite: false })
+        new THREE.SphereGeometry(0.9, 10, 8),
+        new THREE.MeshBasicMaterial({ color: 0x768190, transparent: true, opacity: 0.56, depthWrite: false })
       );
       smoke.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.4);
       world.add(smoke);
-      game.effects.push({ mesh: smoke, life: 0.4, scaleRate: 3.6 });
+      game.effects.push({ mesh: smoke, life: 0.52, scaleRate: 4.4 });
     }
 
     let exploded = false;
@@ -1855,7 +1869,6 @@ function updateState() {
     if (!bot.lockOutline) return;
     const visible = bot === lockTarget && bot.alive;
     bot.lockOutline.visible = visible;
-    if (visible) bot.lockOutline.update();
   });
 
   updateHudHealthPanel();
@@ -1892,7 +1905,7 @@ function clearPlaneHpLabel(plane) {
     plane.hpLabel = null;
   }
   if (plane?.lockOutline) {
-    world.remove(plane.lockOutline);
+    plane.mesh?.remove?.(plane.lockOutline);
     plane.lockOutline = null;
   }
 }
