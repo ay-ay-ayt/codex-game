@@ -7,8 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>Sky Ace Duel 3D</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=153" />
-  <link rel="stylesheet" href="./style.css?v=153" />
+  <link rel="manifest" href="./manifest.webmanifest?v=164" />
+  <link rel="stylesheet" href="./style.css?v=164" />
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -56,7 +56,8 @@
 
     <div class="action-wrap">
       <div class="weapon-buttons">
-        <button id="missileBtn" class="action">MISSILE</button>
+        <button id="lockCancelBtn" class="action action-sub" hidden>CANCEL LOCK</button>
+        <button id="missileBtn" class="action">LOCK ON</button>
         <button id="fireBtn" class="action">FIRE</button>
       </div>
       <div class="lever-wrap">
@@ -71,6 +72,6 @@
     <small>ブラウザUIが狭い場合は「ホーム画面に追加」で全画面化できます。</small>
   </div>
 
-  <script type="module" src="./main.js?v=153"></script>
+  <script type="module" src="./main.js?v=164"></script>
 </body>
 </html>

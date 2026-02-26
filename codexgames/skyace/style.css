@@ -216,6 +216,22 @@ body {
   font-size: 10px;
 }
 
+.hp-row.is-locked {
+  border: 1px solid rgba(255, 196, 114, 0.95);
+  border-radius: 8px;
+  padding: 2px 4px;
+  box-shadow: 0 0 12px rgba(255, 173, 77, 0.5);
+}
+
+.hp-row.is-locked .hp-name,
+.hp-row.is-locked .hp-val {
+  color: #ffd9a8;
+}
+
+.hp-row.is-locked .hp-track {
+  border-color: rgba(255, 196, 114, 0.9);
+}
+
 
 .hp-name,
 .hp-val {
@@ -373,13 +389,14 @@ body {
 
 .weapon-buttons {
   display: grid;
-  grid-template-columns: max-content max-content;
+  grid-template-columns: max-content;
   align-items: end;
   gap: 6px;
 }
 
 #fireBtn,
-#missileBtn {
+#missileBtn,
+#lockCancelBtn {
   align-self: end;
   margin-bottom: 8px;
 }
@@ -425,6 +442,18 @@ body {
   touch-action: manipulation;
 }
 
+
+.action-sub {
+  min-height: 44px;
+  font-size: 12px;
+  border-color: rgba(255, 188, 140, 0.9);
+  background: rgba(78, 34, 22, 0.84);
+  color: #ffd9b6;
+}
+
+.action-sub[hidden] {
+  display: none;
+}
 .action.active {
   background: rgba(156, 229, 255, 0.36);
   transform: translateY(1px);
@@ -533,3 +562,5 @@ body {
   box-shadow: 0 0 12px rgba(255, 169, 77, 0.45);
   pointer-events: none;
 }
+
+
