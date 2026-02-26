@@ -417,12 +417,6 @@ body {
   grid-row: 2;
 }
 
-#missileBtn,
-#fireBtn,
-#lockCancelBtn {
-  transform: translateX(10px);
-}
-
 .lever-wrap {
   grid-column: 2;
   display: grid;
