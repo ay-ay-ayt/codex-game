@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 159;
+const DEBUG_BUILD_NUMBER = 160;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -287,6 +287,7 @@ const game = {
   missileIncomingTimer: 0,
   missileButtonLatch: false,
   missileTapQueuedCount: 0,
+  matchElapsed: 0,
 };
 
 let lastHitVibeAt = 0;
@@ -1306,7 +1307,7 @@ function spawnBullet(owner, color) {
   const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
   b.userData = {
-    vel: dir.multiplyScalar(1200),
+    vel: dir.multiplyScalar(1350),
     life: 1.9,
     team: owner === game.player ? "player" : "bot",
   };
@@ -1343,7 +1344,9 @@ function spawnMissileExplosion(position) {
 }
 
 function getBestLockTarget(shooter, lockRange = MISSILE_LOCK_RANGE, lockDot = MISSILE_LOCK_DOT) {
-  const candidates = shooter.isPlayer ? game.bots : [game.player];
+  const candidates = shooter.isPlayer
+    ? game.bots
+    : [game.player, ...game.bots];
   const lockOrigin = shooter.isPlayer ? camera.position : shooter.mesh.position;
   const aimForward = shooter.isPlayer
     ? new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize()
@@ -1580,8 +1583,30 @@ function updatePlayer(dt) {
   }
 }
 
+
+function selectBotCombatTarget(bot) {
+  const candidates = [];
+  if (game.player?.alive) candidates.push(game.player);
+  for (const other of game.bots) {
+    if (other !== bot && other.alive) candidates.push(other);
+  }
+  if (candidates.length === 0) return null;
+
+  let best = null;
+  let bestScore = Infinity;
+  for (const target of candidates) {
+    const distSq = bot.mesh.position.distanceToSquared(target.mesh.position);
+    const playerBias = target.isPlayer ? 0.94 : 1.0;
+    const score = distSq * playerBias;
+    if (score < bestScore) {
+      bestScore = score;
+      best = target;
+    }
+  }
+  return best;
+}
+
 function updateBots(dt) {
-  const player = game.player;
   const botMinSpeed = 150;
   const botMaxSpeed = 560;
 
@@ -1590,7 +1615,7 @@ function updateBots(dt) {
 
     b.cooldown -= dt;
     b.missileCooldown -= dt;
-    b.target = player.alive ? player : game.bots.find((x) => x !== b && x.alive) || null;
+    b.target = selectBotCombatTarget(b);
     if (!b.target) continue;
 
     const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
@@ -1659,7 +1684,17 @@ function updateBots(dt) {
 
     if (b.missileAmmo > 0 && b.missileCooldown <= 0) {
       if (!b.missileTarget || !b.missileTarget.alive) b.missileTarget = getBestLockTarget(b);
-      if (b.missileTarget && dist < MISSILE_LOCK_RANGE * 0.96 && aimDot > 0.86 && Math.random() < dt * 1.4) {
+
+      const earlyPhase = game.matchElapsed < 18;
+      const holdLastMissile = earlyPhase && b.missileAmmo <= 1;
+      const launchChance = earlyPhase ? dt * 0.42 : dt * 1.05;
+      const launchRangeFactor = earlyPhase ? 0.78 : 0.96;
+
+      if (!holdLastMissile
+        && b.missileTarget
+        && dist < MISSILE_LOCK_RANGE * launchRangeFactor
+        && aimDot > 0.9
+        && Math.random() < launchChance) {
         spawnMissile(b, b.missileTarget);
         b.missileTarget = null;
       }
@@ -1886,6 +1921,7 @@ function resetMatch() {
   game.missileIncomingTimer = 0;
   game.missileButtonLatch = false;
   game.missileTapQueuedCount = 0;
+  game.matchElapsed = 0;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -2102,7 +2138,7 @@ function setupBoostLever() {
 }
 
 
-function bindActionButton(btn, onPress = null) {
+function bindActionButton(btn, onPress = null, onRelease = null) {
   const press = (e) => {
     e.preventDefault();
     btn.classList.add("active");
@@ -2111,6 +2147,7 @@ function bindActionButton(btn, onPress = null) {
   const release = (e) => {
     e.preventDefault();
     btn.classList.remove("active");
+    onRelease?.(e);
   };
   btn.addEventListener("pointerdown", press);
   btn.addEventListener("pointerup", release);
@@ -2237,12 +2274,28 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
-bindActionButton(missileBtn, () => { game.missileTapQueuedCount += 1; });
+let missileBtnPressAt = 0;
+bindActionButton(
+  missileBtn,
+  () => {
+    missileBtnPressAt = performance.now();
+  },
+  (e) => {
+    if (e?.type !== "pointerup") return;
+    const holdMs = performance.now() - missileBtnPressAt;
+    if (holdMs >= 450 && game.missileLockTarget) {
+      game.missileLockTarget = null;
+      return;
+    }
+    game.missileTapQueuedCount += 1;
+  }
+);
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
   keys.add(e.code);
-  if (["ArrowUp", "ArrowDown", "Space", "KeyM"].includes(e.code)) e.preventDefault();
+  if (["ArrowUp", "ArrowDown", "Space", "KeyM", "Escape", "KeyC"].includes(e.code)) e.preventDefault();
+  if (e.code === "Escape" || e.code === "KeyC") game.missileLockTarget = null;
 });
 window.addEventListener("keyup", (e) => {
   keys.delete(e.code);
@@ -2309,6 +2362,7 @@ function tick(now) {
     const dt = Math.min((now - last) / 1000, 0.033);
     last = now;
 
+    game.matchElapsed += dt;
     syncInput();
     updatePlayer(dt);
     updateBots(dt);
