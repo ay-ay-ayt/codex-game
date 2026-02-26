@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 170;
+const DEBUG_BUILD_NUMBER = 171;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -260,8 +260,9 @@ const input = {
   boost: false,
   boostLevel: 0,
   fire: false,
-  missile: false,
-  missilePressed: false,
+  lockToggle: false,
+  lockTogglePressed: false,
+  missileLaunchPressed: false,
 };
 
 const boostLeverState = {
@@ -286,8 +287,9 @@ const game = {
   boostAutoDropAt: null,
   missileLockTarget: null,
   missileIncomingTimer: 0,
-  missileButtonLatch: false,
-  missileTapQueuedCount: 0,
+  lockToggleButtonLatch: false,
+  lockToggleTapQueuedCount: 0,
+  missileLaunchTapQueuedCount: 0,
   matchElapsed: 0,
 };
 
@@ -1191,7 +1193,6 @@ function createFighter(colorOrPalette, isPlayer = false) {
   g.add(lockOutline);
 
   world.add(g);
-  world.add(lockOutline);
 
   const plane = {
     mesh: g,
@@ -1611,12 +1612,16 @@ function updatePlayer(dt) {
   })();
   if (!currentLockValid) game.missileLockTarget = null;
 
-  if (input.missilePressed) {
+  if (input.lockTogglePressed) {
     if (!game.missileLockTarget) {
       game.missileLockTarget = getBestLockTarget(p);
-    } else if (p.missileAmmo > 0 && p.missileCooldown <= 0 && spawnMissile(p, game.missileLockTarget)) {
+    } else {
       game.missileLockTarget = null;
     }
+  }
+
+  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+    if (spawnMissile(p, game.missileLockTarget)) game.missileLockTarget = null;
   }
 }
 
@@ -1919,7 +1924,7 @@ function updateState() {
   updateHudHealthPanel();
   ammoEl.textContent = `MSL ${game.player?.missileAmmo ?? 0} | AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
-  if (missileBtn) missileBtn.textContent = lockTarget ? "MISSILE" : "LOCK ON";
+  if (missileBtn) missileBtn.textContent = lockTarget ? "LOCK OFF" : "LOCK ON";
   if (lockOnCueEl) {
     if (lockTarget?.alive) {
       lockOnCueEl.hidden = false;
@@ -1928,7 +1933,10 @@ function updateState() {
       lockOnCueEl.hidden = true;
     }
   }
-  if (lockCancelBtn) lockCancelBtn.hidden = !lockTarget;
+  if (lockCancelBtn) {
+    lockCancelBtn.textContent = "LAUNCH";
+    lockCancelBtn.hidden = !lockTarget;
+  }
 
   if (!game.player.alive && !game.over) {
     game.over = true;
@@ -1979,8 +1987,9 @@ function resetMatch() {
   game.boostAutoDropAt = null;
   game.missileLockTarget = null;
   game.missileIncomingTimer = 0;
-  game.missileButtonLatch = false;
-  game.missileTapQueuedCount = 0;
+  game.lockToggleButtonLatch = false;
+  game.lockToggleTapQueuedCount = 0;
+  game.missileLaunchTapQueuedCount = 0;
   game.matchElapsed = 0;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
@@ -2043,13 +2052,17 @@ function syncInput() {
   input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
-  input.missile = keys.has("KeyM");
-  const keyEdgePress = input.missile && !game.missileButtonLatch;
-  input.missilePressed = keyEdgePress || game.missileTapQueuedCount > 0;
-  if (!keyEdgePress && game.missileTapQueuedCount > 0) {
-    game.missileTapQueuedCount = Math.max(0, game.missileTapQueuedCount - 1);
+  input.lockToggle = keys.has("KeyM");
+  const keyEdgePress = input.lockToggle && !game.lockToggleButtonLatch;
+  input.lockTogglePressed = keyEdgePress || game.lockToggleTapQueuedCount > 0;
+  if (!keyEdgePress && game.lockToggleTapQueuedCount > 0) {
+    game.lockToggleTapQueuedCount = Math.max(0, game.lockToggleTapQueuedCount - 1);
   }
-  game.missileButtonLatch = input.missile;
+  input.missileLaunchPressed = keys.has("KeyN") || game.missileLaunchTapQueuedCount > 0;
+  if (game.missileLaunchTapQueuedCount > 0) {
+    game.missileLaunchTapQueuedCount = Math.max(0, game.missileLaunchTapQueuedCount - 1);
+  }
+  game.lockToggleButtonLatch = input.lockToggle;
 }
 
 function setupJoystick(stickId, onMove) {
@@ -2334,18 +2347,13 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
-bindActionButton(missileBtn, () => { game.missileTapQueuedCount += 1; });
-if (lockCancelBtn) {
-  lockCancelBtn.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    game.missileLockTarget = null;
-  });
-}
+bindActionButton(missileBtn, () => { game.lockToggleTapQueuedCount += 1; });
+if (lockCancelBtn) bindActionButton(lockCancelBtn, () => { game.missileLaunchTapQueuedCount += 1; });
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
   keys.add(e.code);
-  if (["ArrowUp", "ArrowDown", "Space", "KeyM", "Escape", "KeyC"].includes(e.code)) e.preventDefault();
+  if (["ArrowUp", "ArrowDown", "Space", "KeyM", "KeyN", "Escape", "KeyC"].includes(e.code)) e.preventDefault();
   if (e.code === "Escape" || e.code === "KeyC") game.missileLockTarget = null;
 });
 window.addEventListener("keyup", (e) => {
