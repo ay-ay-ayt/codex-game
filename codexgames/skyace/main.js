@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 156;
+const DEBUG_BUILD_NUMBER = 157;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1144,13 +1144,24 @@ function createFighter(colorOrPalette, isPlayer = false) {
     }
   });
 
-  const lockOutline = new THREE.LineSegments(
-    new THREE.EdgesGeometry(g, 38),
-    new THREE.LineBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.95 })
-  );
+  const lockOutline = g.clone(true);
   lockOutline.visible = false;
+  lockOutline.scale.multiplyScalar(1.035);
   lockOutline.renderOrder = 120;
-  lockOutline.frustumCulled = false;
+  lockOutline.traverse((node) => {
+    if (!node.isMesh) return;
+    node.material = new THREE.MeshBasicMaterial({
+      color: 0xffb347,
+      transparent: true,
+      opacity: 0.48,
+      side: THREE.BackSide,
+      depthWrite: false,
+    });
+    node.castShadow = false;
+    node.receiveShadow = false;
+    node.frustumCulled = false;
+    node.renderOrder = 120;
+  });
   g.add(lockOutline);
 
   world.add(g);
