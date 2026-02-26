@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 158;
+const DEBUG_BUILD_NUMBER = 159;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -292,7 +292,7 @@ const game = {
 let lastHitVibeAt = 0;
 
 const MISSILE_MAX_AMMO = 2;
-const MISSILE_SPEED = 430;
+const MISSILE_SPEED = 650;
 const MISSILE_TURN_RATE = 1.02;
 const MISSILE_LOCK_RANGE = 1700;
 const MISSILE_LOCK_DOT = 0.58;
@@ -1306,7 +1306,7 @@ function spawnBullet(owner, color) {
   const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
   b.userData = {
-    vel: dir.multiplyScalar(980).add(owner.velocity.clone().multiplyScalar(0.4)),
+    vel: dir.multiplyScalar(1200),
     life: 1.9,
     team: owner === game.player ? "player" : "bot",
   };
@@ -1381,12 +1381,12 @@ function spawnMissile(owner, target) {
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   missile.position.copy(launchPos).addScaledVector(forward, 3.2);
   missile.quaternion.copy(owner.mesh.quaternion);
-  const cruiseSpeed = clamp(MISSILE_SPEED + owner.velocity.length() * 0.36, MISSILE_SPEED, 620);
+  const cruiseSpeed = MISSILE_SPEED;
   missile.userData = {
     owner,
     team: owner.isPlayer ? "player" : "bot",
     target,
-    velocity: forward.multiplyScalar(cruiseSpeed).addScaledVector(owner.velocity, 0.34),
+    velocity: forward.multiplyScalar(cruiseSpeed),
     cruiseSpeed,
     life: 10.5,
     smokeTick: 0,
