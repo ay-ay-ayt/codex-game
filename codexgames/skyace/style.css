@@ -389,13 +389,14 @@ body {
 
 .weapon-buttons {
   display: grid;
-  grid-template-columns: max-content max-content;
+  grid-template-columns: max-content;
   align-items: end;
   gap: 6px;
 }
 
 #fireBtn,
-#missileBtn {
+#missileBtn,
+#lockCancelBtn {
   align-self: end;
   margin-bottom: 8px;
 }
@@ -441,6 +442,18 @@ body {
   touch-action: manipulation;
 }
 
+
+.action-sub {
+  min-height: 44px;
+  font-size: 12px;
+  border-color: rgba(255, 188, 140, 0.9);
+  background: rgba(78, 34, 22, 0.84);
+  color: #ffd9b6;
+}
+
+.action-sub[hidden] {
+  display: none;
+}
 .action.active {
   background: rgba(156, 229, 255, 0.36);
   transform: translateY(1px);
@@ -551,7 +564,4 @@ body {
   cursor: pointer;
 }
 
-#lockOnCue:active {
-  transform: translateX(-50%) scale(0.98);
-}
 

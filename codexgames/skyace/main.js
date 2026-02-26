@@ -24,11 +24,12 @@ const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
 const missileWarningEl = document.getElementById("missileWarning");
 const lockOnCueEl = document.getElementById("lockOnCue");
+const lockCancelBtn = document.getElementById("lockCancelBtn");
 const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 163;
+const DEBUG_BUILD_NUMBER = 164;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1864,11 +1865,12 @@ function updateState() {
   if (lockOnCueEl) {
     if (lockTarget?.alive) {
       lockOnCueEl.hidden = false;
-      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(lockTarget) + 1)} · TAP TO CANCEL`;
+      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(lockTarget) + 1)}`;
     } else {
       lockOnCueEl.hidden = true;
     }
   }
+  if (lockCancelBtn) lockCancelBtn.hidden = !lockTarget;
 
   if (!game.player.alive && !game.over) {
     game.over = true;
@@ -2275,8 +2277,8 @@ setupJoystick("leftStick", (x, y) => {
 });
 bindActionButton(fireBtn);
 bindActionButton(missileBtn, () => { game.missileTapQueuedCount += 1; });
-if (lockOnCueEl) {
-  lockOnCueEl.addEventListener("pointerdown", (e) => {
+if (lockCancelBtn) {
+  lockCancelBtn.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     game.missileLockTarget = null;
   });
