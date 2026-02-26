@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 161;
+const DEBUG_BUILD_NUMBER = 162;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1685,16 +1685,16 @@ function updateBots(dt) {
     if (b.missileAmmo > 0 && b.missileCooldown <= 0) {
       if (!b.missileTarget || !b.missileTarget.alive) b.missileTarget = getBestLockTarget(b);
 
-      const earlyPhase = game.matchElapsed < 10;
+      const noLaunchPhase = game.matchElapsed < 5;
       const missilesFired = MISSILE_MAX_AMMO - b.missileAmmo;
-      const earlyLaunchChanceByShot = missilesFired <= 0 ? dt * 0.36 : dt * 0.2;
-      const launchChance = earlyPhase ? earlyLaunchChanceByShot : dt * 1.05;
-      const launchRangeFactor = earlyPhase ? 0.9 : 0.96;
+      const launchChanceByShot = missilesFired <= 0 ? dt * 0.36 : dt * 0.2;
+      const launchRangeFactor = missilesFired <= 0 ? 0.93 : 0.9;
 
-      if (b.missileTarget
+      if (!noLaunchPhase
+        && b.missileTarget
         && dist < MISSILE_LOCK_RANGE * launchRangeFactor
         && aimDot > 0.9
-        && Math.random() < launchChance) {
+        && Math.random() < launchChanceByShot) {
         spawnMissile(b, b.missileTarget);
         b.missileTarget = null;
       }
@@ -2274,22 +2274,13 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
-let missileBtnPressAt = 0;
-bindActionButton(
-  missileBtn,
-  () => {
-    missileBtnPressAt = performance.now();
-  },
-  (e) => {
-    if (e?.type !== "pointerup") return;
-    const holdMs = performance.now() - missileBtnPressAt;
-    if (holdMs >= 450 && game.missileLockTarget) {
-      game.missileLockTarget = null;
-      return;
-    }
-    game.missileTapQueuedCount += 1;
-  }
-);
+bindActionButton(missileBtn, () => { game.missileTapQueuedCount += 1; });
+if (lockOnCueEl) {
+  lockOnCueEl.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    game.missileLockTarget = null;
+  });
+}
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
