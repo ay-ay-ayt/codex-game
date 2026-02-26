@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 160;
+const DEBUG_BUILD_NUMBER = 161;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1685,13 +1685,13 @@ function updateBots(dt) {
     if (b.missileAmmo > 0 && b.missileCooldown <= 0) {
       if (!b.missileTarget || !b.missileTarget.alive) b.missileTarget = getBestLockTarget(b);
 
-      const earlyPhase = game.matchElapsed < 18;
-      const holdLastMissile = earlyPhase && b.missileAmmo <= 1;
-      const launchChance = earlyPhase ? dt * 0.42 : dt * 1.05;
-      const launchRangeFactor = earlyPhase ? 0.78 : 0.96;
+      const earlyPhase = game.matchElapsed < 10;
+      const missilesFired = MISSILE_MAX_AMMO - b.missileAmmo;
+      const earlyLaunchChanceByShot = missilesFired <= 0 ? dt * 0.36 : dt * 0.2;
+      const launchChance = earlyPhase ? earlyLaunchChanceByShot : dt * 1.05;
+      const launchRangeFactor = earlyPhase ? 0.9 : 0.96;
 
-      if (!holdLastMissile
-        && b.missileTarget
+      if (b.missileTarget
         && dist < MISSILE_LOCK_RANGE * launchRangeFactor
         && aimDot > 0.9
         && Math.random() < launchChance) {
