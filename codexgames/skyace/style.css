@@ -131,7 +131,7 @@ body {
   border: 1px solid var(--line);
   background: var(--glass);
   backdrop-filter: blur(5px);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -214,6 +214,22 @@ body {
   align-items: center;
   gap: 6px;
   font-size: 10px;
+}
+
+.hp-row.is-locked {
+  border: 1px solid rgba(255, 196, 114, 0.95);
+  border-radius: 8px;
+  padding: 2px 4px;
+  box-shadow: 0 0 12px rgba(255, 173, 77, 0.5);
+}
+
+.hp-row.is-locked .hp-name,
+.hp-row.is-locked .hp-val {
+  color: #ffd9a8;
+}
+
+.hp-row.is-locked .hp-track {
+  border-color: rgba(255, 196, 114, 0.9);
 }
 
 
@@ -373,15 +389,32 @@ body {
 
 .weapon-buttons {
   display: grid;
-  grid-template-columns: max-content max-content;
+  grid-template-columns: max-content max-content max-content;
+  grid-template-rows: auto auto;
   align-items: end;
   gap: 6px;
 }
 
 #fireBtn,
-#missileBtn {
+#missileBtn,
+#lockCancelBtn {
   align-self: end;
   margin-bottom: 8px;
+}
+
+#lockCancelBtn {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+#missileBtn {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+#fireBtn {
+  grid-column: 3;
+  grid-row: 2;
 }
 
 .lever-wrap {
@@ -425,6 +458,18 @@ body {
   touch-action: manipulation;
 }
 
+
+.action-sub {
+  min-height: 44px;
+  font-size: 10px;
+  border-color: rgba(255, 188, 140, 0.9);
+  background: rgba(78, 34, 22, 0.84);
+  color: #ffd9b6;
+}
+
+.action-sub[hidden] {
+  display: none;
+}
 .action.active {
   background: rgba(156, 229, 255, 0.36);
   transform: translateY(1px);
@@ -522,14 +567,16 @@ body {
   top: calc(50% - 62px);
   transform: translateX(-50%);
   z-index: 7;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
   border: 1px solid rgba(255, 212, 148, 0.9);
   background: rgba(47, 26, 8, 0.62);
   color: #ffd9a8;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.04em;
   box-shadow: 0 0 12px rgba(255, 169, 77, 0.45);
   pointer-events: none;
 }
+
+
