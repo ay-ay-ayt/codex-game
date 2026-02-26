@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 168;
+const DEBUG_BUILD_NUMBER = 169;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1903,8 +1903,10 @@ function updateState() {
     const lineOpacity = 0.78 + emphasis * 0.22;
     const shellOpacity = 0.22 + emphasis * 0.36;
     const scaleMul = 1.03 + emphasis * 0.08;
-    bot.lockOutline.userData?.lineMat?.opacity = lineOpacity;
-    bot.lockOutline.userData?.shellMat?.opacity = shellOpacity;
+    const lineMat = bot.lockOutline.userData?.lineMat;
+    const shellMat = bot.lockOutline.userData?.shellMat;
+    if (lineMat) lineMat.opacity = lineOpacity;
+    if (shellMat) shellMat.opacity = shellOpacity;
 
     bot.lockOutline.children.forEach((child) => {
       const base = child.userData.baseScale;
