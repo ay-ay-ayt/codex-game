@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 157;
+const DEBUG_BUILD_NUMBER = 158;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1144,27 +1144,16 @@ function createFighter(colorOrPalette, isPlayer = false) {
     }
   });
 
-  const lockOutline = g.clone(true);
+  const lockOutline = new THREE.BoxHelper(g, 0xffb347);
   lockOutline.visible = false;
-  lockOutline.scale.multiplyScalar(1.035);
+  lockOutline.material.transparent = true;
+  lockOutline.material.opacity = 0.92;
+  lockOutline.material.depthWrite = false;
+  lockOutline.material.depthTest = false;
   lockOutline.renderOrder = 120;
-  lockOutline.traverse((node) => {
-    if (!node.isMesh) return;
-    node.material = new THREE.MeshBasicMaterial({
-      color: 0xffb347,
-      transparent: true,
-      opacity: 0.48,
-      side: THREE.BackSide,
-      depthWrite: false,
-    });
-    node.castShadow = false;
-    node.receiveShadow = false;
-    node.frustumCulled = false;
-    node.renderOrder = 120;
-  });
-  g.add(lockOutline);
 
   world.add(g);
+  world.add(lockOutline);
 
   const plane = {
     mesh: g,
@@ -1317,7 +1306,7 @@ function spawnBullet(owner, color) {
   const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
   b.userData = {
-    vel: dir.multiplyScalar(900).add(owner.velocity.clone().multiplyScalar(0.4)),
+    vel: dir.multiplyScalar(980).add(owner.velocity.clone().multiplyScalar(0.4)),
     life: 1.9,
     team: owner === game.player ? "player" : "bot",
   };
@@ -1827,7 +1816,10 @@ function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
   const lockTarget = game.missileLockTarget;
   game.bots.forEach((bot) => {
-    if (bot.lockOutline) bot.lockOutline.visible = bot === lockTarget && bot.alive;
+    if (!bot.lockOutline) return;
+    const visible = bot === lockTarget && bot.alive;
+    bot.lockOutline.visible = visible;
+    if (visible) bot.lockOutline.update();
   });
 
   updateHudHealthPanel();
@@ -1858,9 +1850,14 @@ function updateState() {
 
 
 function clearPlaneHpLabel(plane) {
-  if (!plane?.hpLabel) return;
-  world.remove(plane.hpLabel);
-  plane.hpLabel = null;
+  if (plane?.hpLabel) {
+    world.remove(plane.hpLabel);
+    plane.hpLabel = null;
+  }
+  if (plane?.lockOutline) {
+    world.remove(plane.lockOutline);
+    plane.lockOutline = null;
+  }
 }
 
 function resetMatch() {
