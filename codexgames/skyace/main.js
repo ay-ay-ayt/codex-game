@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 173;
+const DEBUG_BUILD_NUMBER = 174;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1655,13 +1655,6 @@ function updatePlayer(dt) {
   }
 
   if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
-    if (spawnMissile(p, game.missileLockTarget)) {
-      game.missileLockTarget = null;
-      game.missileLockLostTimer = 0;
-    }
-  }
-
-  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
     if (spawnMissile(p, game.missileLockTarget)) game.missileLockTarget = null;
   }
 }
@@ -1948,7 +1941,7 @@ function updateState() {
 
     const dist = game.player?.mesh?.position?.distanceTo(bot.mesh.position) ?? 600;
     const emphasis = clamp((dist - 220) / 1500, 0, 1);
-    const lineOpacity = clamp((0.58 + emphasis * 0.26) * 1.8, 0, 0.95);
+    const lineOpacity = clamp((0.58 + emphasis * 0.26) * 1.8, 0, 0.84);
     const scaleMul = 1.08 + emphasis * 0.16;
     const lineMat = bot.lockOutline.userData?.lineMat;
     if (lineMat) lineMat.opacity = lineOpacity;
