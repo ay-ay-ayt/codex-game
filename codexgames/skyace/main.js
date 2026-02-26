@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 154;
+const DEBUG_BUILD_NUMBER = 155;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1922,7 +1922,7 @@ function syncInput() {
   input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
-  input.missile = keys.has("KeyM") || missileBtn?.classList.contains("active");
+  input.missile = keys.has("KeyM");
   const keyEdgePress = input.missile && !game.missileButtonLatch;
   input.missilePressed = keyEdgePress || game.missileTapQueuedCount > 0;
   if (!keyEdgePress && game.missileTapQueuedCount > 0) {
