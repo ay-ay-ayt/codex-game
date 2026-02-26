@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 153;
+const DEBUG_BUILD_NUMBER = 157;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -51,10 +51,10 @@ function hpBarClass(ratio) {
   return "danger";
 }
 
-function hpRowMarkup(label, hp) {
+function hpRowMarkup(label, hp, locked = false) {
   const hpInt = Math.max(0, Math.round(hp));
   const ratio = clamp(hpInt / 100, 0, 1);
-  const sizeClass = "hp-row";
+  const sizeClass = `hp-row${locked ? " is-locked" : ""}`;
   return `
     <div class="${sizeClass}">
       <span class="hp-name">${label}</span>
@@ -67,9 +67,9 @@ function hpRowMarkup(label, hp) {
 function updateHudHealthPanel() {
   if (!hpPanelReady || !game.player) return;
 
-  const rows = [hpRowMarkup("YOU", game.player.hp)];
+  const rows = [hpRowMarkup("YOU", game.player.hp, false)];
   game.bots.forEach((b, i) => {
-    rows.push(hpRowMarkup(`EN${i + 1}`, b.hp));
+    rows.push(hpRowMarkup(`EN${i + 1}`, b.hp, b === game.missileLockTarget));
   });
   healthEl.innerHTML = rows.join("");
 }
@@ -286,7 +286,7 @@ const game = {
   missileLockTarget: null,
   missileIncomingTimer: 0,
   missileButtonLatch: false,
-  missileTapQueued: false,
+  missileTapQueuedCount: 0,
 };
 
 let lastHitVibeAt = 0;
@@ -1143,6 +1143,27 @@ function createFighter(colorOrPalette, isPlayer = false) {
       node.frustumCulled = false;
     }
   });
+
+  const lockOutline = g.clone(true);
+  lockOutline.visible = false;
+  lockOutline.scale.multiplyScalar(1.035);
+  lockOutline.renderOrder = 120;
+  lockOutline.traverse((node) => {
+    if (!node.isMesh) return;
+    node.material = new THREE.MeshBasicMaterial({
+      color: 0xffb347,
+      transparent: true,
+      opacity: 0.48,
+      side: THREE.BackSide,
+      depthWrite: false,
+    });
+    node.castShadow = false;
+    node.receiveShadow = false;
+    node.frustumCulled = false;
+    node.renderOrder = 120;
+  });
+  g.add(lockOutline);
+
   world.add(g);
 
   const plane = {
@@ -1159,6 +1180,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     pitch: 0,
     roll: 0,
     hpLabel: null,
+    lockOutline,
     exhaust: {
       nozzleGlow,
       flameCore,
@@ -1560,10 +1582,10 @@ function updatePlayer(dt) {
   })();
   if (!currentLockValid) game.missileLockTarget = null;
 
-  if (input.missilePressed && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+  if (input.missilePressed) {
     if (!game.missileLockTarget) {
       game.missileLockTarget = getBestLockTarget(p);
-    } else if (spawnMissile(p, game.missileLockTarget)) {
+    } else if (p.missileAmmo > 0 && p.missileCooldown <= 0 && spawnMissile(p, game.missileLockTarget)) {
       game.missileLockTarget = null;
     }
   }
@@ -1696,7 +1718,7 @@ function updateBullets(dt) {
     for (const t of targets) {
       if (!t || !t.alive) continue;
       if (b.position.distanceToSquared(t.mesh.position) < 18 * 18) {
-        hitPlane(t, rand(16, 28), b.userData.team);
+        hitPlane(t, 1, b.userData.team);
         b.userData.life = -1;
         break;
       }
@@ -1803,13 +1825,19 @@ function updateCamera(dt) {
 
 function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
+  const lockTarget = game.missileLockTarget;
+  game.bots.forEach((bot) => {
+    if (bot.lockOutline) bot.lockOutline.visible = bot === lockTarget && bot.alive;
+  });
+
   updateHudHealthPanel();
   ammoEl.textContent = `MSL ${game.player?.missileAmmo ?? 0} | AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
+  if (missileBtn) missileBtn.textContent = lockTarget ? "MISSILE" : "LOCK ON";
   if (lockOnCueEl) {
-    if (game.missileLockTarget?.alive && game.player?.missileAmmo > 0) {
+    if (lockTarget?.alive) {
       lockOnCueEl.hidden = false;
-      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(game.missileLockTarget) + 1)}`;
+      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(lockTarget) + 1)}`;
     } else {
       lockOnCueEl.hidden = true;
     }
@@ -1860,7 +1888,7 @@ function resetMatch() {
   game.missileLockTarget = null;
   game.missileIncomingTimer = 0;
   game.missileButtonLatch = false;
-  game.missileTapQueued = false;
+  game.missileTapQueuedCount = 0;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -1922,10 +1950,12 @@ function syncInput() {
   input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
-  input.missile = keys.has("KeyM") || missileBtn?.classList.contains("active");
+  input.missile = keys.has("KeyM");
   const keyEdgePress = input.missile && !game.missileButtonLatch;
-  input.missilePressed = keyEdgePress || game.missileTapQueued;
-  game.missileTapQueued = false;
+  input.missilePressed = keyEdgePress || game.missileTapQueuedCount > 0;
+  if (!keyEdgePress && game.missileTapQueuedCount > 0) {
+    game.missileTapQueuedCount = Math.max(0, game.missileTapQueuedCount - 1);
+  }
   game.missileButtonLatch = input.missile;
 }
 
@@ -2080,12 +2110,10 @@ function bindActionButton(btn, onPress = null) {
     e.preventDefault();
     btn.classList.add("active");
     onPress?.();
-    syncInput();
   };
   const release = (e) => {
     e.preventDefault();
     btn.classList.remove("active");
-    syncInput();
   };
   btn.addEventListener("pointerdown", press);
   btn.addEventListener("pointerup", release);
@@ -2212,7 +2240,7 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
-bindActionButton(missileBtn, () => { game.missileTapQueued = true; });
+bindActionButton(missileBtn, () => { game.missileTapQueuedCount += 1; });
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
