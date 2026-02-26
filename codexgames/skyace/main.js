@@ -28,7 +28,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 153;
+const DEBUG_BUILD_NUMBER = 155;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -286,7 +286,7 @@ const game = {
   missileLockTarget: null,
   missileIncomingTimer: 0,
   missileButtonLatch: false,
-  missileTapQueued: false,
+  missileTapQueuedCount: 0,
 };
 
 let lastHitVibeAt = 0;
@@ -1860,7 +1860,7 @@ function resetMatch() {
   game.missileLockTarget = null;
   game.missileIncomingTimer = 0;
   game.missileButtonLatch = false;
-  game.missileTapQueued = false;
+  game.missileTapQueuedCount = 0;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -1922,10 +1922,12 @@ function syncInput() {
   input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
-  input.missile = keys.has("KeyM") || missileBtn?.classList.contains("active");
+  input.missile = keys.has("KeyM");
   const keyEdgePress = input.missile && !game.missileButtonLatch;
-  input.missilePressed = keyEdgePress || game.missileTapQueued;
-  game.missileTapQueued = false;
+  input.missilePressed = keyEdgePress || game.missileTapQueuedCount > 0;
+  if (!keyEdgePress && game.missileTapQueuedCount > 0) {
+    game.missileTapQueuedCount = Math.max(0, game.missileTapQueuedCount - 1);
+  }
   game.missileButtonLatch = input.missile;
 }
 
@@ -2080,12 +2082,10 @@ function bindActionButton(btn, onPress = null) {
     e.preventDefault();
     btn.classList.add("active");
     onPress?.();
-    syncInput();
   };
   const release = (e) => {
     e.preventDefault();
     btn.classList.remove("active");
-    syncInput();
   };
   btn.addEventListener("pointerdown", press);
   btn.addEventListener("pointerup", release);
@@ -2212,7 +2212,7 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
-bindActionButton(missileBtn, () => { game.missileTapQueued = true; });
+bindActionButton(missileBtn, () => { game.missileTapQueuedCount += 1; });
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
