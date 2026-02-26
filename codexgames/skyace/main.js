@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 172;
+const DEBUG_BUILD_NUMBER = 173;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1182,39 +1182,21 @@ function createFighter(colorOrPalette, isPlayer = false) {
     depthWrite: false,
     depthTest: false,
   });
-  const lockShellMat = new THREE.MeshBasicMaterial({
-    color: 0xff3232,
-    transparent: true,
-    opacity: 0.32,
-    side: THREE.BackSide,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    depthTest: false,
-  });
   g.traverse((node) => {
     if (!node.isMesh) return;
     if (!node.geometry) return;
-
-    const shell = new THREE.Mesh(node.geometry, lockShellMat);
-    shell.position.copy(node.position);
-    shell.quaternion.copy(node.quaternion);
-    shell.scale.copy(node.scale).multiplyScalar(1.12);
-    shell.renderOrder = 119;
-    shell.frustumCulled = false;
-    shell.userData.baseScale = shell.scale.clone();
-    lockOutline.add(shell);
 
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 30), lockOutlineMat);
     edges.position.copy(node.position);
     edges.quaternion.copy(node.quaternion);
     edges.scale.copy(node.scale).multiplyScalar(1.14);
-    edges.renderOrder = 120;
+    edges.renderOrder = 121;
     edges.frustumCulled = false;
     edges.userData.baseScale = edges.scale.clone();
     lockOutline.add(edges);
   });
   lockOutline.visible = false;
-  lockOutline.userData = { lineMat: lockOutlineMat, shellMat: lockShellMat };
+  lockOutline.userData = { lineMat: lockOutlineMat };
   g.add(lockOutline);
 
   world.add(g);
@@ -1646,7 +1628,7 @@ function updatePlayer(dt) {
       game.missileLockLostTimer = 0;
     } else {
       game.missileLockLostTimer += dt;
-      if (game.missileLockLostTimer >= 2) {
+      if (game.missileLockLostTimer >= 1) {
         game.missileLockTarget = null;
         game.missileLockLostTimer = 0;
       }
@@ -1660,6 +1642,13 @@ function updatePlayer(dt) {
       game.missileLockTarget = getBestLockTarget(p);
       game.missileLockLostTimer = 0;
     } else {
+      game.missileLockTarget = null;
+      game.missileLockLostTimer = 0;
+    }
+  }
+
+  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+    if (spawnMissile(p, game.missileLockTarget)) {
       game.missileLockTarget = null;
       game.missileLockLostTimer = 0;
     }
@@ -1960,12 +1949,9 @@ function updateState() {
     const dist = game.player?.mesh?.position?.distanceTo(bot.mesh.position) ?? 600;
     const emphasis = clamp((dist - 220) / 1500, 0, 1);
     const lineOpacity = clamp((0.58 + emphasis * 0.26) * 1.8, 0, 0.95);
-    const shellOpacity = clamp((0.15 + emphasis * 0.22) * 1.8, 0, 0.62);
     const scaleMul = 1.08 + emphasis * 0.16;
     const lineMat = bot.lockOutline.userData?.lineMat;
-    const shellMat = bot.lockOutline.userData?.shellMat;
     if (lineMat) lineMat.opacity = lineOpacity;
-    if (shellMat) shellMat.opacity = shellOpacity;
 
     bot.lockOutline.children.forEach((child) => {
       const base = child.userData.baseScale;
