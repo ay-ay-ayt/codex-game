@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 175;
+const DEBUG_BUILD_NUMBER = 176;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -302,9 +302,9 @@ let lastHitVibeAt = 0;
 const MISSILE_MAX_AMMO = 2;
 const MISSILE_SPEED = 650;
 const MISSILE_TURN_RATE = 1.02;
-const MISSILE_LOCK_RANGE = 1700;
+const MISSILE_LOCK_RANGE = 1800;
 const MISSILE_LOCK_DOT = 0.58;
-const MISSILE_LOCK_DROP_RANGE = 1900;
+const MISSILE_LOCK_DROP_RANGE = 2000;
 const MISSILE_LOCK_DROP_DOT = 0.42;
 
 
@@ -1284,9 +1284,10 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerOpacityBoost = clamp(0.34 + boostLevel * 0.2 + pulse * 0.04, 0.22, 0.62);
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
-  const innerBlueDepth = clamp(0.74 + boostMix * 0.2 + pulse * 0.03, 0.72, 1.0);
-  const innerWarm = clamp(0.22 + boostMix * 0.22 + pulse * 0.03, 0.2, 0.5);
-  plane.exhaust.flameCore.material.color.setRGB(innerWarm, 0.36 + boostMix * 0.2, innerBlueDepth);
+  const innerBlueDepth = clamp(0.82 + boostMix * 0.1 + pulse * 0.02, 0.8, 1.0);
+  const innerWarm = clamp(0.34 + boostMix * 0.5 + pulse * 0.03, 0.32, 1.0);
+  const innerGreen = clamp(0.46 + boostMix * 0.46 + pulse * 0.03, 0.44, 1.0);
+  plane.exhaust.flameCore.material.color.setRGB(innerWarm, innerGreen, innerBlueDepth);
 
   const outerBlueGlow = clamp(0.9 + boostMix * 0.08 + pulse * 0.015, 0.86, 1.0);
   plane.exhaust.flameOuter.material.color.setRGB(0.12, 0.34 + boostMix * 0.06, outerBlueGlow);
@@ -1309,11 +1310,11 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.nozzleHeatLines.rotation.z = Math.sin(t * 2.8 + plane.mesh.id * 0.13) * 0.12;
   plane.exhaust.nozzleHeatLines.children.forEach((streak, index) => {
     const streakPulse = 0.9 + Math.sin(t * 7.2 + index * 0.9 + plane.mesh.id * 0.17) * 0.1;
-    streak.material.opacity = clamp(0.22 + streakPulse * 0.18, 0.22, 0.5);
+    streak.material.opacity = clamp(0.3 + streakPulse * 0.28, 0.3, 0.72);
     streak.material.color.setRGB(
-      0.92,
-      0.05,
-      0.03
+      1.0,
+      0.15,
+      0.08
     );
   });
 
