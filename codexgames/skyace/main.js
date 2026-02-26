@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 166;
+const DEBUG_BUILD_NUMBER = 167;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1148,19 +1148,36 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const lockOutline = new THREE.Group();
   const lockOutlineMat = new THREE.LineBasicMaterial({
-    color: 0xff3c3c,
+    color: 0xff2222,
     transparent: true,
-    opacity: 0.92,
+    opacity: 1,
+    depthWrite: false,
+    depthTest: false,
+  });
+  const lockShellMat = new THREE.MeshBasicMaterial({
+    color: 0xff2f2f,
+    transparent: true,
+    opacity: 0.36,
+    side: THREE.BackSide,
     depthWrite: false,
     depthTest: false,
   });
   g.traverse((node) => {
     if (!node.isMesh) return;
     if (!node.geometry) return;
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 36), lockOutlineMat);
+
+    const shell = new THREE.Mesh(node.geometry, lockShellMat);
+    shell.position.copy(node.position);
+    shell.quaternion.copy(node.quaternion);
+    shell.scale.copy(node.scale).multiplyScalar(1.065);
+    shell.renderOrder = 119;
+    shell.frustumCulled = false;
+    lockOutline.add(shell);
+
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 30), lockOutlineMat);
     edges.position.copy(node.position);
     edges.quaternion.copy(node.quaternion);
-    edges.scale.copy(node.scale).multiplyScalar(1.015);
+    edges.scale.copy(node.scale).multiplyScalar(1.07);
     edges.renderOrder = 120;
     edges.frustumCulled = false;
     lockOutline.add(edges);
@@ -1818,7 +1835,6 @@ function updateMissiles(dt) {
     }
 
     let exploded = false;
-    if (intersectsObstacle(m.position, 3.4)) exploded = true;
 
     const targets = data.team === "player" ? game.bots : [game.player];
     for (const t of targets) {
@@ -1835,6 +1851,7 @@ function updateMissiles(dt) {
       }
     }
 
+    if (!exploded && intersectsObstacle(m.position, 3.4)) exploded = true;
     if (!exploded && (Math.abs(m.position.x) > ARENA * 1.02 || Math.abs(m.position.z) > ARENA * 1.02 || m.position.y < FLOOR_Y + 4 || m.position.y > 980)) exploded = true;
 
     if (!exploded && playerPos && data.team === "bot") {
