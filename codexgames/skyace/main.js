@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 169;
+const DEBUG_BUILD_NUMBER = 170;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1148,17 +1148,19 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   const lockOutline = new THREE.Group();
   const lockOutlineMat = new THREE.LineBasicMaterial({
-    color: 0xff2222,
+    color: 0xff3030,
     transparent: true,
     opacity: 1,
+    blending: THREE.AdditiveBlending,
     depthWrite: false,
     depthTest: false,
   });
   const lockShellMat = new THREE.MeshBasicMaterial({
-    color: 0xff2f2f,
+    color: 0xff3a3a,
     transparent: true,
-    opacity: 0.36,
+    opacity: 0.82,
     side: THREE.BackSide,
+    blending: THREE.AdditiveBlending,
     depthWrite: false,
     depthTest: false,
   });
@@ -1169,7 +1171,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     const shell = new THREE.Mesh(node.geometry, lockShellMat);
     shell.position.copy(node.position);
     shell.quaternion.copy(node.quaternion);
-    shell.scale.copy(node.scale).multiplyScalar(1.065);
+    shell.scale.copy(node.scale).multiplyScalar(1.2);
     shell.renderOrder = 119;
     shell.frustumCulled = false;
     shell.userData.baseScale = shell.scale.clone();
@@ -1178,7 +1180,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 30), lockOutlineMat);
     edges.position.copy(node.position);
     edges.quaternion.copy(node.quaternion);
-    edges.scale.copy(node.scale).multiplyScalar(1.07);
+    edges.scale.copy(node.scale).multiplyScalar(1.24);
     edges.renderOrder = 120;
     edges.frustumCulled = false;
     edges.userData.baseScale = edges.scale.clone();
@@ -1900,9 +1902,9 @@ function updateState() {
 
     const dist = game.player?.mesh?.position?.distanceTo(bot.mesh.position) ?? 600;
     const emphasis = clamp((dist - 220) / 1500, 0, 1);
-    const lineOpacity = 0.78 + emphasis * 0.22;
-    const shellOpacity = 0.22 + emphasis * 0.36;
-    const scaleMul = 1.03 + emphasis * 0.08;
+    const lineOpacity = clamp((0.78 + emphasis * 0.22) * 30, 0, 1);
+    const shellOpacity = clamp((0.22 + emphasis * 0.36) * 30, 0, 0.96);
+    const scaleMul = 1.22 + emphasis * 0.42;
     const lineMat = bot.lockOutline.userData?.lineMat;
     const shellMat = bot.lockOutline.userData?.shellMat;
     if (lineMat) lineMat.opacity = lineOpacity;
