@@ -384,12 +384,12 @@ body {
   grid-template-columns: max-content max-content max-content;
   align-items: end;
   justify-items: end;
-  gap: 6px;
+  gap: 3px;
 }
 
 .weapon-buttons {
   display: grid;
-  grid-template-columns: max-content max-content max-content;
+  grid-template-columns: max-content max-content max-content max-content;
   grid-template-rows: auto auto;
   align-items: end;
   gap: 6px;
@@ -403,18 +403,24 @@ body {
 }
 
 #lockCancelBtn {
-  grid-column: 1;
-  grid-row: 2;
+  grid-column: 4;
+  grid-row: 1;
 }
 
 #missileBtn {
-  grid-column: 2;
+  grid-column: 3;
   grid-row: 2;
 }
 
 #fireBtn {
-  grid-column: 3;
+  grid-column: 4;
   grid-row: 2;
+}
+
+#missileBtn,
+#fireBtn,
+#lockCancelBtn {
+  transform: translateX(10px);
 }
 
 .lever-wrap {
