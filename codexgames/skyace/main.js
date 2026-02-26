@@ -1186,6 +1186,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   g.add(lockOutline);
 
   world.add(g);
+  world.add(lockOutline);
 
   const plane = {
     mesh: g,
