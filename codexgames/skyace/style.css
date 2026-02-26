@@ -131,7 +131,7 @@ body {
   border: 1px solid var(--line);
   background: var(--glass);
   backdrop-filter: blur(5px);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -389,7 +389,8 @@ body {
 
 .weapon-buttons {
   display: grid;
-  grid-template-columns: max-content;
+  grid-template-columns: max-content max-content;
+  grid-template-rows: auto auto;
   align-items: end;
   gap: 6px;
 }
@@ -399,6 +400,21 @@ body {
 #lockCancelBtn {
   align-self: end;
   margin-bottom: 8px;
+}
+
+#lockCancelBtn {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+#missileBtn {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+#fireBtn {
+  grid-column: 2;
+  grid-row: 2;
 }
 
 .lever-wrap {
@@ -445,7 +461,7 @@ body {
 
 .action-sub {
   min-height: 44px;
-  font-size: 12px;
+  font-size: 10px;
   border-color: rgba(255, 188, 140, 0.9);
   background: rgba(78, 34, 22, 0.84);
   color: #ffd9b6;
@@ -551,12 +567,12 @@ body {
   top: calc(50% - 62px);
   transform: translateX(-50%);
   z-index: 7;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
   border: 1px solid rgba(255, 212, 148, 0.9);
   background: rgba(47, 26, 8, 0.62);
   color: #ffd9a8;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.04em;
   box-shadow: 0 0 12px rgba(255, 169, 77, 0.45);
