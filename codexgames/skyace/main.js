@@ -1187,6 +1187,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     transparent: true,
     opacity: 0.32,
     side: THREE.BackSide,
+    blending: THREE.AdditiveBlending,
     depthWrite: false,
     depthTest: false,
   });
@@ -1669,6 +1670,10 @@ function updatePlayer(dt) {
       game.missileLockTarget = null;
       game.missileLockLostTimer = 0;
     }
+  }
+
+  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+    if (spawnMissile(p, game.missileLockTarget)) game.missileLockTarget = null;
   }
 }
 
