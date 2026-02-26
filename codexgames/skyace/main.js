@@ -24,11 +24,12 @@ const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
 const missileWarningEl = document.getElementById("missileWarning");
 const lockOnCueEl = document.getElementById("lockOnCue");
+const lockCancelBtn = document.getElementById("lockCancelBtn");
 const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 153;
+const DEBUG_BUILD_NUMBER = 168;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -51,10 +52,10 @@ function hpBarClass(ratio) {
   return "danger";
 }
 
-function hpRowMarkup(label, hp) {
+function hpRowMarkup(label, hp, locked = false) {
   const hpInt = Math.max(0, Math.round(hp));
   const ratio = clamp(hpInt / 100, 0, 1);
-  const sizeClass = "hp-row";
+  const sizeClass = `hp-row${locked ? " is-locked" : ""}`;
   return `
     <div class="${sizeClass}">
       <span class="hp-name">${label}</span>
@@ -67,9 +68,9 @@ function hpRowMarkup(label, hp) {
 function updateHudHealthPanel() {
   if (!hpPanelReady || !game.player) return;
 
-  const rows = [hpRowMarkup("YOU", game.player.hp)];
+  const rows = [hpRowMarkup("YOU", game.player.hp, false)];
   game.bots.forEach((b, i) => {
-    rows.push(hpRowMarkup(`EN${i + 1}`, b.hp));
+    rows.push(hpRowMarkup(`EN${i + 1}`, b.hp, b === game.missileLockTarget));
   });
   healthEl.innerHTML = rows.join("");
 }
@@ -286,13 +287,14 @@ const game = {
   missileLockTarget: null,
   missileIncomingTimer: 0,
   missileButtonLatch: false,
-  missileTapQueued: false,
+  missileTapQueuedCount: 0,
+  matchElapsed: 0,
 };
 
 let lastHitVibeAt = 0;
 
 const MISSILE_MAX_AMMO = 2;
-const MISSILE_SPEED = 430;
+const MISSILE_SPEED = 650;
 const MISSILE_TURN_RATE = 1.02;
 const MISSILE_LOCK_RANGE = 1700;
 const MISSILE_LOCK_DOT = 0.58;
@@ -1143,6 +1145,49 @@ function createFighter(colorOrPalette, isPlayer = false) {
       node.frustumCulled = false;
     }
   });
+
+  const lockOutline = new THREE.Group();
+  const lockOutlineMat = new THREE.LineBasicMaterial({
+    color: 0xff2222,
+    transparent: true,
+    opacity: 1,
+    depthWrite: false,
+    depthTest: false,
+  });
+  const lockShellMat = new THREE.MeshBasicMaterial({
+    color: 0xff2f2f,
+    transparent: true,
+    opacity: 0.36,
+    side: THREE.BackSide,
+    depthWrite: false,
+    depthTest: false,
+  });
+  g.traverse((node) => {
+    if (!node.isMesh) return;
+    if (!node.geometry) return;
+
+    const shell = new THREE.Mesh(node.geometry, lockShellMat);
+    shell.position.copy(node.position);
+    shell.quaternion.copy(node.quaternion);
+    shell.scale.copy(node.scale).multiplyScalar(1.065);
+    shell.renderOrder = 119;
+    shell.frustumCulled = false;
+    shell.userData.baseScale = shell.scale.clone();
+    lockOutline.add(shell);
+
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 30), lockOutlineMat);
+    edges.position.copy(node.position);
+    edges.quaternion.copy(node.quaternion);
+    edges.scale.copy(node.scale).multiplyScalar(1.07);
+    edges.renderOrder = 120;
+    edges.frustumCulled = false;
+    edges.userData.baseScale = edges.scale.clone();
+    lockOutline.add(edges);
+  });
+  lockOutline.visible = false;
+  lockOutline.userData = { lineMat: lockOutlineMat, shellMat: lockShellMat };
+  g.add(lockOutline);
+
   world.add(g);
 
   const plane = {
@@ -1159,6 +1204,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
     pitch: 0,
     roll: 0,
     hpLabel: null,
+    lockOutline,
     exhaust: {
       nozzleGlow,
       flameCore,
@@ -1295,7 +1341,7 @@ function spawnBullet(owner, color) {
   const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
   b.userData = {
-    vel: dir.multiplyScalar(900).add(owner.velocity.clone().multiplyScalar(0.4)),
+    vel: dir.multiplyScalar(1350),
     life: 1.9,
     team: owner === game.player ? "player" : "bot",
   };
@@ -1332,7 +1378,9 @@ function spawnMissileExplosion(position) {
 }
 
 function getBestLockTarget(shooter, lockRange = MISSILE_LOCK_RANGE, lockDot = MISSILE_LOCK_DOT) {
-  const candidates = shooter.isPlayer ? game.bots : [game.player];
+  const candidates = shooter.isPlayer
+    ? game.bots
+    : [game.player, ...game.bots];
   const lockOrigin = shooter.isPlayer ? camera.position : shooter.mesh.position;
   const aimForward = shooter.isPlayer
     ? new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize()
@@ -1370,12 +1418,12 @@ function spawnMissile(owner, target) {
   const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   missile.position.copy(launchPos).addScaledVector(forward, 3.2);
   missile.quaternion.copy(owner.mesh.quaternion);
-  const cruiseSpeed = clamp(MISSILE_SPEED + owner.velocity.length() * 0.36, MISSILE_SPEED, 620);
+  const cruiseSpeed = MISSILE_SPEED;
   missile.userData = {
     owner,
     team: owner.isPlayer ? "player" : "bot",
     target,
-    velocity: forward.multiplyScalar(cruiseSpeed).addScaledVector(owner.velocity, 0.34),
+    velocity: forward.multiplyScalar(cruiseSpeed),
     cruiseSpeed,
     life: 10.5,
     smokeTick: 0,
@@ -1560,17 +1608,39 @@ function updatePlayer(dt) {
   })();
   if (!currentLockValid) game.missileLockTarget = null;
 
-  if (input.missilePressed && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+  if (input.missilePressed) {
     if (!game.missileLockTarget) {
       game.missileLockTarget = getBestLockTarget(p);
-    } else if (spawnMissile(p, game.missileLockTarget)) {
+    } else if (p.missileAmmo > 0 && p.missileCooldown <= 0 && spawnMissile(p, game.missileLockTarget)) {
       game.missileLockTarget = null;
     }
   }
 }
 
+
+function selectBotCombatTarget(bot) {
+  const candidates = [];
+  if (game.player?.alive) candidates.push(game.player);
+  for (const other of game.bots) {
+    if (other !== bot && other.alive) candidates.push(other);
+  }
+  if (candidates.length === 0) return null;
+
+  let best = null;
+  let bestScore = Infinity;
+  for (const target of candidates) {
+    const distSq = bot.mesh.position.distanceToSquared(target.mesh.position);
+    const playerBias = target.isPlayer ? 0.94 : 1.0;
+    const score = distSq * playerBias;
+    if (score < bestScore) {
+      bestScore = score;
+      best = target;
+    }
+  }
+  return best;
+}
+
 function updateBots(dt) {
-  const player = game.player;
   const botMinSpeed = 150;
   const botMaxSpeed = 560;
 
@@ -1579,7 +1649,7 @@ function updateBots(dt) {
 
     b.cooldown -= dt;
     b.missileCooldown -= dt;
-    b.target = player.alive ? player : game.bots.find((x) => x !== b && x.alive) || null;
+    b.target = selectBotCombatTarget(b);
     if (!b.target) continue;
 
     const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
@@ -1648,7 +1718,17 @@ function updateBots(dt) {
 
     if (b.missileAmmo > 0 && b.missileCooldown <= 0) {
       if (!b.missileTarget || !b.missileTarget.alive) b.missileTarget = getBestLockTarget(b);
-      if (b.missileTarget && dist < MISSILE_LOCK_RANGE * 0.96 && aimDot > 0.86 && Math.random() < dt * 1.4) {
+
+      const noLaunchPhase = game.matchElapsed < 5;
+      const missilesFired = MISSILE_MAX_AMMO - b.missileAmmo;
+      const launchChanceByShot = missilesFired <= 0 ? dt * 0.2 : dt * 0.1;
+      const launchRangeFactor = missilesFired <= 0 ? 0.93 : 0.9;
+
+      if (!noLaunchPhase
+        && b.missileTarget
+        && dist < MISSILE_LOCK_RANGE * launchRangeFactor
+        && aimDot > 0.9
+        && Math.random() < launchChanceByShot) {
         spawnMissile(b, b.missileTarget);
         b.missileTarget = null;
       }
@@ -1696,7 +1776,7 @@ function updateBullets(dt) {
     for (const t of targets) {
       if (!t || !t.alive) continue;
       if (b.position.distanceToSquared(t.mesh.position) < 18 * 18) {
-        hitPlane(t, rand(16, 28), b.userData.team);
+        hitPlane(t, 1, b.userData.team);
         b.userData.life = -1;
         break;
       }
@@ -1720,10 +1800,11 @@ function updateMissiles(dt) {
 
     const target = data.target;
     if (target?.alive) {
-      const toTarget = target.mesh.position.clone().sub(m.position);
+      const targetCenter = target.mesh.getWorldPosition(new THREE.Vector3());
+      const toTarget = targetCenter.clone().sub(m.position);
       const dist = Math.max(1, toTarget.length());
       const leadTime = clamp(dist / Math.max(data.cruiseSpeed, 1), 0.08, 0.8);
-      const aimPoint = target.mesh.position.clone().addScaledVector(target.velocity, leadTime * 0.88);
+      const aimPoint = targetCenter.clone().addScaledVector(target.velocity, leadTime * 0.88);
       const desiredDir = aimPoint.sub(m.position).normalize();
       const currentDir = data.velocity.clone().normalize();
       currentDir.lerp(desiredDir, clamp(MISSILE_TURN_RATE * dt, 0, 0.24)).normalize();
@@ -1737,43 +1818,49 @@ function updateMissiles(dt) {
     if (data.motorTick > 0.03) {
       data.motorTick = 0;
       const jet = new THREE.Mesh(
-        new THREE.SphereGeometry(0.45, 8, 6),
-        new THREE.MeshBasicMaterial({ color: 0xffb86d, transparent: true, opacity: 0.82, blending: THREE.AdditiveBlending, depthWrite: false })
+        new THREE.SphereGeometry(0.62, 10, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffb86d, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })
       );
       jet.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.9);
       world.add(jet);
-      game.effects.push({ mesh: jet, life: 0.14, scaleRate: 6.8 });
+      game.effects.push({ mesh: jet, life: 0.2, scaleRate: 8.8 });
     }
     data.smokeTick += dt;
     if (data.smokeTick > 0.06) {
       data.smokeTick = 0;
       const smoke = new THREE.Mesh(
-        new THREE.SphereGeometry(0.72, 8, 6),
-        new THREE.MeshBasicMaterial({ color: 0x768190, transparent: true, opacity: 0.42, depthWrite: false })
+        new THREE.SphereGeometry(0.9, 10, 8),
+        new THREE.MeshBasicMaterial({ color: 0x768190, transparent: true, opacity: 0.56, depthWrite: false })
       );
       smoke.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.4);
       world.add(smoke);
-      game.effects.push({ mesh: smoke, life: 0.4, scaleRate: 3.6 });
+      game.effects.push({ mesh: smoke, life: 0.52, scaleRate: 4.4 });
     }
 
     let exploded = false;
-    if (intersectsObstacle(m.position, 3.4)) exploded = true;
 
     const targets = data.team === "player" ? game.bots : [game.player];
     for (const t of targets) {
       if (!t?.alive) continue;
       const seg = tmpVecA.subVectors(m.position, prevPos);
       const segLenSq = Math.max(1e-6, seg.lengthSq());
-      const toCenter = tmpVecB.subVectors(t.mesh.position, prevPos);
+      const targetCenter = t.mesh.getWorldPosition(new THREE.Vector3());
+      const toCenter = tmpVecB.subVectors(targetCenter, prevPos);
       const proj = clamp(toCenter.dot(seg) / segLenSq, 0, 1);
       const closest = tmpVecC.copy(prevPos).addScaledVector(seg, proj);
-      if (closest.distanceToSquared(t.mesh.position) < 32 * 32) {
+      if (closest.distanceToSquared(targetCenter) < 40 * 40) {
         hitPlane(t, 30, data.team);
         exploded = true;
         break;
       }
     }
 
+    if (!exploded && intersectsObstacle(m.position, 3.4)) {
+      if (target?.alive && m.position.distanceToSquared(target.mesh.getWorldPosition(new THREE.Vector3())) < 95 * 95) {
+        hitPlane(target, 30, data.team);
+      }
+      exploded = true;
+    }
     if (!exploded && (Math.abs(m.position.x) > ARENA * 1.02 || Math.abs(m.position.z) > ARENA * 1.02 || m.position.y < FLOOR_Y + 4 || m.position.y > 980)) exploded = true;
 
     if (!exploded && playerPos && data.team === "bot") {
@@ -1803,17 +1890,40 @@ function updateCamera(dt) {
 
 function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
+  const lockTarget = game.missileLockTarget;
+  game.bots.forEach((bot) => {
+    if (!bot.lockOutline) return;
+    const visible = bot === lockTarget && bot.alive;
+    bot.lockOutline.visible = visible;
+    if (!visible) return;
+
+    const dist = game.player?.mesh?.position?.distanceTo(bot.mesh.position) ?? 600;
+    const emphasis = clamp((dist - 220) / 1500, 0, 1);
+    const lineOpacity = 0.78 + emphasis * 0.22;
+    const shellOpacity = 0.22 + emphasis * 0.36;
+    const scaleMul = 1.03 + emphasis * 0.08;
+    bot.lockOutline.userData?.lineMat?.opacity = lineOpacity;
+    bot.lockOutline.userData?.shellMat?.opacity = shellOpacity;
+
+    bot.lockOutline.children.forEach((child) => {
+      const base = child.userData.baseScale;
+      if (base) child.scale.copy(base).multiplyScalar(scaleMul);
+    });
+  });
+
   updateHudHealthPanel();
   ammoEl.textContent = `MSL ${game.player?.missileAmmo ?? 0} | AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
+  if (missileBtn) missileBtn.textContent = lockTarget ? "MISSILE" : "LOCK ON";
   if (lockOnCueEl) {
-    if (game.missileLockTarget?.alive && game.player?.missileAmmo > 0) {
+    if (lockTarget?.alive) {
       lockOnCueEl.hidden = false;
-      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(game.missileLockTarget) + 1)}`;
+      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(lockTarget) + 1)}`;
     } else {
       lockOnCueEl.hidden = true;
     }
   }
+  if (lockCancelBtn) lockCancelBtn.hidden = !lockTarget;
 
   if (!game.player.alive && !game.over) {
     game.over = true;
@@ -1830,9 +1940,14 @@ function updateState() {
 
 
 function clearPlaneHpLabel(plane) {
-  if (!plane?.hpLabel) return;
-  world.remove(plane.hpLabel);
-  plane.hpLabel = null;
+  if (plane?.hpLabel) {
+    world.remove(plane.hpLabel);
+    plane.hpLabel = null;
+  }
+  if (plane?.lockOutline) {
+    plane.mesh?.remove?.(plane.lockOutline);
+    plane.lockOutline = null;
+  }
 }
 
 function resetMatch() {
@@ -1860,7 +1975,8 @@ function resetMatch() {
   game.missileLockTarget = null;
   game.missileIncomingTimer = 0;
   game.missileButtonLatch = false;
-  game.missileTapQueued = false;
+  game.missileTapQueuedCount = 0;
+  game.matchElapsed = 0;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -1922,10 +2038,12 @@ function syncInput() {
   input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
-  input.missile = keys.has("KeyM") || missileBtn?.classList.contains("active");
+  input.missile = keys.has("KeyM");
   const keyEdgePress = input.missile && !game.missileButtonLatch;
-  input.missilePressed = keyEdgePress || game.missileTapQueued;
-  game.missileTapQueued = false;
+  input.missilePressed = keyEdgePress || game.missileTapQueuedCount > 0;
+  if (!keyEdgePress && game.missileTapQueuedCount > 0) {
+    game.missileTapQueuedCount = Math.max(0, game.missileTapQueuedCount - 1);
+  }
   game.missileButtonLatch = input.missile;
 }
 
@@ -2075,17 +2193,16 @@ function setupBoostLever() {
 }
 
 
-function bindActionButton(btn, onPress = null) {
+function bindActionButton(btn, onPress = null, onRelease = null) {
   const press = (e) => {
     e.preventDefault();
     btn.classList.add("active");
     onPress?.();
-    syncInput();
   };
   const release = (e) => {
     e.preventDefault();
     btn.classList.remove("active");
-    syncInput();
+    onRelease?.(e);
   };
   btn.addEventListener("pointerdown", press);
   btn.addEventListener("pointerup", release);
@@ -2212,12 +2329,19 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
-bindActionButton(missileBtn, () => { game.missileTapQueued = true; });
+bindActionButton(missileBtn, () => { game.missileTapQueuedCount += 1; });
+if (lockCancelBtn) {
+  lockCancelBtn.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    game.missileLockTarget = null;
+  });
+}
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
   keys.add(e.code);
-  if (["ArrowUp", "ArrowDown", "Space", "KeyM"].includes(e.code)) e.preventDefault();
+  if (["ArrowUp", "ArrowDown", "Space", "KeyM", "Escape", "KeyC"].includes(e.code)) e.preventDefault();
+  if (e.code === "Escape" || e.code === "KeyC") game.missileLockTarget = null;
 });
 window.addEventListener("keyup", (e) => {
   keys.delete(e.code);
@@ -2284,6 +2408,7 @@ function tick(now) {
     const dt = Math.min((now - last) / 1000, 0.033);
     last = now;
 
+    game.matchElapsed += dt;
     syncInput();
     updatePlayer(dt);
     updateBots(dt);
