@@ -1653,6 +1653,17 @@ function updatePlayer(dt) {
       game.missileLockLostTimer = 0;
     }
   }
+
+  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+    if (spawnMissile(p, game.missileLockTarget)) {
+      game.missileLockTarget = null;
+      game.missileLockLostTimer = 0;
+    }
+  }
+
+  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+    if (spawnMissile(p, game.missileLockTarget)) game.missileLockTarget = null;
+  }
 }
 
 
