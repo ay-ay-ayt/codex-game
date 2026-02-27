@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 184;
+const DEBUG_BUILD_NUMBER = 185;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -241,6 +241,7 @@ const TURN_RATE = 1.0;
 const BOOST_SPEED_BONUS_MAX = 260;
 const BOOST_FUEL_BURN_BASE_PER_SEC = 22;
 const BOOST_FUEL_BURN_CURVE = 0.35; // Higher boost levels become less fuel-efficient toward 100%.
+const BOOST_FUEL_MAX = 130;
 const keys = new Set();
 
 const qYaw = new THREE.Quaternion();
@@ -286,7 +287,7 @@ const game = {
   over: false,
   initialBots: 0,
   ammo: 60,
-  boostFuel: 100,
+  boostFuel: BOOST_FUEL_MAX,
   effects: [],
   playerHitTimer: 0,
   hitConfirmTimer: 0,
@@ -1590,7 +1591,7 @@ function updatePlayer(dt) {
       }
     }
   } else if (game.boostAutoDropAt == null) {
-    game.boostFuel = Math.min(100, game.boostFuel + 12 * dt);
+    game.boostFuel = Math.min(BOOST_FUEL_MAX, game.boostFuel + 12 * dt);
   } else {
     game.boostFuel = 0;
   }
@@ -1960,7 +1961,7 @@ function updateState() {
 
   updateHudHealthPanel();
   ammoEl.textContent = `MSL ${game.player?.missileAmmo ?? 0} | AMMO ${Math.round(game.ammo)}`;
-  boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
+  boostStatEl.textContent = `BOOST ${Math.round((game.boostFuel / BOOST_FUEL_MAX) * 100)}%`;
   if (missileBtn) missileBtn.textContent = lockTarget ? "LOCK OFF" : "LOCK ON";
   if (lockOnCueEl) {
     if (lockTarget?.alive) {
@@ -2018,7 +2019,7 @@ function resetMatch() {
 
   game.score = 0;
   game.ammo = 60;
-  game.boostFuel = 100;
+  game.boostFuel = BOOST_FUEL_MAX;
   game.playerHitTimer = 0;
   game.hitConfirmTimer = 0;
   game.boostAutoDropAt = null;
