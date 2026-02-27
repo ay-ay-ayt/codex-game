@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 188;
+const DEBUG_BUILD_NUMBER = 189;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1351,16 +1351,22 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const phase = t * phaseSpeed - offset * 0.72 + plane.mesh.id * 0.05;
     const travel = (Math.sin(phase) + 1) * 0.5;
     const baseX = ring.userData.baseX ?? ring.position.x;
+
+    const pulseSpeedA = THREE.MathUtils.lerp(4.1, 8.6, boostMix);
+    const pulseSpeedB = THREE.MathUtils.lerp(1.9, 4.2, boostMix);
     const ringPulse = 0.94
-      + Math.sin(t * 4.1 + offset * 1.2 + plane.mesh.id * 0.11) * 0.08
-      + Math.sin(t * 1.9 + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
+      + Math.sin(t * pulseSpeedA + offset * 1.2 + plane.mesh.id * 0.11) * 0.08
+      + Math.sin(t * pulseSpeedB + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
+
     const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
     const boostScale = THREE.MathUtils.lerp(0.9, boostScaleTarget, Math.pow(boostMix, 0.68));
     const boostBackShift = THREE.MathUtils.lerp(0.04, 0.56, boostMix);
     ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.32, 1.7, boostMix) - boostBackShift;
     ring.scale.setScalar(shockRingSizeMultiplier * boostScale * ringPulse);
+
     const ringOpacityBase = 0.14 + boostMix * 0.22;
-    ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * 2.1 + offset * 0.9) * 0.04, 0.08, 0.5);
+    const opacityWaveSpeed = THREE.MathUtils.lerp(2.1, 5.4, boostMix);
+    ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * opacityWaveSpeed + offset * 0.9) * 0.04, 0.08, 0.5);
     ring.material.color.setRGB(0.52 + boostMix * 0.2, 0.74 + boostMix * 0.12, 1.0);
   });
 
