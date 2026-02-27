@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 187;
+const DEBUG_BUILD_NUMBER = 188;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -240,7 +240,7 @@ const LEVEL_RATE = 1.2;
 const TURN_RATE = 1.0;
 const BOOST_SPEED_BONUS_MAX = 260;
 const BOOST_FUEL_BURN_BASE_PER_SEC = 22;
-const BOOST_FUEL_BURN_CURVE = 0.35; // Higher boost levels become less fuel-efficient toward 100%.
+const BOOST_FUEL_BURN_CURVE = 0.48; // Higher boost levels become less fuel-efficient toward 100%.
 const BOOST_FUEL_MAX = 130;
 const keys = new Set();
 
@@ -311,7 +311,7 @@ const MISSILE_LOCK_RANGE = 1800;
 const MISSILE_LOCK_DOT = 0.58;
 const MISSILE_LOCK_DROP_RANGE = 2000;
 const MISSILE_LOCK_DROP_DOT = 0.42;
-const MISSILE_BODY_COLLISION_RADIUS = 0.6;
+const MISSILE_BODY_COLLISION_RADIUS = 0.5;
 
 
 function clamp(v, a, b) {
@@ -1353,8 +1353,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
       + Math.sin(ringState.pulseBAcc + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
     const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
     const boostScale = THREE.MathUtils.lerp(0.9, boostScaleTarget, Math.pow(boostMix, 0.68));
-    const boostBackShift = THREE.MathUtils.lerp(0.04, 0.56, boostMix);
-    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.32, 1.7, boostMix) - boostBackShift;
+    const boostBackShift = THREE.MathUtils.lerp(0.04, 0.44, boostMix);
+    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.32, 1.45, boostMix) - boostBackShift;
     ring.scale.setScalar(shockRingSizeMultiplier * boostScale * ringPulse);
     const ringOpacityBase = 0.14 + boostMix * 0.22;
     ring.material.opacity = clamp(ringOpacityBase + Math.sin(ringState.opacityAcc + offset * 0.9) * 0.04, 0.08, 0.5);
@@ -1764,10 +1764,12 @@ function updateBots(dt) {
     const throttleTargetBase = dist > 650 ? 0.9 : dist > 360 ? 0.45 : 0.1;
     const throttleTarget = throttleTargetBase * (1 - threat * 0.65);
     const pseudoBoost = clamp((throttleTarget - 0.25) / 0.65, 0, 0.55);
-    updatePlaneExhaust(b, pseudoBoost);
+    const botBoostLevel = pseudoBoost;
+    updatePlaneExhaust(b, botBoostLevel);
     b.speed = clamp(b.speed + throttleTarget * dt * 170, botMinSpeed, botMaxSpeed);
 
-    const desiredVel = newForward.multiplyScalar(b.speed);
+    const botTargetSpeed = b.speed + botBoostLevel * (BOOST_SPEED_BONUS_MAX * 0.42);
+    const desiredVel = newForward.multiplyScalar(botTargetSpeed);
     b.velocity.lerp(desiredVel, 0.08);
 
     const prevPos = b.mesh.position.clone();
@@ -1915,7 +1917,7 @@ function updateMissiles(dt) {
       const toCenter = tmpVecB.subVectors(targetCenter, prevPos);
       const proj = clamp(toCenter.dot(seg) / segLenSq, 0, 1);
       const closest = tmpVecC.copy(prevPos).addScaledVector(seg, proj);
-      if (closest.distanceToSquared(targetCenter) < 40 * 40) {
+      if (closest.distanceToSquared(targetCenter) < 30 * 30) {
         hitPlane(t, 30, data.team);
         exploded = true;
         break;
