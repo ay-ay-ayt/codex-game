@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 181;
+const DEBUG_BUILD_NUMBER = 182;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1271,7 +1271,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const coreShiftBoost = (coreLength - 1) * 7.2;
   plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
   const coreOpacityIdle = clamp(0.24 + boostLevel * 0.3 + pulse * 0.03, 0.16, 0.62);
-  const coreOpacityBoost = clamp(0.68 + boostLevel * 1.38 + pulse * 0.15, 0.52, 1.0);
+  const coreOpacityBoost = clamp(0.62 + boostLevel * 0.58 + pulse * 0.05, 0.46, 1.0);
   plane.exhaust.flameCore.material.opacity = THREE.MathUtils.lerp(coreOpacityIdle, coreOpacityBoost, Math.pow(boostMix, 0.72));
 
   plane.exhaust.flameOuter.scale.set(outerRadius, outerLength, outerRadius);
@@ -1284,9 +1284,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerOpacityBoost = clamp(0.34 + boostLevel * 0.2 + pulse * 0.04, 0.22, 0.62);
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
-  const innerBlueDepth = clamp(0.82 + boostMix * 0.54 + pulse * 0.02, 0.8, 3.0);
-  const innerWarm = clamp(0.34 + boostMix * 1.98 + pulse * 0.03, 0.32, 3.0);
-  const innerGreen = clamp(0.44 + boostMix * 1.68 + pulse * 0.03, 0.42, 3.0);
+  const innerBlueDepth = clamp(0.82 + boostMix * 0.06 + pulse * 0.02, 0.8, 1.0);
+  const innerWarm = clamp(0.34 + boostMix * 0.86 + pulse * 0.03, 0.32, 1.0);
+  const innerGreen = clamp(0.44 + boostMix * 0.76 + pulse * 0.03, 0.42, 1.0);
   plane.exhaust.flameCore.material.color.setRGB(innerWarm, innerGreen, innerBlueDepth);
 
   const outerBlueGlow = clamp(0.9 + boostMix * 0.08 + pulse * 0.015, 0.86, 1.0);
@@ -1310,11 +1310,11 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.nozzleHeatLines.rotation.z = Math.sin(t * 2.8 + plane.mesh.id * 0.13) * 0.12;
   plane.exhaust.nozzleHeatLines.children.forEach((streak, index) => {
     const streakPulse = 0.9 + Math.sin(t * 7.2 + index * 0.9 + plane.mesh.id * 0.17) * 0.1;
-    streak.material.opacity = clamp(0.5 + streakPulse * 0.34 + boostMix * 0.08, 0.5, 0.9);
+    streak.material.opacity = clamp(0.74 + streakPulse * 0.4, 0.72, 1.0);
     streak.material.color.setRGB(
-      3.0,
-      0.66,
-      0.33
+      1.0,
+      0.08,
+      0.04
     );
   });
 
