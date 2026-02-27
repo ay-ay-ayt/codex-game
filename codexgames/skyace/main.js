@@ -17,8 +17,8 @@ if (!Number.isFinite(selectedBotCount)) selectedBotCount = 2;
 const initialMapButton = mapTypeButtons.find((btn) => btn.classList.contains("is-active"));
 let selectedMapType = (initialMapButton && initialMapButton.dataset.mapType) || "city";
 const menuPanel = document.getElementById("menuPanel");
-menuPanel.hidden = true;
-menuBtn.setAttribute("aria-expanded", "false");
+if (menuPanel) menuPanel.hidden = true;
+if (menuBtn) menuBtn.setAttribute("aria-expanded", "false");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
@@ -32,7 +32,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 194;
+const DEBUG_BUILD_NUMBER = 195;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const coarsePointerQuery = window.matchMedia ? window.matchMedia("(pointer: coarse)") : null;
@@ -445,6 +445,7 @@ function fitViewport() {
 
 
 function updateMenuPanelPosition() {
+  if (!menuBtn) return;
   const menuRect = menuBtn.getBoundingClientRect();
   const menuBottom = Math.ceil(menuRect.bottom);
   document.documentElement.style.setProperty("--menu-bottom", `${menuBottom}px`);
@@ -2450,28 +2451,33 @@ const restartFromHud = (e) => {
   resetMatch();
 };
 
-restartBtn.addEventListener("click", restartFromHud);
-restartBtn.addEventListener("pointerup", restartFromHud);
+if (restartBtn) {
+  restartBtn.addEventListener("click", restartFromHud);
+  restartBtn.addEventListener("pointerup", restartFromHud);
+}
 
 let lastMenuToggleAt = 0;
 
 function toggleMenuPanel() {
+  if (!menuPanel || !menuBtn) return;
   updateMenuPanelPosition();
   menuPanel.hidden = !menuPanel.hidden;
   menuBtn.setAttribute("aria-expanded", String(!menuPanel.hidden));
   lastMenuToggleAt = performance.now();
 }
 
-menuBtn.addEventListener("pointerup", (e) => {
-  e.preventDefault();
-  toggleMenuPanel();
-});
+if (menuBtn) {
+  menuBtn.addEventListener("pointerup", (e) => {
+    e.preventDefault();
+    toggleMenuPanel();
+  });
 
-menuBtn.addEventListener("click", (e) => {
-  e.preventDefault();
-  if (performance.now() - lastMenuToggleAt < 350) return;
-  toggleMenuPanel();
-});
+  menuBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (performance.now() - lastMenuToggleAt < 350) return;
+    toggleMenuPanel();
+  });
+}
 
 setupTapMenuButtons();
 
