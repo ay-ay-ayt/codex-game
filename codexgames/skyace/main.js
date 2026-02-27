@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 176;
+const DEBUG_BUILD_NUMBER = 184;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -238,6 +238,9 @@ const BANK_RATE = 3.0;
 const PITCH_RATE = 2.5;
 const LEVEL_RATE = 1.2;
 const TURN_RATE = 1.0;
+const BOOST_SPEED_BONUS_MAX = 260;
+const BOOST_FUEL_BURN_BASE_PER_SEC = 22;
+const BOOST_FUEL_BURN_CURVE = 0.35; // Higher boost levels become less fuel-efficient toward 100%.
 const keys = new Set();
 
 const qYaw = new THREE.Quaternion();
@@ -1265,13 +1268,14 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const glowOpacityBoost = clamp(0.56 + boostLevel * 0.46 + pulse * 0.06, 0.3, 1.0);
   plane.exhaust.nozzleGlow.material.opacity = THREE.MathUtils.lerp(glowOpacityIdle, glowOpacityBoost, boostMix);
 
-  plane.exhaust.flameCore.scale.set(coreRadius, coreLength, coreRadius);
+  const innerFlameRadiusScale = 1 - boostMix * 0.1;
+  plane.exhaust.flameCore.scale.set(coreRadius * innerFlameRadiusScale, coreLength, coreRadius * innerFlameRadiusScale);
   const coreBaseX = plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x;
   const coreShiftIdle = (coreLength - 1) * 3.5;
   const coreShiftBoost = (coreLength - 1) * 7.2;
   plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
-  const coreOpacityIdle = clamp(0.2 + boostLevel * 0.24 + pulse * 0.03, 0.1, 0.54);
-  const coreOpacityBoost = clamp(0.44 + boostLevel * 0.4 + pulse * 0.05, 0.34, 0.94);
+  const coreOpacityIdle = clamp(0.24 + boostLevel * 0.3 + pulse * 0.03, 0.16, 0.62);
+  const coreOpacityBoost = clamp(0.62 + boostLevel * 0.58 + pulse * 0.05, 0.46, 1.0);
   plane.exhaust.flameCore.material.opacity = THREE.MathUtils.lerp(coreOpacityIdle, coreOpacityBoost, Math.pow(boostMix, 0.72));
 
   plane.exhaust.flameOuter.scale.set(outerRadius, outerLength, outerRadius);
@@ -1284,9 +1288,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerOpacityBoost = clamp(0.34 + boostLevel * 0.2 + pulse * 0.04, 0.22, 0.62);
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
-  const innerBlueDepth = clamp(0.82 + boostMix * 0.1 + pulse * 0.02, 0.8, 1.0);
-  const innerWarm = clamp(0.34 + boostMix * 0.5 + pulse * 0.03, 0.32, 1.0);
-  const innerGreen = clamp(0.46 + boostMix * 0.46 + pulse * 0.03, 0.44, 1.0);
+  const innerBlueDepth = clamp(0.82 + boostMix * 0.06 + pulse * 0.02, 0.8, 1.0 + boostMix * 0.5);
+  const innerWarm = clamp(0.34 + boostMix * 0.86 + pulse * 0.03, 0.32, 1.0 + boostMix * 0.5);
+  const innerGreen = clamp(0.44 + boostMix * 0.76 + pulse * 0.03, 0.42, 1.0 + boostMix * 0.5);
   plane.exhaust.flameCore.material.color.setRGB(innerWarm, innerGreen, innerBlueDepth);
 
   const outerBlueGlow = clamp(0.9 + boostMix * 0.08 + pulse * 0.015, 0.86, 1.0);
@@ -1310,10 +1314,10 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.nozzleHeatLines.rotation.z = Math.sin(t * 2.8 + plane.mesh.id * 0.13) * 0.12;
   plane.exhaust.nozzleHeatLines.children.forEach((streak, index) => {
     const streakPulse = 0.9 + Math.sin(t * 7.2 + index * 0.9 + plane.mesh.id * 0.17) * 0.1;
-    streak.material.opacity = clamp(0.3 + streakPulse * 0.28, 0.3, 0.72);
+    streak.material.opacity = clamp(0.74 + streakPulse * 0.4, 0.72, 1.0);
     streak.material.color.setRGB(
-      1.0,
-      0.15,
+      2.0,
+      0.16,
       0.08
     );
   });
@@ -1577,7 +1581,8 @@ function updatePlayer(dt) {
   const boostAllowed = game.boostAutoDropAt == null && game.boostFuel > 0.01;
   const boostLevel = input.boostLevel > 0 && boostAllowed ? input.boostLevel : 0;
   if (boostLevel > 0) {
-    game.boostFuel = Math.max(0, game.boostFuel - 22 * boostLevel * dt);
+    const boostFuelBurnRate = BOOST_FUEL_BURN_BASE_PER_SEC * boostLevel * (1 + BOOST_FUEL_BURN_CURVE * boostLevel * boostLevel);
+    game.boostFuel = Math.max(0, game.boostFuel - boostFuelBurnRate * dt);
     if (game.boostFuel <= 0.01) {
       game.boostFuel = 0;
       if (boostLeverState.level > 0 && game.boostAutoDropAt == null) {
@@ -1590,7 +1595,7 @@ function updatePlayer(dt) {
     game.boostFuel = 0;
   }
 
-  const targetSpeed = p.speed + boostLevel * 220;
+  const targetSpeed = p.speed + boostLevel * BOOST_SPEED_BONUS_MAX;
   updatePlaneExhaust(p, boostLevel);
   const desiredVel = forward.multiplyScalar(targetSpeed);
   p.velocity.lerp(desiredVel, 0.08);
