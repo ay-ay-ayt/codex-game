@@ -8,17 +8,14 @@ const botCountEl = document.getElementById("botCount");
 const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
-const botCountButtons = botCountEl ? Array.from(botCountEl.querySelectorAll(".tap-btn[data-bot-count]")) : [];
-const mapTypeButtons = mapTypeEl ? Array.from(mapTypeEl.querySelectorAll(".tap-btn[data-map-type]")) : [];
+const botCountButtons = Array.from(botCountEl.querySelectorAll(".tap-btn[data-bot-count]"));
+const mapTypeButtons = Array.from(mapTypeEl.querySelectorAll(".tap-btn[data-map-type]"));
 
-const initialBotButton = botCountButtons.find((btn) => btn.classList.contains("is-active"));
-let selectedBotCount = Number((initialBotButton && initialBotButton.dataset.botCount) || 2);
-if (!Number.isFinite(selectedBotCount)) selectedBotCount = 2;
-const initialMapButton = mapTypeButtons.find((btn) => btn.classList.contains("is-active"));
-let selectedMapType = (initialMapButton && initialMapButton.dataset.mapType) || "city";
+let selectedBotCount = Number(botCountButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.botCount || 2);
+let selectedMapType = mapTypeButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.mapType || "city";
 const menuPanel = document.getElementById("menuPanel");
-if (menuPanel) menuPanel.hidden = true;
-if (menuBtn) menuBtn.setAttribute("aria-expanded", "false");
+menuPanel.hidden = true;
+menuBtn.setAttribute("aria-expanded", "false");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
@@ -32,11 +29,10 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 195;
+const DEBUG_BUILD_NUMBER = 185;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
-const coarsePointerQuery = window.matchMedia ? window.matchMedia("(pointer: coarse)") : null;
-const isMobile = (coarsePointerQuery && coarsePointerQuery.matches)
+const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
   || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 if (isMobile) {
@@ -88,7 +84,7 @@ function createRenderer() {
   for (const options of attempts) {
     try {
       return new THREE.WebGLRenderer(options);
-    } catch (err) {
+    } catch {
       // fall through to the next option
     }
   }
@@ -299,7 +295,6 @@ const game = {
   missileLockTarget: null,
   missileLockLostTimer: 0,
   missileIncomingTimer: 0,
-  shiftBoostRelatchRequired: false,
   lockToggleButtonLatch: false,
   lockToggleTapQueuedCount: 0,
   missileLaunchTapQueuedCount: 0,
@@ -339,7 +334,7 @@ function addObstacle(mesh, padding = 0) {
 }
 
 function getLockAimPoint(plane, out = tmpVecD) {
-  const pos = plane && plane.mesh ? plane.mesh.position : null;
+  const pos = plane?.mesh?.position;
   if (!pos) return out.set(0, 0, 0);
   out.copy(pos);
   out.y += 14;
@@ -347,7 +342,7 @@ function getLockAimPoint(plane, out = tmpVecD) {
 }
 
 function hasLineOfSight(origin, targetPlane) {
-  if (!targetPlane || !targetPlane.mesh || staticObstacleMeshes.length === 0) return true;
+  if (!targetPlane?.mesh || staticObstacleMeshes.length === 0) return true;
   const targetPos = getLockAimPoint(targetPlane, tmpVecD);
   const dir = tmpVecB.copy(targetPos).sub(origin);
   const dist = dir.length();
@@ -366,22 +361,6 @@ function intersectsObstacle(position, radius = 0) {
   for (const box of staticObstacles) {
     tmpBox.copy(box).expandByScalar(radius);
     if (tmpBox.containsPoint(position)) return true;
-  }
-  return false;
-}
-
-function intersectsObstacleSegment(start, end, radius = 0) {
-  const segmentDir = tmpVecA.subVectors(end, start);
-  const segmentLength = segmentDir.length();
-  if (segmentLength <= 1e-6) return intersectsObstacle(start, radius);
-  segmentDir.multiplyScalar(1 / segmentLength);
-  const segmentRay = new THREE.Ray(start, segmentDir);
-
-  for (const box of staticObstacles) {
-    tmpBox.copy(box).expandByScalar(radius);
-    if (tmpBox.containsPoint(start) || tmpBox.containsPoint(end)) return true;
-    const hit = segmentRay.intersectBox(tmpBox, tmpVecB);
-    if (hit && hit.distanceToSquared(start) <= segmentLength * segmentLength) return true;
   }
   return false;
 }
@@ -435,9 +414,8 @@ function buildArenaBoundary() {
 }
 
 function fitViewport() {
-  const visualViewport = window.visualViewport;
-  const width = Math.max(1, (visualViewport && visualViewport.width) || window.innerWidth);
-  const height = Math.max(1, (visualViewport && visualViewport.height) || window.innerHeight);
+  const width = Math.max(1, window.visualViewport?.width || window.innerWidth);
+  const height = Math.max(1, window.visualViewport?.height || window.innerHeight);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height, false);
@@ -445,7 +423,6 @@ function fitViewport() {
 
 
 function updateMenuPanelPosition() {
-  if (!menuBtn) return;
   const menuRect = menuBtn.getBoundingClientRect();
   const menuBottom = Math.ceil(menuRect.bottom);
   document.documentElement.style.setProperty("--menu-bottom", `${menuBottom}px`);
@@ -1261,7 +1238,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
 }
 
 function updatePlaneExhaust(plane, boostLevel = 0) {
-  if (!plane || !plane.exhaust) return;
+  if (!plane?.exhaust) return;
   const t = performance.now() * 0.001;
   const pulse = 1 + Math.sin(t * 32 + plane.mesh.id * 0.73) * 0.07;
   const shimmer = Math.sin(t * 21 + plane.mesh.id * 0.31) * 0.05;
@@ -1294,7 +1271,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
 
   const innerFlameRadiusScale = 1 - boostMix * 0.1;
   plane.exhaust.flameCore.scale.set(coreRadius * innerFlameRadiusScale, coreLength, coreRadius * innerFlameRadiusScale);
-  const coreBaseX = plane.exhaust.flameCore.userData.baseX != null ? plane.exhaust.flameCore.userData.baseX : plane.exhaust.flameCore.position.x;
+  const coreBaseX = plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x;
   const coreShiftIdle = (coreLength - 1) * 3.5;
   const coreShiftBoost = (coreLength - 1) * 7.2;
   plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
@@ -1303,7 +1280,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.flameCore.material.opacity = THREE.MathUtils.lerp(coreOpacityIdle, coreOpacityBoost, Math.pow(boostMix, 0.72));
 
   plane.exhaust.flameOuter.scale.set(outerRadius, outerLength, outerRadius);
-  const outerBaseX = plane.exhaust.flameOuter.userData.baseX != null ? plane.exhaust.flameOuter.userData.baseX : plane.exhaust.flameOuter.position.x;
+  const outerBaseX = plane.exhaust.flameOuter.userData.baseX ?? plane.exhaust.flameOuter.position.x;
   const outerShiftIdle = (outerLength - 1) * 4.9;
   const outerShiftBoost = (outerLength - 1) * 6.3;
   plane.exhaust.flameOuter.position.x = outerBaseX - THREE.MathUtils.lerp(outerShiftIdle, outerShiftBoost, boostMix);
@@ -1323,7 +1300,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const nozzleHeatPulse = 0.86 + Math.sin(t * 24 + plane.mesh.id * 0.57) * 0.14;
   const heatCoreScale = THREE.MathUtils.lerp(0.82, 0.98 + boostMix * 0.2, boostMix) * nozzleHeatPulse;
   plane.exhaust.nozzleHeatCore.scale.setScalar(heatCoreScale);
-  const heatCoreBaseX = plane.exhaust.nozzleHeatCore.userData.baseX != null ? plane.exhaust.nozzleHeatCore.userData.baseX : plane.exhaust.nozzleHeatCore.position.x;
+  const heatCoreBaseX = plane.exhaust.nozzleHeatCore.userData.baseX ?? plane.exhaust.nozzleHeatCore.position.x;
   plane.exhaust.nozzleHeatCore.position.x = heatCoreBaseX - THREE.MathUtils.lerp(0.25, 1.6, boostMix);
   plane.exhaust.nozzleHeatCore.material.opacity = clamp(0.2 + boostMix * 0.18 + nozzleHeatPulse * 0.08, 0.14, 0.46);
   plane.exhaust.nozzleHeatCore.material.color.setRGB(
@@ -1332,7 +1309,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     clamp(0.12 + boostMix * 0.06, 0.08, 0.22)
   );
 
-  const heatLinesBaseX = plane.exhaust.nozzleHeatLines.userData.baseX != null ? plane.exhaust.nozzleHeatLines.userData.baseX : plane.exhaust.nozzleHeatLines.position.x;
+  const heatLinesBaseX = plane.exhaust.nozzleHeatLines.userData.baseX ?? plane.exhaust.nozzleHeatLines.position.x;
   plane.exhaust.nozzleHeatLines.position.x = heatLinesBaseX - THREE.MathUtils.lerp(0.2, 1.35, boostMix);
   plane.exhaust.nozzleHeatLines.rotation.x = Math.PI * 0.5 + Math.sin(t * 4.2 + plane.mesh.id * 0.19) * 0.1;
   plane.exhaust.nozzleHeatLines.rotation.z = Math.sin(t * 2.8 + plane.mesh.id * 0.13) * 0.12;
@@ -1352,33 +1329,20 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   };
   const shockRingSizeMultiplier = 1.2;
   plane.exhaust.shockRings.forEach((ring) => {
-    const offset = ring.userData.offset != null ? ring.userData.offset : 0;
-    const phaseSpeed = THREE.MathUtils.lerp(2.4, 10.0, Math.pow(boostMix, 0.82));
-    const phaseSpeed = THREE.MathUtils.lerp(2.4, 12.0, Math.pow(boostMix, 0.82));
-    const phase = t * phaseSpeed - offset * 0.72 + plane.mesh.id * 0.05;
+    const offset = ring.userData.offset ?? 0;
+    const phase = t * 2.4 - offset * 0.72 + plane.mesh.id * 0.05;
     const travel = (Math.sin(phase) + 1) * 0.5;
-    const baseX = ring.userData.baseX != null ? ring.userData.baseX : ring.position.x;
-
-    const speedMix = Math.pow(boostMix, 2.6);
-    const pulseSpeedA = THREE.MathUtils.lerp(4.1, 10.8, speedMix);
-    const pulseSpeedB = THREE.MathUtils.lerp(1.9, 5.6, speedMix);
-    const speedMix = Math.pow(boostMix, 2.6);
-    const pulseSpeedA = THREE.MathUtils.lerp(4.1, 8.6, speedMix);
-    const pulseSpeedB = THREE.MathUtils.lerp(1.9, 4.2, speedMix);
+    const baseX = ring.userData.baseX ?? ring.position.x;
     const ringPulse = 0.94
-      + Math.sin(t * pulseSpeedA + offset * 1.2 + plane.mesh.id * 0.11) * 0.08
-      + Math.sin(t * pulseSpeedB + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
-
-    const boostScaleTarget = shockRingBoostScaleByOffset[offset] != null ? shockRingBoostScaleByOffset[offset] : 1.1;
+      + Math.sin(t * 4.1 + offset * 1.2 + plane.mesh.id * 0.11) * 0.08
+      + Math.sin(t * 1.9 + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
+    const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
     const boostScale = THREE.MathUtils.lerp(0.9, boostScaleTarget, Math.pow(boostMix, 0.68));
     const boostBackShift = THREE.MathUtils.lerp(0.04, 0.56, boostMix);
     ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.32, 1.7, boostMix) - boostBackShift;
     ring.scale.setScalar(shockRingSizeMultiplier * boostScale * ringPulse);
-
     const ringOpacityBase = 0.14 + boostMix * 0.22;
-    const opacityWaveSpeed = THREE.MathUtils.lerp(2.1, 7.4, speedMix);
-    const opacityWaveSpeed = THREE.MathUtils.lerp(2.1, 5.4, speedMix);
-    ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * opacityWaveSpeed + offset * 0.9) * 0.04, 0.08, 0.5);
+    ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * 2.1 + offset * 0.9) * 0.04, 0.08, 0.5);
     ring.material.color.setRGB(0.52 + boostMix * 0.2, 0.74 + boostMix * 0.12, 1.0);
   });
 
@@ -1462,7 +1426,7 @@ function getBestLockTarget(shooter, lockRange = MISSILE_LOCK_RANGE, lockDot = MI
 }
 
 function spawnMissile(owner, target) {
-  if (!owner.alive || owner.missileAmmo <= 0 || !target || !target.alive) return false;
+  if (!owner.alive || owner.missileAmmo <= 0 || !target?.alive) return false;
   const index = owner.missiles.findIndex((m) => m.visible);
   if (index < 0) return false;
   const attachedMesh = owner.missiles[index];
@@ -1611,7 +1575,7 @@ function updatePlayer(dt) {
     game.boostAutoDropAt != null
     && performance.now() >= game.boostAutoDropAt
   ) {
-    if (boostLeverState.applyLevel) boostLeverState.applyLevel(0);
+    boostLeverState.applyLevel?.(0);
     game.boostAutoDropAt = null;
   }
 
@@ -1622,7 +1586,6 @@ function updatePlayer(dt) {
     game.boostFuel = Math.max(0, game.boostFuel - boostFuelBurnRate * dt);
     if (game.boostFuel <= 0.01) {
       game.boostFuel = 0;
-      if (keys.has("ShiftLeft") || keys.has("ShiftRight")) game.shiftBoostRelatchRequired = true;
       if (boostLeverState.level > 0 && game.boostAutoDropAt == null) {
         game.boostAutoDropAt = performance.now() + 1000;
       }
@@ -1656,7 +1619,7 @@ function updatePlayer(dt) {
     p.cooldown = 0.11;
   }
 
-  if (game.missileLockTarget && game.missileLockTarget.alive) {
+  if (game.missileLockTarget?.alive) {
     const lockTargetPos = getLockAimPoint(game.missileLockTarget, tmpVecA);
     const toTarget = lockTargetPos.sub(camera.position);
     const dist = toTarget.length();
@@ -1706,7 +1669,7 @@ function updatePlayer(dt) {
 
 function selectBotCombatTarget(bot) {
   const candidates = [];
-  if (game.player && game.player.alive) candidates.push(game.player);
+  if (game.player?.alive) candidates.push(game.player);
   for (const other of game.bots) {
     if (other !== bot && other.alive) candidates.push(other);
   }
@@ -1876,7 +1839,7 @@ function updateBullets(dt) {
 }
 
 function updateMissiles(dt) {
-  const playerPos = game.player && game.player.mesh ? game.player.mesh.position : null;
+  const playerPos = game.player?.mesh?.position;
 
   for (let i = game.missiles.length - 1; i >= 0; i--) {
     const m = game.missiles[i];
@@ -1885,7 +1848,7 @@ function updateMissiles(dt) {
     const prevPos = m.position.clone();
 
     const target = data.target;
-    if (target && target.alive) {
+    if (target?.alive) {
       const targetCenter = target.mesh.getWorldPosition(new THREE.Vector3());
       const toTarget = targetCenter.clone().sub(m.position);
       const dist = Math.max(1, toTarget.length());
@@ -1927,7 +1890,7 @@ function updateMissiles(dt) {
 
     const targets = data.team === "player" ? game.bots : [game.player];
     for (const t of targets) {
-      if (!t || !t.alive) continue;
+      if (!t?.alive) continue;
       const seg = tmpVecA.subVectors(m.position, prevPos);
       const segLenSq = Math.max(1e-6, seg.lengthSq());
       const targetCenter = t.mesh.getWorldPosition(new THREE.Vector3());
@@ -1941,8 +1904,8 @@ function updateMissiles(dt) {
       }
     }
 
-    if (!exploded && intersectsObstacleSegment(prevPos, m.position, 0.45)) {
-      if (target && target.alive && m.position.distanceToSquared(target.mesh.getWorldPosition(new THREE.Vector3())) < 95 * 95) {
+    if (!exploded && intersectsObstacle(m.position, 3.4)) {
+      if (target?.alive && m.position.distanceToSquared(target.mesh.getWorldPosition(new THREE.Vector3())) < 95 * 95) {
         hitPlane(target, 30, data.team);
       }
       exploded = true;
@@ -1983,12 +1946,11 @@ function updateState() {
     bot.lockOutline.visible = visible;
     if (!visible) return;
 
-    const playerMeshPos = game.player && game.player.mesh ? game.player.mesh.position : null;
-    const dist = playerMeshPos ? playerMeshPos.distanceTo(bot.mesh.position) : 600;
+    const dist = game.player?.mesh?.position?.distanceTo(bot.mesh.position) ?? 600;
     const emphasis = clamp((dist - 220) / 1500, 0, 1);
     const lineOpacity = clamp((0.58 + emphasis * 0.26) * 1.8, 0, 0.70);
     const scaleMul = 1.08 + emphasis * 0.16;
-    const lineMat = bot.lockOutline.userData ? bot.lockOutline.userData.lineMat : null;
+    const lineMat = bot.lockOutline.userData?.lineMat;
     if (lineMat) lineMat.opacity = lineOpacity;
 
     bot.lockOutline.children.forEach((child) => {
@@ -1998,12 +1960,11 @@ function updateState() {
   });
 
   updateHudHealthPanel();
-  const missileAmmo = game.player && game.player.missileAmmo != null ? game.player.missileAmmo : 0;
-  ammoEl.textContent = `MSL ${missileAmmo} | AMMO ${Math.round(game.ammo)}`;
+  ammoEl.textContent = `MSL ${game.player?.missileAmmo ?? 0} | AMMO ${Math.round(game.ammo)}`;
   boostStatEl.textContent = `BOOST ${Math.round((game.boostFuel / BOOST_FUEL_MAX) * 100)}%`;
   if (missileBtn) missileBtn.textContent = lockTarget ? "LOCK OFF" : "LOCK ON";
   if (lockOnCueEl) {
-    if (lockTarget && lockTarget.alive) {
+    if (lockTarget?.alive) {
       lockOnCueEl.hidden = false;
       lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(lockTarget) + 1)}`;
     } else {
@@ -2030,12 +1991,12 @@ function updateState() {
 
 
 function clearPlaneHpLabel(plane) {
-  if (plane && plane.hpLabel) {
+  if (plane?.hpLabel) {
     world.remove(plane.hpLabel);
     plane.hpLabel = null;
   }
-  if (plane && plane.lockOutline) {
-    if (plane.mesh && plane.mesh.remove) plane.mesh.remove(plane.lockOutline);
+  if (plane?.lockOutline) {
+    plane.mesh?.remove?.(plane.lockOutline);
     plane.lockOutline = null;
   }
 }
@@ -2065,7 +2026,6 @@ function resetMatch() {
   game.missileLockTarget = null;
   game.missileIncomingTimer = 0;
   game.missileLockLostTimer = 0;
-  game.shiftBoostRelatchRequired = false;
   game.lockToggleButtonLatch = false;
   game.lockToggleTapQueuedCount = 0;
   game.missileLaunchTapQueuedCount = 0;
@@ -2077,7 +2037,7 @@ function resetMatch() {
   messageEl.hidden = true;
   messageEl.textContent = "";
 
-  if (boostLeverState.applyLevel) boostLeverState.applyLevel(0);
+  boostLeverState.applyLevel?.(0);
 
   game.player = createFighter(0x48d7ff, true);
   game.player.mesh.position.set(0, 320, 0);
@@ -2110,8 +2070,8 @@ function resetMatch() {
 }
 
 function syncInput() {
-  const kRoll = (keys.has("KeyA") ? 1 : 0) + (keys.has("KeyD") ? -1 : 0);
-  const kPitch = (keys.has("KeyW") ? -1 : 0) + (keys.has("KeyS") ? 1 : 0);
+  const kRoll = (keys.has("KeyA") ? -1 : 0) + (keys.has("KeyD") ? 1 : 0);
+  const kPitch = (keys.has("KeyW") ? 1 : 0) + (keys.has("KeyS") ? -1 : 0);
   const kThr = (keys.has("ArrowDown") ? -1 : 0) + (keys.has("ArrowUp") ? 1 : 0);
 
   const stickRoll = Math.abs(stickInput.yaw) > 0.01 ? stickInput.yaw : 0;
@@ -2128,10 +2088,7 @@ function syncInput() {
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
   input.throttle = clamp(input.throttle + (throttleTarget - input.throttle) * 0.24, -1, 1);
 
-  const shiftHeld = keys.has("ShiftLeft") || keys.has("ShiftRight");
-  if (!shiftHeld) game.shiftBoostRelatchRequired = false;
-  const shiftBoostLevel = shiftHeld && !game.shiftBoostRelatchRequired ? 1 : 0;
-  input.boostLevel = clamp(Math.max(boostLeverState.level, shiftBoostLevel), 0, 1);
+  input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
   input.lockToggle = keys.has("KeyM");
@@ -2294,16 +2251,15 @@ function setupBoostLever() {
 
 
 function bindActionButton(btn, onPress = null, onRelease = null) {
-  if (!btn) return;
   const press = (e) => {
     e.preventDefault();
     btn.classList.add("active");
-    if (onPress) onPress();
+    onPress?.();
   };
   const release = (e) => {
     e.preventDefault();
     btn.classList.remove("active");
-    if (onRelease) onRelease(e);
+    onRelease?.(e);
   };
   btn.addEventListener("pointerdown", press);
   btn.addEventListener("pointerup", release);
@@ -2316,16 +2272,16 @@ async function tryFullscreen() {
   if (document.fullscreenElement || !target.requestFullscreen) return;
   try {
     await target.requestFullscreen({ navigationUI: "hide" });
-  } catch (err) {
+  } catch {
     // iOS Safari fallback is PWA standalone mode.
   }
 }
 
 async function lockLandscape() {
-  if (screen.orientation && screen.orientation.lock) {
+  if (screen.orientation?.lock) {
     try {
       await screen.orientation.lock("landscape");
-    } catch (err) {
+    } catch {
       // Browsers may require fullscreen or block orientation lock.
     }
   }
@@ -2407,7 +2363,7 @@ function showFatalInitError(err, scope = "init") {
   const phase = startupState.phase || "unknown";
   console.error(`[skyace:${scope}:${phase}]`, err);
   messageEl.hidden = false;
-  const text = String((err && err.message) || err || "unknown error");
+  const text = String(err?.message || err || "unknown error");
   messageEl.textContent = `初期化エラー(${scope}:${phase}): ${text}`;
 }
 
@@ -2447,37 +2403,32 @@ window.addEventListener("keyup", (e) => {
 });
 
 const restartFromHud = (e) => {
-  if (e && e.preventDefault) e.preventDefault();
+  e?.preventDefault?.();
   resetMatch();
 };
 
-if (restartBtn) {
-  restartBtn.addEventListener("click", restartFromHud);
-  restartBtn.addEventListener("pointerup", restartFromHud);
-}
+restartBtn.addEventListener("click", restartFromHud);
+restartBtn.addEventListener("pointerup", restartFromHud);
 
 let lastMenuToggleAt = 0;
 
 function toggleMenuPanel() {
-  if (!menuPanel || !menuBtn) return;
   updateMenuPanelPosition();
   menuPanel.hidden = !menuPanel.hidden;
   menuBtn.setAttribute("aria-expanded", String(!menuPanel.hidden));
   lastMenuToggleAt = performance.now();
 }
 
-if (menuBtn) {
-  menuBtn.addEventListener("pointerup", (e) => {
-    e.preventDefault();
-    toggleMenuPanel();
-  });
+menuBtn.addEventListener("pointerup", (e) => {
+  e.preventDefault();
+  toggleMenuPanel();
+});
 
-  menuBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (performance.now() - lastMenuToggleAt < 350) return;
-    toggleMenuPanel();
-  });
-}
+menuBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (performance.now() - lastMenuToggleAt < 350) return;
+  toggleMenuPanel();
+});
 
 setupTapMenuButtons();
 
@@ -2491,7 +2442,7 @@ window.addEventListener("resize", () => {
   updateMenuPanelPosition();
   updateOrientationHint();
 });
-if (window.visualViewport) window.visualViewport.addEventListener("resize", () => {
+window.visualViewport?.addEventListener("resize", () => {
   fitViewport();
   updateMenuPanelPosition();
 });
