@@ -30,6 +30,7 @@ let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
 const DEBUG_BUILD_NUMBER = 191;
+const DEBUG_BUILD_NUMBER = 190;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1348,6 +1349,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   plane.exhaust.shockRings.forEach((ring) => {
     const offset = ring.userData.offset ?? 0;
     const phaseSpeed = THREE.MathUtils.lerp(2.4, 10.0, Math.pow(boostMix, 0.82));
+    const phaseSpeed = THREE.MathUtils.lerp(2.4, 12.0, Math.pow(boostMix, 0.82));
     const phase = t * phaseSpeed - offset * 0.72 + plane.mesh.id * 0.05;
     const travel = (Math.sin(phase) + 1) * 0.5;
     const baseX = ring.userData.baseX ?? ring.position.x;
@@ -1355,6 +1357,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const speedMix = Math.pow(boostMix, 2.6);
     const pulseSpeedA = THREE.MathUtils.lerp(4.1, 10.8, speedMix);
     const pulseSpeedB = THREE.MathUtils.lerp(1.9, 5.6, speedMix);
+    const speedMix = Math.pow(boostMix, 2.6);
+    const pulseSpeedA = THREE.MathUtils.lerp(4.1, 8.6, speedMix);
+    const pulseSpeedB = THREE.MathUtils.lerp(1.9, 4.2, speedMix);
     const ringPulse = 0.94
       + Math.sin(t * pulseSpeedA + offset * 1.2 + plane.mesh.id * 0.11) * 0.08
       + Math.sin(t * pulseSpeedB + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
@@ -1367,6 +1372,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
 
     const ringOpacityBase = 0.14 + boostMix * 0.22;
     const opacityWaveSpeed = THREE.MathUtils.lerp(2.1, 7.4, speedMix);
+    const opacityWaveSpeed = THREE.MathUtils.lerp(2.1, 5.4, speedMix);
     ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * opacityWaveSpeed + offset * 0.9) * 0.04, 0.08, 0.5);
     ring.material.color.setRGB(0.52 + boostMix * 0.2, 0.74 + boostMix * 0.12, 1.0);
   });
