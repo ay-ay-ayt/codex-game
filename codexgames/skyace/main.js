@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 185;
+const DEBUG_BUILD_NUMBER = 186;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -292,6 +292,7 @@ const game = {
   playerHitTimer: 0,
   hitConfirmTimer: 0,
   boostAutoDropAt: null,
+  shiftBoostRelatchRequired: false,
   missileLockTarget: null,
   missileLockLostTimer: 0,
   missileIncomingTimer: 0,
@@ -310,6 +311,7 @@ const MISSILE_LOCK_RANGE = 1800;
 const MISSILE_LOCK_DOT = 0.58;
 const MISSILE_LOCK_DROP_RANGE = 2000;
 const MISSILE_LOCK_DROP_DOT = 0.42;
+const MISSILE_BODY_COLLISION_RADIUS = 0.6;
 
 
 function clamp(v, a, b) {
@@ -1330,19 +1332,24 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const shockRingSizeMultiplier = 1.2;
   plane.exhaust.shockRings.forEach((ring) => {
     const offset = ring.userData.offset ?? 0;
-    const phase = t * 2.4 - offset * 0.72 + plane.mesh.id * 0.05;
+    const boostPulseMix = Math.pow(boostMix, 0.72);
+    const phaseSpeed = THREE.MathUtils.lerp(2.4, 10.0, boostPulseMix);
+    const pulseSpeedA = THREE.MathUtils.lerp(4.1, 10.8, boostPulseMix);
+    const pulseSpeedB = THREE.MathUtils.lerp(1.9, 5.6, boostPulseMix);
+    const opacityWaveSpeed = THREE.MathUtils.lerp(2.1, 7.4, boostPulseMix);
+    const phase = t * phaseSpeed - offset * 0.72 + plane.mesh.id * 0.05;
     const travel = (Math.sin(phase) + 1) * 0.5;
     const baseX = ring.userData.baseX ?? ring.position.x;
     const ringPulse = 0.94
-      + Math.sin(t * 4.1 + offset * 1.2 + plane.mesh.id * 0.11) * 0.08
-      + Math.sin(t * 1.9 + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
+      + Math.sin(t * pulseSpeedA + offset * 1.2 + plane.mesh.id * 0.11) * 0.08
+      + Math.sin(t * pulseSpeedB + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
     const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
     const boostScale = THREE.MathUtils.lerp(0.9, boostScaleTarget, Math.pow(boostMix, 0.68));
     const boostBackShift = THREE.MathUtils.lerp(0.04, 0.56, boostMix);
     ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.32, 1.7, boostMix) - boostBackShift;
     ring.scale.setScalar(shockRingSizeMultiplier * boostScale * ringPulse);
     const ringOpacityBase = 0.14 + boostMix * 0.22;
-    ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * 2.1 + offset * 0.9) * 0.04, 0.08, 0.5);
+    ring.material.opacity = clamp(ringOpacityBase + Math.sin(t * opacityWaveSpeed + offset * 0.9) * 0.04, 0.08, 0.5);
     ring.material.color.setRGB(0.52 + boostMix * 0.2, 0.74 + boostMix * 0.12, 1.0);
   });
 
@@ -1586,6 +1593,9 @@ function updatePlayer(dt) {
     game.boostFuel = Math.max(0, game.boostFuel - boostFuelBurnRate * dt);
     if (game.boostFuel <= 0.01) {
       game.boostFuel = 0;
+      if (!isMobile && (keys.has("ShiftLeft") || keys.has("ShiftRight"))) {
+        game.shiftBoostRelatchRequired = true;
+      }
       if (boostLeverState.level > 0 && game.boostAutoDropAt == null) {
         game.boostAutoDropAt = performance.now() + 1000;
       }
@@ -1904,7 +1914,7 @@ function updateMissiles(dt) {
       }
     }
 
-    if (!exploded && intersectsObstacle(m.position, 3.4)) {
+    if (!exploded && intersectsObstacle(m.position, MISSILE_BODY_COLLISION_RADIUS)) {
       if (target?.alive && m.position.distanceToSquared(target.mesh.getWorldPosition(new THREE.Vector3())) < 95 * 95) {
         hitPlane(target, 30, data.team);
       }
@@ -2026,6 +2036,7 @@ function resetMatch() {
   game.missileLockTarget = null;
   game.missileIncomingTimer = 0;
   game.missileLockLostTimer = 0;
+  game.shiftBoostRelatchRequired = false;
   game.lockToggleButtonLatch = false;
   game.lockToggleTapQueuedCount = 0;
   game.missileLaunchTapQueuedCount = 0;
@@ -2070,9 +2081,13 @@ function resetMatch() {
 }
 
 function syncInput() {
-  const kRoll = (keys.has("KeyA") ? -1 : 0) + (keys.has("KeyD") ? 1 : 0);
-  const kPitch = (keys.has("KeyW") ? 1 : 0) + (keys.has("KeyS") ? -1 : 0);
+  const kRoll = (keys.has("KeyA") ? 1 : 0) + (keys.has("KeyD") ? -1 : 0);
+  const kPitch = (keys.has("KeyW") ? -1 : 0) + (keys.has("KeyS") ? 1 : 0);
   const kThr = (keys.has("ArrowDown") ? -1 : 0) + (keys.has("ArrowUp") ? 1 : 0);
+  const shiftBoostHeld = keys.has("ShiftLeft") || keys.has("ShiftRight");
+
+  if (!shiftBoostHeld) game.shiftBoostRelatchRequired = false;
+  const shiftBoostEnabled = shiftBoostHeld && (isMobile || !game.shiftBoostRelatchRequired);
 
   const stickRoll = Math.abs(stickInput.yaw) > 0.01 ? stickInput.yaw : 0;
   const stickPitch = Math.abs(stickInput.pitch) > 0.01 ? stickInput.pitch : 0;
@@ -2088,7 +2103,7 @@ function syncInput() {
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
   input.throttle = clamp(input.throttle + (throttleTarget - input.throttle) * 0.24, -1, 1);
 
-  input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
+  input.boostLevel = clamp(Math.max(boostLeverState.level, shiftBoostEnabled ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
   input.lockToggle = keys.has("KeyM");
