@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 185;
+const DEBUG_BUILD_NUMBER = 186;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -295,6 +295,7 @@ const game = {
   missileLockTarget: null,
   missileLockLostTimer: 0,
   missileIncomingTimer: 0,
+  shiftBoostRelatchRequired: false,
   lockToggleButtonLatch: false,
   lockToggleTapQueuedCount: 0,
   missileLaunchTapQueuedCount: 0,
@@ -361,6 +362,15 @@ function intersectsObstacle(position, radius = 0) {
   for (const box of staticObstacles) {
     tmpBox.copy(box).expandByScalar(radius);
     if (tmpBox.containsPoint(position)) return true;
+  }
+  return false;
+}
+
+function intersectsObstacleSegment(start, end, radius = 0) {
+  const segment = new THREE.Line3(start, end);
+  for (const box of staticObstacles) {
+    tmpBox.copy(box).expandByScalar(radius);
+    if (tmpBox.intersectsLine(segment)) return true;
   }
   return false;
 }
@@ -1330,7 +1340,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const shockRingSizeMultiplier = 1.2;
   plane.exhaust.shockRings.forEach((ring) => {
     const offset = ring.userData.offset ?? 0;
-    const phase = t * 2.4 - offset * 0.72 + plane.mesh.id * 0.05;
+    const phaseSpeed = THREE.MathUtils.lerp(2.4, 4.8, Math.pow(boostMix, 0.82));
+    const phase = t * phaseSpeed - offset * 0.72 + plane.mesh.id * 0.05;
     const travel = (Math.sin(phase) + 1) * 0.5;
     const baseX = ring.userData.baseX ?? ring.position.x;
     const ringPulse = 0.94
@@ -1586,6 +1597,7 @@ function updatePlayer(dt) {
     game.boostFuel = Math.max(0, game.boostFuel - boostFuelBurnRate * dt);
     if (game.boostFuel <= 0.01) {
       game.boostFuel = 0;
+      if (keys.has("ShiftLeft") || keys.has("ShiftRight")) game.shiftBoostRelatchRequired = true;
       if (boostLeverState.level > 0 && game.boostAutoDropAt == null) {
         game.boostAutoDropAt = performance.now() + 1000;
       }
@@ -1904,7 +1916,7 @@ function updateMissiles(dt) {
       }
     }
 
-    if (!exploded && intersectsObstacle(m.position, 3.4)) {
+    if (!exploded && intersectsObstacleSegment(prevPos, m.position, 0.45)) {
       if (target?.alive && m.position.distanceToSquared(target.mesh.getWorldPosition(new THREE.Vector3())) < 95 * 95) {
         hitPlane(target, 30, data.team);
       }
@@ -2026,6 +2038,7 @@ function resetMatch() {
   game.missileLockTarget = null;
   game.missileIncomingTimer = 0;
   game.missileLockLostTimer = 0;
+  game.shiftBoostRelatchRequired = false;
   game.lockToggleButtonLatch = false;
   game.lockToggleTapQueuedCount = 0;
   game.missileLaunchTapQueuedCount = 0;
@@ -2088,7 +2101,10 @@ function syncInput() {
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
   input.throttle = clamp(input.throttle + (throttleTarget - input.throttle) * 0.24, -1, 1);
 
-  input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
+  const shiftHeld = keys.has("ShiftLeft") || keys.has("ShiftRight");
+  if (!shiftHeld) game.shiftBoostRelatchRequired = false;
+  const shiftBoostLevel = shiftHeld && !game.shiftBoostRelatchRequired ? 1 : 0;
+  input.boostLevel = clamp(Math.max(boostLeverState.level, shiftBoostLevel), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
   input.lockToggle = keys.has("KeyM");
