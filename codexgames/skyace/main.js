@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 186;
+const DEBUG_BUILD_NUMBER = 187;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -367,10 +367,17 @@ function intersectsObstacle(position, radius = 0) {
 }
 
 function intersectsObstacleSegment(start, end, radius = 0) {
-  const segment = new THREE.Line3(start, end);
+  const segmentDir = tmpVecA.subVectors(end, start);
+  const segmentLength = segmentDir.length();
+  if (segmentLength <= 1e-6) return intersectsObstacle(start, radius);
+  segmentDir.multiplyScalar(1 / segmentLength);
+  const segmentRay = new THREE.Ray(start, segmentDir);
+
   for (const box of staticObstacles) {
     tmpBox.copy(box).expandByScalar(radius);
-    if (tmpBox.intersectsLine(segment)) return true;
+    if (tmpBox.containsPoint(start) || tmpBox.containsPoint(end)) return true;
+    const hit = segmentRay.intersectBox(tmpBox, tmpVecB);
+    if (hit && hit.distanceToSquared(start) <= segmentLength * segmentLength) return true;
   }
   return false;
 }
@@ -1340,7 +1347,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const shockRingSizeMultiplier = 1.2;
   plane.exhaust.shockRings.forEach((ring) => {
     const offset = ring.userData.offset ?? 0;
-    const phaseSpeed = THREE.MathUtils.lerp(2.4, 4.8, Math.pow(boostMix, 0.82));
+    const phaseSpeed = THREE.MathUtils.lerp(2.4, 7.2, Math.pow(boostMix, 0.82));
     const phase = t * phaseSpeed - offset * 0.72 + plane.mesh.id * 0.05;
     const travel = (Math.sin(phase) + 1) * 0.5;
     const baseX = ring.userData.baseX ?? ring.position.x;
