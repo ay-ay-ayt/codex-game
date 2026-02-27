@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 182;
+const DEBUG_BUILD_NUMBER = 183;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1265,7 +1265,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const glowOpacityBoost = clamp(0.56 + boostLevel * 0.46 + pulse * 0.06, 0.3, 1.0);
   plane.exhaust.nozzleGlow.material.opacity = THREE.MathUtils.lerp(glowOpacityIdle, glowOpacityBoost, boostMix);
 
-  plane.exhaust.flameCore.scale.set(coreRadius, coreLength, coreRadius);
+  const innerFlameRadiusScale = 1 - boostMix * 0.1;
+  plane.exhaust.flameCore.scale.set(coreRadius * innerFlameRadiusScale, coreLength, coreRadius * innerFlameRadiusScale);
   const coreBaseX = plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x;
   const coreShiftIdle = (coreLength - 1) * 3.5;
   const coreShiftBoost = (coreLength - 1) * 7.2;
@@ -1284,9 +1285,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const outerOpacityBoost = clamp(0.34 + boostLevel * 0.2 + pulse * 0.04, 0.22, 0.62);
   plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
-  const innerBlueDepth = clamp(0.82 + boostMix * 0.06 + pulse * 0.02, 0.8, 1.0);
-  const innerWarm = clamp(0.34 + boostMix * 0.86 + pulse * 0.03, 0.32, 1.0);
-  const innerGreen = clamp(0.44 + boostMix * 0.76 + pulse * 0.03, 0.42, 1.0);
+  const innerBlueDepth = clamp(0.82 + boostMix * 0.06 + pulse * 0.02, 0.8, 1.0 + boostMix * 0.5);
+  const innerWarm = clamp(0.34 + boostMix * 0.86 + pulse * 0.03, 0.32, 1.0 + boostMix * 0.5);
+  const innerGreen = clamp(0.44 + boostMix * 0.76 + pulse * 0.03, 0.42, 1.0 + boostMix * 0.5);
   plane.exhaust.flameCore.material.color.setRGB(innerWarm, innerGreen, innerBlueDepth);
 
   const outerBlueGlow = clamp(0.9 + boostMix * 0.08 + pulse * 0.015, 0.86, 1.0);
@@ -1312,9 +1313,9 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
     const streakPulse = 0.9 + Math.sin(t * 7.2 + index * 0.9 + plane.mesh.id * 0.17) * 0.1;
     streak.material.opacity = clamp(0.74 + streakPulse * 0.4, 0.72, 1.0);
     streak.material.color.setRGB(
-      1.0,
-      0.08,
-      0.04
+      2.0,
+      0.16,
+      0.08
     );
   });
 
