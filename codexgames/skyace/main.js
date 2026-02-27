@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 187;
+const DEBUG_BUILD_NUMBER = 188;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1347,7 +1347,7 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const shockRingSizeMultiplier = 1.2;
   plane.exhaust.shockRings.forEach((ring) => {
     const offset = ring.userData.offset ?? 0;
-    const phaseSpeed = THREE.MathUtils.lerp(2.4, 7.2, Math.pow(boostMix, 0.82));
+    const phaseSpeed = THREE.MathUtils.lerp(2.4, 10.0, Math.pow(boostMix, 0.82));
     const phase = t * phaseSpeed - offset * 0.72 + plane.mesh.id * 0.05;
     const travel = (Math.sin(phase) + 1) * 0.5;
     const baseX = ring.userData.baseX ?? ring.position.x;
@@ -2090,8 +2090,8 @@ function resetMatch() {
 }
 
 function syncInput() {
-  const kRoll = (keys.has("KeyA") ? -1 : 0) + (keys.has("KeyD") ? 1 : 0);
-  const kPitch = (keys.has("KeyW") ? 1 : 0) + (keys.has("KeyS") ? -1 : 0);
+  const kRoll = (keys.has("KeyA") ? 1 : 0) + (keys.has("KeyD") ? -1 : 0);
+  const kPitch = (keys.has("KeyW") ? -1 : 0) + (keys.has("KeyS") ? 1 : 0);
   const kThr = (keys.has("ArrowDown") ? -1 : 0) + (keys.has("ArrowUp") ? 1 : 0);
 
   const stickRoll = Math.abs(stickInput.yaw) > 0.01 ? stickInput.yaw : 0;
