@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 190;
+const DEBUG_BUILD_NUMBER = 191;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -300,6 +300,7 @@ const game = {
   lockToggleTapQueuedCount: 0,
   missileLaunchTapQueuedCount: 0,
   matchElapsed: 0,
+  playerBoostWasActive: false,
 };
 
 let lastHitVibeAt = 0;
@@ -1546,8 +1547,8 @@ function collidePlaneWithObstacles(plane, previousPosition) {
     plane.velocity.addScaledVector(away, 180);
   }
 
-  plane.velocity.multiplyScalar(0.68);
-  plane.speed = Math.max(160, plane.speed * 0.9);
+  plane.velocity.multiplyScalar(0.35);
+  plane.speed = Math.max(150, plane.speed * 0.9);
   plane.isColliding = true;
   return true;
 }
@@ -1596,6 +1597,14 @@ function updatePlayer(dt) {
 
   const boostAllowed = game.boostAutoDropAt == null && game.boostFuel > 0.01;
   const boostLevel = input.boostLevel > 0 && boostAllowed ? input.boostLevel : 0;
+  const boostJustEnded = game.playerBoostWasActive && boostLevel <= 0;
+  game.playerBoostWasActive = boostLevel > 0;
+
+  if (boostJustEnded) {
+    const speedAfterBoost = Math.min(560, p.velocity.length());
+    p.speed = Math.max(p.speed, speedAfterBoost);
+  }
+
   if (boostLevel > 0) {
     const boostFuelBurnRate = BOOST_FUEL_BURN_BASE_PER_SEC * boostLevel * (1 + BOOST_FUEL_BURN_CURVE * boostLevel * boostLevel);
     game.boostFuel = Math.max(0, game.boostFuel - boostFuelBurnRate * dt);
@@ -2051,6 +2060,7 @@ function resetMatch() {
   game.lockToggleTapQueuedCount = 0;
   game.missileLaunchTapQueuedCount = 0;
   game.matchElapsed = 0;
+  game.playerBoostWasActive = false;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
