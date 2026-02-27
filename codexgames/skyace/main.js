@@ -8,11 +8,12 @@ const botCountEl = document.getElementById("botCount");
 const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
-const botCountButtons = Array.from(botCountEl.querySelectorAll(".tap-btn[data-bot-count]"));
-const mapTypeButtons = Array.from(mapTypeEl.querySelectorAll(".tap-btn[data-map-type]"));
+const botCountButtons = botCountEl ? Array.from(botCountEl.querySelectorAll(".tap-btn[data-bot-count]")) : [];
+const mapTypeButtons = mapTypeEl ? Array.from(mapTypeEl.querySelectorAll(".tap-btn[data-map-type]")) : [];
 
 const initialBotButton = botCountButtons.find((btn) => btn.classList.contains("is-active"));
 let selectedBotCount = Number((initialBotButton && initialBotButton.dataset.botCount) || 2);
+if (!Number.isFinite(selectedBotCount)) selectedBotCount = 2;
 const initialMapButton = mapTypeButtons.find((btn) => btn.classList.contains("is-active"));
 let selectedMapType = (initialMapButton && initialMapButton.dataset.mapType) || "city";
 const menuPanel = document.getElementById("menuPanel");
@@ -31,7 +32,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 193;
+const DEBUG_BUILD_NUMBER = 194;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const coarsePointerQuery = window.matchMedia ? window.matchMedia("(pointer: coarse)") : null;
@@ -2292,6 +2293,7 @@ function setupBoostLever() {
 
 
 function bindActionButton(btn, onPress = null, onRelease = null) {
+  if (!btn) return;
   const press = (e) => {
     e.preventDefault();
     btn.classList.add("active");
