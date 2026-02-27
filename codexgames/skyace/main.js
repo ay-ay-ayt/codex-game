@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 189;
+const DEBUG_BUILD_NUMBER = 190;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -306,7 +306,7 @@ let lastHitVibeAt = 0;
 
 const MISSILE_MAX_AMMO = 2;
 const MISSILE_SPEED = 650;
-const MISSILE_TURN_RATE = 1.02;
+const MISSILE_TURN_RATE = 1.12;
 const MISSILE_LOCK_RANGE = 1800;
 const MISSILE_LOCK_DOT = 0.58;
 const MISSILE_LOCK_DROP_RANGE = 2000;
@@ -1876,7 +1876,7 @@ function updateMissiles(dt) {
       const aimPoint = targetCenter.clone().addScaledVector(target.velocity, leadTime * 0.88);
       const desiredDir = aimPoint.sub(m.position).normalize();
       const currentDir = data.velocity.clone().normalize();
-      currentDir.lerp(desiredDir, clamp(MISSILE_TURN_RATE * dt, 0, 0.24)).normalize();
+      currentDir.lerp(desiredDir, clamp(MISSILE_TURN_RATE * dt, 0, 0.27)).normalize();
       data.velocity.copy(currentDir.multiplyScalar(data.cruiseSpeed));
       m.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), currentDir);
     }
