@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 183;
+const DEBUG_BUILD_NUMBER = 184;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -238,6 +238,9 @@ const BANK_RATE = 3.0;
 const PITCH_RATE = 2.5;
 const LEVEL_RATE = 1.2;
 const TURN_RATE = 1.0;
+const BOOST_SPEED_BONUS_MAX = 260;
+const BOOST_FUEL_BURN_BASE_PER_SEC = 22;
+const BOOST_FUEL_BURN_CURVE = 0.35; // Higher boost levels become less fuel-efficient toward 100%.
 const keys = new Set();
 
 const qYaw = new THREE.Quaternion();
@@ -1578,7 +1581,8 @@ function updatePlayer(dt) {
   const boostAllowed = game.boostAutoDropAt == null && game.boostFuel > 0.01;
   const boostLevel = input.boostLevel > 0 && boostAllowed ? input.boostLevel : 0;
   if (boostLevel > 0) {
-    game.boostFuel = Math.max(0, game.boostFuel - 22 * boostLevel * dt);
+    const boostFuelBurnRate = BOOST_FUEL_BURN_BASE_PER_SEC * boostLevel * (1 + BOOST_FUEL_BURN_CURVE * boostLevel * boostLevel);
+    game.boostFuel = Math.max(0, game.boostFuel - boostFuelBurnRate * dt);
     if (game.boostFuel <= 0.01) {
       game.boostFuel = 0;
       if (boostLeverState.level > 0 && game.boostAutoDropAt == null) {
@@ -1591,7 +1595,7 @@ function updatePlayer(dt) {
     game.boostFuel = 0;
   }
 
-  const targetSpeed = p.speed + boostLevel * 220;
+  const targetSpeed = p.speed + boostLevel * BOOST_SPEED_BONUS_MAX;
   updatePlaneExhaust(p, boostLevel);
   const desiredVel = forward.multiplyScalar(targetSpeed);
   p.velocity.lerp(desiredVel, 0.08);
