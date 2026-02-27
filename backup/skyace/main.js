@@ -19,13 +19,17 @@ menuBtn.setAttribute("aria-expanded", "false");
 const messageEl = document.getElementById("message");
 const rotateHint = document.getElementById("rotateHint");
 const fireBtn = document.getElementById("fireBtn");
+const missileBtn = document.getElementById("missileBtn");
 const boostLeverEl = document.getElementById("boostLever");
 const crosshairEl = document.getElementById("crosshair");
+const missileWarningEl = document.getElementById("missileWarning");
+const lockOnCueEl = document.getElementById("lockOnCue");
+const lockCancelBtn = document.getElementById("lockCancelBtn");
 const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 85;
+const DEBUG_BUILD_NUMBER = 192;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -48,10 +52,10 @@ function hpBarClass(ratio) {
   return "danger";
 }
 
-function hpRowMarkup(label, hp) {
+function hpRowMarkup(label, hp, locked = false) {
   const hpInt = Math.max(0, Math.round(hp));
   const ratio = clamp(hpInt / 100, 0, 1);
-  const sizeClass = "hp-row";
+  const sizeClass = `hp-row${locked ? " is-locked" : ""}`;
   return `
     <div class="${sizeClass}">
       <span class="hp-name">${label}</span>
@@ -64,9 +68,9 @@ function hpRowMarkup(label, hp) {
 function updateHudHealthPanel() {
   if (!hpPanelReady || !game.player) return;
 
-  const rows = [hpRowMarkup("YOU", game.player.hp)];
+  const rows = [hpRowMarkup("YOU", game.player.hp, false)];
   game.bots.forEach((b, i) => {
-    rows.push(hpRowMarkup(`EN${i + 1}`, b.hp));
+    rows.push(hpRowMarkup(`EN${i + 1}`, b.hp, b === game.missileLockTarget));
   });
   healthEl.innerHTML = rows.join("");
 }
@@ -160,6 +164,27 @@ const fighterTextures = {
   trimRoughness: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough_2k.jpg", [1.8, 1]),
 };
 
+const worldTextures = {
+  cityGroundColor: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_diff_2k.jpg", [26, 26], THREE.SRGBColorSpace),
+  cityGroundNormal: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_2k.jpg", [26, 26]),
+  cityGroundRoughness: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough_2k.jpg", [26, 26]),
+  cityRoadColor: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff_2k.jpg", [20, 8], THREE.SRGBColorSpace),
+  cityRoadNormal: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl_2k.jpg", [20, 8]),
+  cityRoadRoughness: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough_2k.jpg", [20, 8]),
+  cityBuildingColor: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff_2k.jpg", [2.4, 3.4], THREE.SRGBColorSpace),
+  cityBuildingNormal: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl_2k.jpg", [2.4, 3.4]),
+  cityBuildingRoughness: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough_2k.jpg", [2.4, 3.4]),
+  forestGroundColor: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff_2k.jpg", [18, 18], THREE.SRGBColorSpace),
+  forestGroundNormal: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl_2k.jpg", [18, 18]),
+  forestGroundRoughness: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough_2k.jpg", [18, 18]),
+  rockColor: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_diff_2k.jpg", [1.4, 1.4], THREE.SRGBColorSpace),
+  rockNormal: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_2k.jpg", [1.4, 1.4]),
+  rockRoughness: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough_2k.jpg", [1.4, 1.4]),
+  trunkColor: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_diff_2k.jpg", [1.1, 3.2], THREE.SRGBColorSpace),
+  trunkNormal: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_nor_gl_2k.jpg", [1.1, 3.2]),
+  trunkRoughness: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough_2k.jpg", [1.1, 3.2]),
+};
+
 const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
 const sun = new THREE.DirectionalLight(0xffffff, 1.15);
@@ -172,10 +197,13 @@ const world = new THREE.Group();
 scene.add(world);
 
 const staticObstacles = [];
+const staticObstacleMeshes = [];
 const tmpBox = new THREE.Box3();
 const tmpVecA = new THREE.Vector3();
 const tmpVecB = new THREE.Vector3();
 const tmpVecC = new THREE.Vector3();
+const tmpVecD = new THREE.Vector3();
+const losRaycaster = new THREE.Raycaster();
 
 const ARENA = 3600;
 const FLOOR_Y = 40;
@@ -210,6 +238,10 @@ const BANK_RATE = 3.0;
 const PITCH_RATE = 2.5;
 const LEVEL_RATE = 1.2;
 const TURN_RATE = 1.0;
+const BOOST_SPEED_BONUS_MAX = 260;
+const BOOST_FUEL_BURN_BASE_PER_SEC = 22;
+const BOOST_FUEL_BURN_CURVE = 0.48; // Higher boost levels become less fuel-efficient toward 100%.
+const BOOST_FUEL_MAX = 130;
 const keys = new Set();
 
 const qYaw = new THREE.Quaternion();
@@ -235,6 +267,9 @@ const input = {
   boost: false,
   boostLevel: 0,
   fire: false,
+  lockToggle: false,
+  lockTogglePressed: false,
+  missileLaunchPressed: false,
 };
 
 const boostLeverState = {
@@ -247,18 +282,38 @@ const game = {
   player: null,
   bots: [],
   bullets: [],
+  missiles: [],
   score: 0,
   over: false,
   initialBots: 0,
   ammo: 60,
-  boostFuel: 100,
+  boostFuel: BOOST_FUEL_MAX,
   effects: [],
   playerHitTimer: 0,
   hitConfirmTimer: 0,
   boostAutoDropAt: null,
+  shiftBoostRelatchRequired: false,
+  missileLockTarget: null,
+  missileLockLostTimer: 0,
+  missileIncomingTimer: 0,
+  lockToggleButtonLatch: false,
+  lockToggleTapQueuedCount: 0,
+  missileLaunchTapQueuedCount: 0,
+  matchElapsed: 0,
+  playerBoostWasActive: false,
 };
 
 let lastHitVibeAt = 0;
+
+const MISSILE_MAX_AMMO = 2;
+const MISSILE_SPEED = 650;
+const MISSILE_TURN_RATE = 1.12;
+const MISSILE_LOCK_RANGE = 1800;
+const MISSILE_LOCK_DOT = 0.58;
+const MISSILE_LOCK_DROP_RANGE = 2000;
+const MISSILE_LOCK_DROP_DOT = 0.42;
+const MISSILE_BODY_COLLISION_RADIUS = 0.5;
+
 
 function clamp(v, a, b) {
   return Math.max(a, Math.min(b, v));
@@ -273,10 +328,36 @@ function smoothApproach(current, target, rate, dt) {
 }
 
 function addObstacle(mesh, padding = 0) {
+  if (!mesh) return;
   mesh.updateWorldMatrix(true, false);
   const box = new THREE.Box3().setFromObject(mesh);
   if (padding > 0) box.expandByScalar(padding);
   staticObstacles.push(box);
+  staticObstacleMeshes.push(mesh);
+}
+
+function getLockAimPoint(plane, out = tmpVecD) {
+  const pos = plane?.mesh?.position;
+  if (!pos) return out.set(0, 0, 0);
+  out.copy(pos);
+  out.y += 14;
+  return out;
+}
+
+function hasLineOfSight(origin, targetPlane) {
+  if (!targetPlane?.mesh || staticObstacleMeshes.length === 0) return true;
+  const targetPos = getLockAimPoint(targetPlane, tmpVecD);
+  const dir = tmpVecB.copy(targetPos).sub(origin);
+  const dist = dir.length();
+  if (dist <= 1e-3) return true;
+
+  dir.multiplyScalar(1 / dist);
+  losRaycaster.set(origin, dir);
+  losRaycaster.near = 0.1;
+  losRaycaster.far = dist - 2;
+
+  const hits = losRaycaster.intersectObjects(staticObstacleMeshes, false);
+  return hits.length === 0;
 }
 
 function intersectsObstacle(position, radius = 0) {
@@ -353,6 +434,7 @@ function updateMenuPanelPosition() {
 function buildWorld(mapType) {
   world.clear();
   staticObstacles.length = 0;
+  staticObstacleMeshes.length = 0;
 
   const isForest = mapType === "forest";
   const skyColor = isForest ? 0x89b992 : 0x7594ba;
@@ -395,14 +477,28 @@ function buildWorld(mapType) {
   if (isForest) {
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
-      new THREE.MeshStandardMaterial({ color: 0x49643f, roughness: 0.98, metalness: 0.02 })
+      new THREE.MeshStandardMaterial({
+        color: 0x5f8550,
+        map: worldTextures.forestGroundColor,
+        normalMap: worldTextures.forestGroundNormal,
+        roughnessMap: worldTextures.forestGroundRoughness,
+        roughness: 0.96,
+        metalness: 0.02,
+      })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = FLOOR_Y;
     ground.receiveShadow = true;
     world.add(ground);
 
-    const hillMat = new THREE.MeshStandardMaterial({ color: 0x5d7f57, roughness: 0.95 });
+    const hillMat = new THREE.MeshStandardMaterial({
+      color: 0x6e9561,
+      map: worldTextures.forestGroundColor,
+      normalMap: worldTextures.forestGroundNormal,
+      roughnessMap: worldTextures.forestGroundRoughness,
+      roughness: 0.94,
+      metalness: 0.03,
+    });
     for (let i = 0; i < worldDetail.hills; i++) {
       const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(90, 260), 16, 12), hillMat);
       hill.scale.y = rand(0.24, 0.55);
@@ -411,7 +507,14 @@ function buildWorld(mapType) {
       world.add(hill);
     }
 
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x6f7668, roughness: 0.96, metalness: 0.03 });
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: 0x8f9792,
+      map: worldTextures.rockColor,
+      normalMap: worldTextures.rockNormal,
+      roughnessMap: worldTextures.rockRoughness,
+      roughness: 0.92,
+      metalness: 0.04,
+    });
     for (let i = 0; i < worldDetail.forestRocks; i++) {
       const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(8, 26), 0), rockMat);
       rock.scale.y = rand(0.45, 1.0);
@@ -432,7 +535,14 @@ function buildWorld(mapType) {
       world.add(shrub);
     }
 
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a30, roughness: 0.9 });
+    const trunkMat = new THREE.MeshStandardMaterial({
+      color: 0x7d5c3f,
+      map: worldTextures.trunkColor,
+      normalMap: worldTextures.trunkNormal,
+      roughnessMap: worldTextures.trunkRoughness,
+      roughness: 0.9,
+      metalness: 0.05,
+    });
     const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
     const forestCenters = Array.from({ length: worldDetail.forestCenters }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
 
@@ -473,14 +583,28 @@ function buildWorld(mapType) {
 
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
-    new THREE.MeshStandardMaterial({ color: 0x42464d, roughness: 0.98, metalness: 0.05 })
+    new THREE.MeshStandardMaterial({
+      color: 0x89909a,
+      map: worldTextures.cityGroundColor,
+      normalMap: worldTextures.cityGroundNormal,
+      roughnessMap: worldTextures.cityGroundRoughness,
+      roughness: 0.92,
+      metalness: 0.08,
+    })
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = FLOOR_Y;
   ground.receiveShadow = true;
   world.add(ground);
 
-  const roadMat = new THREE.MeshStandardMaterial({ color: 0x2d3137, roughness: 0.96 });
+  const roadMat = new THREE.MeshStandardMaterial({
+    color: 0x40464e,
+    map: worldTextures.cityRoadColor,
+    normalMap: worldTextures.cityRoadNormal,
+    roughnessMap: worldTextures.cityRoadRoughness,
+    roughness: 0.86,
+    metalness: 0.08,
+  });
   const laneMat = new THREE.MeshStandardMaterial({ color: 0xa8aeb6, roughness: 0.85 });
   for (let i = -8; i <= 8; i++) {
     const roadX = new THREE.Mesh(new THREE.BoxGeometry(ARENA * 2.7, 0.2, 42), roadMat);
@@ -515,7 +639,14 @@ function buildWorld(mapType) {
 
     const tower = new THREE.Mesh(
       new THREE.BoxGeometry(w, h, d),
-      new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.78, metalness: 0.1 })
+      new THREE.MeshStandardMaterial({
+        color: new THREE.Color(baseColor).lerp(new THREE.Color(0xbcc5ce), 0.2),
+        map: worldTextures.cityBuildingColor,
+        normalMap: worldTextures.cityBuildingNormal,
+        roughnessMap: worldTextures.cityBuildingRoughness,
+        roughness: 0.72,
+        metalness: 0.12,
+      })
     );
     tower.position.set(px, FLOOR_Y + h / 2, pz);
     tower.castShadow = true;
@@ -633,15 +764,15 @@ function createFighter(colorOrPalette, isPlayer = false) {
     roughnessMap: isPlayer ? fighterTextures.bodyRoughness : null,
     metalnessMap: isPlayer ? fighterTextures.bodyMetalness : null,
     normalScale: new THREE.Vector2(0.22, 0.22),
-    roughness: isPlayer ? 0.26 : 0.22,
-    metalness: isPlayer ? 0.82 : 0.68,
+    roughness: isPlayer ? 0.3 : 0.22,
+    metalness: isPlayer ? 0.76 : 0.68,
     clearcoat: 0.48,
     clearcoatRoughness: 0.24,
     emissive: isPlayer ? 0x000000 : new THREE.Color(palette.wing).multiplyScalar(0.18),
     emissiveIntensity: isPlayer ? 0 : 0.32,
   });
   const nozzleMetalMat = new THREE.MeshPhysicalMaterial({
-    color: 0x3a0a0f,
+    color: 0x5a1a22,
     roughnessMap: fighterTextures.bodyRoughness,
     normalMap: fighterTextures.bodyNormal,
     metalnessMap: fighterTextures.bodyMetalness,
@@ -905,24 +1036,23 @@ function createFighter(colorOrPalette, isPlayer = false) {
 
   // Afterburner rebuilt from scratch: bright nozzle bloom + dense flame cone + long cool plume + shock-diamond rings.
   const nozzleGlow = new THREE.Mesh(
-    new THREE.SphereGeometry(1.92, 18, 14),
+    new THREE.SphereGeometry(1.62, 18, 14),
     new THREE.MeshBasicMaterial({
-      color: 0xfff0b0,
+      color: 0xc5e6ff,
       transparent: true,
-      opacity: 0.55,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
+      opacity: 0.28,
+        depthWrite: false,
     })
   );
-  nozzleGlow.position.set(-35.6, 1.15, 0);
+  nozzleGlow.position.set(-35.72, 1.15, 0);
 
   const flameCore = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.82, 0.18, 12.6, 28, 1, true),
+    new THREE.CylinderGeometry(1.26, 0.06, 13.4, 30, 1, true),
     new THREE.MeshBasicMaterial({
-      color: 0xffc28b,
+      color: 0x4f8ee8,
       transparent: true,
-      opacity: 0.62,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.3,
+      blending: THREE.NormalBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
     })
@@ -931,33 +1061,64 @@ function createFighter(colorOrPalette, isPlayer = false) {
   flameCore.position.set(-39.8, 1.15, 0);
 
   const flameOuter = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.44, 0.22, 16.8, 34, 1, true),
+    new THREE.CylinderGeometry(1.44, 0.22, 16.8, 34, 1, false),
     new THREE.MeshBasicMaterial({
       color: 0x7fb7ff,
       transparent: true,
-      opacity: 0.36,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
+      opacity: 0.24,
+        depthWrite: false,
       side: THREE.DoubleSide,
     })
   );
   flameOuter.rotation.z = -Math.PI * 0.5;
   flameOuter.position.set(-42.4, 1.15, 0);
 
-  const shockRings = [];
-  for (let i = 0; i < 5; i++) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.88 + i * 0.12, 0.08, 10, 26),
-      new THREE.MeshBasicMaterial({
-        color: 0xffcfa0,
-        transparent: true,
-        opacity: 0.38,
-        blending: THREE.AdditiveBlending,
+
+  const nozzleHeatCore = new THREE.Mesh(
+    new THREE.SphereGeometry(1.22, 16, 12),
+    new THREE.MeshBasicMaterial({
+      color: 0xff6a3a,
+      transparent: true,
+      opacity: 0.34,
         depthWrite: false,
+    })
+  );
+  nozzleHeatCore.position.set(-35.05, 1.15, 0);
+
+  const nozzleHeatLines = new THREE.Group();
+  for (let i = 0; i < 3; i++) {
+    const streak = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.065, 2.3, 8),
+      new THREE.MeshBasicMaterial({
+        color: 0xff4328,
+        transparent: true,
+        opacity: 0.62,
+            depthWrite: false,
+        depthTest: false,
+      })
+    );
+    streak.rotation.x = (Math.PI * i) / 3;
+    streak.rotation.z = ((i % 2) - 0.5) * 0.1;
+    streak.position.set(0, 0, 0);
+    nozzleHeatLines.add(streak);
+  }
+  nozzleHeatLines.position.set(-34.45, 1.15, 0);
+
+  const shockRings = [];
+  const shockRingRadii = [1.45, 1.7];
+  const shockRingBaseX = [-37.2, -39.25];
+  for (let i = 0; i < shockRingRadii.length; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(shockRingRadii[i], 0.09, 10, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0x8fc3ff,
+        transparent: true,
+        opacity: 0.26,
+            depthWrite: false,
       })
     );
     ring.rotation.y = Math.PI * 0.5;
-    ring.position.set(-37.8 - i * 2.04, 1.15, 0);
+    ring.position.set(shockRingBaseX[i], 1.15, 0);
     ring.userData.offset = i;
     shockRings.push(ring);
   }
@@ -965,14 +1126,47 @@ function createFighter(colorOrPalette, isPlayer = false) {
   nozzleGlow.userData.baseX = nozzleGlow.position.x;
   flameCore.userData.baseX = flameCore.position.x;
   flameOuter.userData.baseX = flameOuter.position.x;
+  nozzleHeatCore.userData.baseX = nozzleHeatCore.position.x;
+  nozzleHeatLines.userData.baseX = nozzleHeatLines.position.x;
   shockRings.forEach((ring) => { ring.userData.baseX = ring.position.x; });
+
+  const missileBodyGeo = new THREE.CylinderGeometry(0.38, 0.38, 6.6, 12);
+  missileBodyGeo.rotateZ(-Math.PI * 0.5);
+  const missileNoseGeo = new THREE.ConeGeometry(0.42, 1.3, 12);
+  missileNoseGeo.rotateZ(-Math.PI * 0.5);
+  missileNoseGeo.translate(3.95, 0, 0);
+  const missileMat = new THREE.MeshStandardMaterial({ color: isPlayer ? 0xd6e4f2 : 0xd4d6cf, emissive: isPlayer ? 0x243749 : 0x1f1f1f, emissiveIntensity: 0.2, roughness: 0.34, metalness: 0.72 });
+
+  function buildWingMissile(side = 1) {
+    const missileGroup = new THREE.Group();
+    const body = new THREE.Mesh(missileBodyGeo, missileMat);
+    const nose = new THREE.Mesh(missileNoseGeo, missileMat);
+    const finMat = accentMat.clone();
+    finMat.emissiveIntensity = 0.1;
+    const finGeo = new THREE.BoxGeometry(1.1, 0.06, 0.7);
+    const finTop = new THREE.Mesh(finGeo, finMat);
+    finTop.position.set(-1.1, 0.38, 0);
+    const finBottom = finTop.clone();
+    finBottom.position.y = -0.38;
+    const finSide = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.06), finMat);
+    finSide.position.set(-1.1, 0, 0.34);
+    const finSideOpp = finSide.clone();
+    finSideOpp.position.z = -0.34;
+    missileGroup.add(body, nose, finTop, finBottom, finSide, finSideOpp);
+    missileGroup.position.set(-17.2, 1.2, side * 19.2);
+    return missileGroup;
+  }
+
+  const wingMissileL = buildWingMissile(1);
+  const wingMissileR = buildWingMissile(-1);
 
   g.add(
     centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
     mainWingL, mainWingR,
+    wingMissileL, wingMissileR,
     tailplaneL, tailplaneR, finCenter,
     engineCore, nozzle, nozzleInner, nozzleLip,
-    nozzleGlow, flameCore, flameOuter, ...shockRings
+    nozzleGlow, flameCore, flameOuter, nozzleHeatCore, nozzleHeatLines, ...shockRings
   );
 
   // Keep aircraft visually facing gameplay forward (+X). Model itself is built with nose on +Z.
@@ -986,6 +1180,32 @@ function createFighter(colorOrPalette, isPlayer = false) {
       node.frustumCulled = false;
     }
   });
+
+  const lockOutline = new THREE.Group();
+  const lockOutlineMat = new THREE.LineBasicMaterial({
+    color: 0xff2c2c,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    depthTest: false,
+  });
+  g.traverse((node) => {
+    if (!node.isMesh) return;
+    if (!node.geometry) return;
+
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 30), lockOutlineMat);
+    edges.position.copy(node.position);
+    edges.quaternion.copy(node.quaternion);
+    edges.scale.copy(node.scale).multiplyScalar(1.14);
+    edges.renderOrder = 121;
+    edges.frustumCulled = false;
+    edges.userData.baseScale = edges.scale.clone();
+    lockOutline.add(edges);
+  });
+  lockOutline.visible = false;
+  lockOutline.userData = { lineMat: lockOutlineMat };
+  g.add(lockOutline);
+
   world.add(g);
 
   const plane = {
@@ -1002,12 +1222,19 @@ function createFighter(colorOrPalette, isPlayer = false) {
     pitch: 0,
     roll: 0,
     hpLabel: null,
+    lockOutline,
     exhaust: {
       nozzleGlow,
       flameCore,
       flameOuter,
+      nozzleHeatCore,
+      nozzleHeatLines,
       shockRings,
     },
+    missiles: [wingMissileL, wingMissileR],
+    missileAmmo: MISSILE_MAX_AMMO,
+    missileCooldown: 0,
+    missileTarget: null,
   };
 
   return plane;
@@ -1019,35 +1246,123 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
   const pulse = 1 + Math.sin(t * 32 + plane.mesh.id * 0.73) * 0.07;
   const shimmer = Math.sin(t * 21 + plane.mesh.id * 0.31) * 0.05;
   const turbulence = Math.sin(t * 17 + plane.mesh.id * 0.42) * 0.12;
+  const boostMix = clamp(boostLevel, 0, 1);
 
-  const coreLength = (1.02 + boostLevel * 0.72) * pulse;
-  const outerLength = (1.08 + boostLevel * 1.45) * (pulse + 0.03);
-  const coreRadius = 1 + boostLevel * 0.24 + shimmer;
-  const outerRadius = 1 + boostLevel * 0.32 + shimmer * 1.3;
+  const coreLengthIdle = (0.84 + boostLevel * 0.42) * pulse;
+  const coreLengthBoost = (1.22 + boostLevel * 1.18) * (pulse + 0.03);
+  const coreLength = THREE.MathUtils.lerp(coreLengthIdle, coreLengthBoost, Math.pow(boostMix, 0.9));
 
-  plane.exhaust.nozzleGlow.scale.setScalar(0.9 + boostLevel * 0.58 + pulse * 0.06);
-  plane.exhaust.nozzleGlow.material.opacity = clamp(0.44 + boostLevel * 0.42 + pulse * 0.06, 0.24, 0.9);
+  const outerLengthIdle = (0.92 + boostLevel * 1.1) * (pulse + 0.02);
+  const outerLengthBoost = (1.16 + boostLevel * 1.58) * (pulse + 0.03);
+  const outerLength = THREE.MathUtils.lerp(outerLengthIdle, outerLengthBoost, boostMix);
 
-  plane.exhaust.flameCore.scale.set(coreRadius, coreLength, coreRadius);
-  plane.exhaust.flameCore.position.x = (plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x) - (coreLength - 1) * 3.8;
-  plane.exhaust.flameCore.material.opacity = clamp(0.5 + boostLevel * 0.24 + pulse * 0.06, 0.3, 0.92);
+  const coreRadiusIdle = 0.92 + boostLevel * 0.14 + shimmer * 0.45;
+  const coreRadiusBoost = 1.52 + boostLevel * 0.4 + shimmer * 0.72;
+  const coreRadius = THREE.MathUtils.lerp(coreRadiusIdle, coreRadiusBoost, Math.pow(boostMix, 0.66));
+
+  const outerRadiusIdle = 0.8 + boostLevel * 0.2 + shimmer;
+  const outerRadiusBoost = 1.12 + boostLevel * 0.4 + shimmer * 1.35;
+  const outerRadius = THREE.MathUtils.lerp(outerRadiusIdle, outerRadiusBoost, boostMix);
+
+  const glowScaleIdle = 0.84 + boostLevel * 0.28 + pulse * 0.03;
+  const glowScaleBoost = 0.98 + boostLevel * 0.56 + pulse * 0.05;
+  plane.exhaust.nozzleGlow.scale.setScalar(THREE.MathUtils.lerp(glowScaleIdle, glowScaleBoost, boostMix));
+
+  const glowOpacityIdle = clamp(0.18 + boostLevel * 0.38 + pulse * 0.03, 0.1, 0.56);
+  const glowOpacityBoost = clamp(0.56 + boostLevel * 0.46 + pulse * 0.06, 0.3, 1.0);
+  plane.exhaust.nozzleGlow.material.opacity = THREE.MathUtils.lerp(glowOpacityIdle, glowOpacityBoost, boostMix);
+
+  const innerFlameRadiusScale = 1 - boostMix * 0.1;
+  plane.exhaust.flameCore.scale.set(coreRadius * innerFlameRadiusScale, coreLength, coreRadius * innerFlameRadiusScale);
+  const coreBaseX = plane.exhaust.flameCore.userData.baseX ?? plane.exhaust.flameCore.position.x;
+  const coreShiftIdle = (coreLength - 1) * 3.5;
+  const coreShiftBoost = (coreLength - 1) * 7.2;
+  plane.exhaust.flameCore.position.x = coreBaseX - THREE.MathUtils.lerp(coreShiftIdle, coreShiftBoost, boostMix);
+  const coreOpacityIdle = clamp(0.24 + boostLevel * 0.3 + pulse * 0.03, 0.16, 0.62);
+  const coreOpacityBoost = clamp(0.62 + boostLevel * 0.58 + pulse * 0.05, 0.46, 1.0);
+  plane.exhaust.flameCore.material.opacity = THREE.MathUtils.lerp(coreOpacityIdle, coreOpacityBoost, Math.pow(boostMix, 0.72));
 
   plane.exhaust.flameOuter.scale.set(outerRadius, outerLength, outerRadius);
-  plane.exhaust.flameOuter.position.x = (plane.exhaust.flameOuter.userData.baseX ?? plane.exhaust.flameOuter.position.x) - (outerLength - 1) * 6.3;
-  plane.exhaust.flameOuter.position.z = turbulence * 0.42;
-  plane.exhaust.flameOuter.material.opacity = clamp(0.28 + boostLevel * 0.2 + pulse * 0.04, 0.15, 0.68);
+  const outerBaseX = plane.exhaust.flameOuter.userData.baseX ?? plane.exhaust.flameOuter.position.x;
+  const outerShiftIdle = (outerLength - 1) * 4.9;
+  const outerShiftBoost = (outerLength - 1) * 6.3;
+  plane.exhaust.flameOuter.position.x = outerBaseX - THREE.MathUtils.lerp(outerShiftIdle, outerShiftBoost, boostMix);
+  plane.exhaust.flameOuter.position.z = THREE.MathUtils.lerp(turbulence * 0.34, turbulence * 0.42, boostMix);
+  const outerOpacityIdle = clamp(0.16 + boostLevel * 0.2 + pulse * 0.03, 0.08, 0.5);
+  const outerOpacityBoost = clamp(0.34 + boostLevel * 0.2 + pulse * 0.04, 0.22, 0.62);
+  plane.exhaust.flameOuter.material.opacity = THREE.MathUtils.lerp(outerOpacityIdle, outerOpacityBoost, Math.pow(boostMix, 0.86));
 
-  plane.exhaust.shockRings.forEach((ring) => {
-    const phase = t * 19 - ring.userData.offset * 0.85;
-    const travel = (phase % 1 + 1) % 1;
-    const fade = 1 - travel;
-    const baseX = ring.userData.baseX ?? ring.position.x;
-    ring.position.x = baseX - travel * (2.9 + boostLevel * 5.1);
-    const ringScale = 0.9 + travel * (1.2 + boostLevel * 0.7);
-    ring.scale.setScalar(ringScale);
-    ring.material.opacity = clamp((0.24 + boostLevel * 0.32) * fade, 0, 0.7);
-    ring.material.color.setHex(travel < 0.38 ? 0xffd6b1 : 0x9ac2ff);
+  const innerBlueDepth = clamp(0.82 + boostMix * 0.06 + pulse * 0.02, 0.8, 1.0 + boostMix * 0.5);
+  const innerWarm = clamp(0.34 + boostMix * 0.86 + pulse * 0.03, 0.32, 1.0 + boostMix * 0.5);
+  const innerGreen = clamp(0.44 + boostMix * 0.76 + pulse * 0.03, 0.42, 1.0 + boostMix * 0.5);
+  plane.exhaust.flameCore.material.color.setRGB(innerWarm, innerGreen, innerBlueDepth);
+
+  const outerBlueGlow = clamp(0.9 + boostMix * 0.08 + pulse * 0.015, 0.86, 1.0);
+  plane.exhaust.flameOuter.material.color.setRGB(0.12, 0.34 + boostMix * 0.06, outerBlueGlow);
+
+  const nozzleHeatPulse = 0.86 + Math.sin(t * 24 + plane.mesh.id * 0.57) * 0.14;
+  const heatCoreScale = THREE.MathUtils.lerp(0.82, 0.98 + boostMix * 0.2, boostMix) * nozzleHeatPulse;
+  plane.exhaust.nozzleHeatCore.scale.setScalar(heatCoreScale);
+  const heatCoreBaseX = plane.exhaust.nozzleHeatCore.userData.baseX ?? plane.exhaust.nozzleHeatCore.position.x;
+  plane.exhaust.nozzleHeatCore.position.x = heatCoreBaseX - THREE.MathUtils.lerp(0.25, 1.6, boostMix);
+  plane.exhaust.nozzleHeatCore.material.opacity = clamp(0.2 + boostMix * 0.18 + nozzleHeatPulse * 0.08, 0.14, 0.46);
+  plane.exhaust.nozzleHeatCore.material.color.setRGB(
+    clamp(0.84 + boostMix * 0.16, 0.72, 1.0),
+    clamp(0.2 + boostMix * 0.24, 0.14, 0.56),
+    clamp(0.12 + boostMix * 0.06, 0.08, 0.22)
+  );
+
+  const heatLinesBaseX = plane.exhaust.nozzleHeatLines.userData.baseX ?? plane.exhaust.nozzleHeatLines.position.x;
+  plane.exhaust.nozzleHeatLines.position.x = heatLinesBaseX - THREE.MathUtils.lerp(0.2, 1.35, boostMix);
+  plane.exhaust.nozzleHeatLines.rotation.x = Math.PI * 0.5 + Math.sin(t * 4.2 + plane.mesh.id * 0.19) * 0.1;
+  plane.exhaust.nozzleHeatLines.rotation.z = Math.sin(t * 2.8 + plane.mesh.id * 0.13) * 0.12;
+  plane.exhaust.nozzleHeatLines.children.forEach((streak, index) => {
+    const streakPulse = 0.9 + Math.sin(t * 7.2 + index * 0.9 + plane.mesh.id * 0.17) * 0.1;
+    streak.material.opacity = clamp(0.74 + streakPulse * 0.4, 0.72, 1.0);
+    streak.material.color.setRGB(
+      2.0,
+      0.16,
+      0.08
+    );
   });
+
+  const shockRingBoostScaleByOffset = {
+    0: (2.45 * 0.85 * 1.1) / 1.45,
+    1: (2.88 * 0.85) / 1.7,
+  };
+  const shockRingSizeMultiplier = 1.2;
+  plane.exhaust.shockRings.forEach((ring) => {
+    const offset = ring.userData.offset ?? 0;
+    const boostPulseMix = Math.pow(boostMix, 0.72);
+    const phaseSpeed = THREE.MathUtils.lerp(2.4, 7.0, boostPulseMix);
+    const pulseSpeedA = THREE.MathUtils.lerp(4.1, 10.8, boostPulseMix);
+    const pulseSpeedB = THREE.MathUtils.lerp(1.9, 5.6, boostPulseMix);
+    const opacityWaveSpeed = THREE.MathUtils.lerp(2.1, 7.4, boostPulseMix);
+    const ringState = ring.userData;
+    const phaseDt = clamp(t - (ringState.phaseLastT ?? t), 0, 0.05);
+    ringState.phaseLastT = t;
+    ringState.phaseAcc = (ringState.phaseAcc ?? 0) + phaseDt * phaseSpeed;
+    ringState.pulseAAcc = (ringState.pulseAAcc ?? 0) + phaseDt * pulseSpeedA;
+    ringState.pulseBAcc = (ringState.pulseBAcc ?? 0) + phaseDt * pulseSpeedB;
+    ringState.opacityAcc = (ringState.opacityAcc ?? 0) + phaseDt * opacityWaveSpeed;
+
+    const phase = ringState.phaseAcc - offset * 0.72 + plane.mesh.id * 0.05;
+    const travel = (Math.sin(phase) + 1) * 0.5;
+    const baseX = ringState.baseX ?? ring.position.x;
+    const ringPulse = 0.94
+      + Math.sin(ringState.pulseAAcc + offset * 1.2 + plane.mesh.id * 0.11) * 0.08
+      + Math.sin(ringState.pulseBAcc + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
+    const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
+    const boostScale = THREE.MathUtils.lerp(0.9, boostScaleTarget, Math.pow(boostMix, 0.68));
+    const boostBackShift = THREE.MathUtils.lerp(0.04, 0.35, boostMix);
+    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.32, 1.30, boostMix) - boostBackShift;
+    ring.scale.setScalar(shockRingSizeMultiplier * boostScale * ringPulse);
+    const ringOpacityBase = 0.14 + boostMix * 0.22;
+    ring.material.opacity = clamp(ringOpacityBase + Math.sin(ringState.opacityAcc + offset * 0.9) * 0.04, 0.08, 0.5);
+    ring.material.color.setRGB(0.52 + boostMix * 0.2, 0.74 + boostMix * 0.12, 1.0);
+  });
+
+  plane.exhaust.nozzleGlow.material.color.setHex(0xbfe7ff);
 
 }
 
@@ -1059,7 +1374,7 @@ function spawnBullet(owner, color) {
   const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
   b.userData = {
-    vel: dir.multiplyScalar(900).add(owner.velocity.clone().multiplyScalar(0.4)),
+    vel: dir.multiplyScalar(1350),
     life: 1.9,
     team: owner === game.player ? "player" : "bot",
   };
@@ -1077,11 +1392,92 @@ function spawnImpactFx(position, color) {
   game.effects.push({ mesh: fx, life: 0.24, scaleRate: 13 });
 }
 
+function spawnMissileExplosion(position) {
+  const flash = new THREE.Mesh(
+    new THREE.SphereGeometry(5, 14, 12),
+    new THREE.MeshBasicMaterial({ color: 0xffd58e, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  flash.position.copy(position);
+  world.add(flash);
+  game.effects.push({ mesh: flash, life: 0.34, scaleRate: 11 });
+
+  const smoke = new THREE.Mesh(
+    new THREE.SphereGeometry(4.2, 10, 8),
+    new THREE.MeshBasicMaterial({ color: 0x6d7988, transparent: true, opacity: 0.52, depthWrite: false })
+  );
+  smoke.position.copy(position);
+  world.add(smoke);
+  game.effects.push({ mesh: smoke, life: 0.62, scaleRate: 5.4 });
+}
+
+function getBestLockTarget(shooter, lockRange = MISSILE_LOCK_RANGE, lockDot = MISSILE_LOCK_DOT) {
+  const candidates = shooter.isPlayer
+    ? game.bots
+    : [game.player, ...game.bots];
+  const lockOrigin = shooter.isPlayer ? camera.position : shooter.mesh.position;
+  const aimForward = shooter.isPlayer
+    ? new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize()
+    : new THREE.Vector3(1, 0, 0).applyQuaternion(shooter.mesh.quaternion).normalize();
+  let best = null;
+  let bestScore = -Infinity;
+
+  for (const target of candidates) {
+    if (!target || !target.alive || target === shooter) continue;
+    const targetPos = getLockAimPoint(target, tmpVecA);
+    const toTarget = targetPos.sub(lockOrigin);
+    const dist = toTarget.length();
+    if (dist > lockRange) continue;
+    const dirToTarget = toTarget.normalize();
+    const dot = aimForward.dot(dirToTarget);
+    if (dot < lockDot) continue;
+    if (!hasLineOfSight(lockOrigin, target)) continue;
+    const centerBias = (1 - dot) * 0.9;
+    const score = dot * 5.1 - dist / lockRange - centerBias;
+    if (score > bestScore) {
+      bestScore = score;
+      best = target;
+    }
+  }
+  return best;
+}
+
+function spawnMissile(owner, target) {
+  if (!owner.alive || owner.missileAmmo <= 0 || !target?.alive) return false;
+  const index = owner.missiles.findIndex((m) => m.visible);
+  if (index < 0) return false;
+  const attachedMesh = owner.missiles[index];
+  attachedMesh.visible = false;
+
+  const missile = attachedMesh.clone(true);
+  const launchPos = attachedMesh.getWorldPosition(new THREE.Vector3());
+  const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+  missile.position.copy(launchPos).addScaledVector(forward, 3.2);
+  missile.quaternion.copy(owner.mesh.quaternion);
+  const cruiseSpeed = MISSILE_SPEED;
+  missile.userData = {
+    owner,
+    team: owner.isPlayer ? "player" : "bot",
+    target,
+    velocity: forward.multiplyScalar(cruiseSpeed),
+    cruiseSpeed,
+    life: 10.5,
+    smokeTick: 0,
+    motorTick: 0,
+  };
+  world.add(missile);
+  game.missiles.push(missile);
+  owner.missileAmmo -= 1;
+  owner.missileCooldown = 0.32;
+  return true;
+}
+
 function updateEffects(dt) {
   game.playerHitTimer = Math.max(0, game.playerHitTimer - dt);
   game.hitConfirmTimer = Math.max(0, game.hitConfirmTimer - dt);
+  game.missileIncomingTimer = Math.max(0, game.missileIncomingTimer - dt);
   healthEl.classList.toggle("flash", game.playerHitTimer > 0);
   crosshairEl.classList.toggle("hit", game.hitConfirmTimer > 0);
+  if (missileWarningEl) missileWarningEl.hidden = game.missileIncomingTimer <= 0;
 
   for (let i = game.effects.length - 1; i >= 0; i--) {
     const fx = game.effects[i];
@@ -1151,8 +1547,8 @@ function collidePlaneWithObstacles(plane, previousPosition) {
     plane.velocity.addScaledVector(away, 180);
   }
 
-  plane.velocity.multiplyScalar(0.68);
-  plane.speed = Math.max(160, plane.speed * 0.9);
+  plane.velocity.multiplyScalar(0.35);
+  plane.speed = Math.max(150, plane.speed * 0.9);
   plane.isColliding = true;
   return true;
 }
@@ -1162,6 +1558,7 @@ function updatePlayer(dt) {
   if (!p.alive || game.over) return;
 
   p.cooldown -= dt;
+  p.missileCooldown -= dt;
   p.speed = clamp(p.speed + input.throttle * dt * 170, 150, 560);
 
   const rollTarget = clamp(input.roll, -1, 1) * MAX_BANK;
@@ -1200,21 +1597,33 @@ function updatePlayer(dt) {
 
   const boostAllowed = game.boostAutoDropAt == null && game.boostFuel > 0.01;
   const boostLevel = input.boostLevel > 0 && boostAllowed ? input.boostLevel : 0;
+  const boostJustEnded = game.playerBoostWasActive && boostLevel <= 0;
+  game.playerBoostWasActive = boostLevel > 0;
+
+  if (boostJustEnded) {
+    const speedAfterBoost = Math.min(560, p.velocity.length());
+    p.speed = Math.max(p.speed, speedAfterBoost);
+  }
+
   if (boostLevel > 0) {
-    game.boostFuel = Math.max(0, game.boostFuel - 22 * boostLevel * dt);
+    const boostFuelBurnRate = BOOST_FUEL_BURN_BASE_PER_SEC * boostLevel * (1 + BOOST_FUEL_BURN_CURVE * boostLevel * boostLevel);
+    game.boostFuel = Math.max(0, game.boostFuel - boostFuelBurnRate * dt);
     if (game.boostFuel <= 0.01) {
       game.boostFuel = 0;
+      if (!isMobile && (keys.has("ShiftLeft") || keys.has("ShiftRight"))) {
+        game.shiftBoostRelatchRequired = true;
+      }
       if (boostLeverState.level > 0 && game.boostAutoDropAt == null) {
         game.boostAutoDropAt = performance.now() + 1000;
       }
     }
   } else if (game.boostAutoDropAt == null) {
-    game.boostFuel = Math.min(100, game.boostFuel + 12 * dt);
+    game.boostFuel = Math.min(BOOST_FUEL_MAX, game.boostFuel + 12 * dt);
   } else {
     game.boostFuel = 0;
   }
 
-  const targetSpeed = p.speed + boostLevel * 220;
+  const targetSpeed = p.speed + boostLevel * BOOST_SPEED_BONUS_MAX;
   updatePlaneExhaust(p, boostLevel);
   const desiredVel = forward.multiplyScalar(targetSpeed);
   p.velocity.lerp(desiredVel, 0.08);
@@ -1236,10 +1645,78 @@ function updatePlayer(dt) {
     game.ammo = Math.max(0, game.ammo - 1);
     p.cooldown = 0.11;
   }
+
+  if (game.missileLockTarget?.alive) {
+    const lockTargetPos = getLockAimPoint(game.missileLockTarget, tmpVecA);
+    const toTarget = lockTargetPos.sub(camera.position);
+    const dist = toTarget.length();
+    const aimForward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+    const dot = aimForward.dot(toTarget.normalize());
+    const inRange = dist <= MISSILE_LOCK_DROP_RANGE;
+    const inSight = dot >= MISSILE_LOCK_DROP_DOT && hasLineOfSight(camera.position, game.missileLockTarget);
+
+    if (!inRange) {
+      game.missileLockTarget = null;
+      game.missileLockLostTimer = 0;
+    } else if (inSight) {
+      game.missileLockLostTimer = 0;
+    } else {
+      game.missileLockLostTimer += dt;
+      if (game.missileLockLostTimer >= 1) {
+        game.missileLockTarget = null;
+        game.missileLockLostTimer = 0;
+      }
+    }
+  } else {
+    game.missileLockLostTimer = 0;
+  }
+
+  if (input.lockTogglePressed) {
+    if (!game.missileLockTarget) {
+      game.missileLockTarget = getBestLockTarget(p);
+      game.missileLockLostTimer = 0;
+    } else {
+      game.missileLockTarget = null;
+      game.missileLockLostTimer = 0;
+    }
+  }
+
+  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+    if (spawnMissile(p, game.missileLockTarget)) {
+      game.missileLockTarget = null;
+      game.missileLockLostTimer = 0;
+    }
+  }
+
+  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
+    if (spawnMissile(p, game.missileLockTarget)) game.missileLockTarget = null;
+  }
+}
+
+
+function selectBotCombatTarget(bot) {
+  const candidates = [];
+  if (game.player?.alive) candidates.push(game.player);
+  for (const other of game.bots) {
+    if (other !== bot && other.alive) candidates.push(other);
+  }
+  if (candidates.length === 0) return null;
+
+  let best = null;
+  let bestScore = Infinity;
+  for (const target of candidates) {
+    const distSq = bot.mesh.position.distanceToSquared(target.mesh.position);
+    const playerBias = target.isPlayer ? 0.94 : 1.0;
+    const score = distSq * playerBias;
+    if (score < bestScore) {
+      bestScore = score;
+      best = target;
+    }
+  }
+  return best;
 }
 
 function updateBots(dt) {
-  const player = game.player;
   const botMinSpeed = 150;
   const botMaxSpeed = 560;
 
@@ -1247,7 +1724,8 @@ function updateBots(dt) {
     if (!b.alive) continue;
 
     b.cooldown -= dt;
-    b.target = player.alive ? player : game.bots.find((x) => x !== b && x.alive) || null;
+    b.missileCooldown -= dt;
+    b.target = selectBotCombatTarget(b);
     if (!b.target) continue;
 
     const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
@@ -1295,10 +1773,12 @@ function updateBots(dt) {
     const throttleTargetBase = dist > 650 ? 0.9 : dist > 360 ? 0.45 : 0.1;
     const throttleTarget = throttleTargetBase * (1 - threat * 0.65);
     const pseudoBoost = clamp((throttleTarget - 0.25) / 0.65, 0, 0.55);
-    updatePlaneExhaust(b, pseudoBoost);
+    const botBoostLevel = pseudoBoost;
+    updatePlaneExhaust(b, botBoostLevel);
     b.speed = clamp(b.speed + throttleTarget * dt * 170, botMinSpeed, botMaxSpeed);
 
-    const desiredVel = newForward.multiplyScalar(b.speed);
+    const botTargetSpeed = b.speed + botBoostLevel * (BOOST_SPEED_BONUS_MAX * 0.42);
+    const desiredVel = newForward.multiplyScalar(botTargetSpeed);
     b.velocity.lerp(desiredVel, 0.08);
 
     const prevPos = b.mesh.position.clone();
@@ -1312,6 +1792,24 @@ function updateBots(dt) {
     if (dist < 820 && aimDot > 0.94 && b.cooldown <= 0) {
       spawnBullet(b, 0xffb67e);
       b.cooldown = 0.11;
+    }
+
+    if (b.missileAmmo > 0 && b.missileCooldown <= 0) {
+      if (!b.missileTarget || !b.missileTarget.alive) b.missileTarget = getBestLockTarget(b);
+
+      const noLaunchPhase = game.matchElapsed < 5;
+      const missilesFired = MISSILE_MAX_AMMO - b.missileAmmo;
+      const launchChanceByShot = missilesFired <= 0 ? dt * 0.2 : dt * 0.1;
+      const launchRangeFactor = missilesFired <= 0 ? 0.93 : 0.9;
+
+      if (!noLaunchPhase
+        && b.missileTarget
+        && dist < MISSILE_LOCK_RANGE * launchRangeFactor
+        && aimDot > 0.9
+        && Math.random() < launchChanceByShot) {
+        spawnMissile(b, b.missileTarget);
+        b.missileTarget = null;
+      }
     }
   }
 }
@@ -1355,8 +1853,8 @@ function updateBullets(dt) {
     const targets = b.userData.team === "player" ? game.bots : [game.player];
     for (const t of targets) {
       if (!t || !t.alive) continue;
-      if (b.position.distanceToSquared(t.mesh.position) < 18 * 18) {
-        hitPlane(t, rand(16, 28), b.userData.team);
+      if (b.position.distanceToSquared(t.mesh.position) < 23 * 23) {
+        hitPlane(t, 1, b.userData.team);
         b.userData.life = -1;
         break;
       }
@@ -1365,6 +1863,95 @@ function updateBullets(dt) {
     if (b.userData.life <= 0 || Math.abs(b.position.x) > ARENA * 1.3 || Math.abs(b.position.z) > ARENA * 1.3 || b.position.y < FLOOR_Y - 20 || b.position.y > 1400) {
       world.remove(b);
       game.bullets.splice(i, 1);
+    }
+  }
+}
+
+function updateMissiles(dt) {
+  const playerPos = game.player?.mesh?.position;
+
+  for (let i = game.missiles.length - 1; i >= 0; i--) {
+    const m = game.missiles[i];
+    const data = m.userData;
+    data.life -= dt;
+    const prevPos = m.position.clone();
+
+    const target = data.target;
+    if (target?.alive) {
+      const targetCenter = target.mesh.getWorldPosition(new THREE.Vector3());
+      const toTarget = targetCenter.clone().sub(m.position);
+      const dist = Math.max(1, toTarget.length());
+      const leadTime = clamp(dist / Math.max(data.cruiseSpeed, 1), 0.08, 0.8);
+      const aimPoint = targetCenter.clone().addScaledVector(target.velocity, leadTime * 0.88);
+      const desiredDir = aimPoint.sub(m.position).normalize();
+      const currentDir = data.velocity.clone().normalize();
+      currentDir.lerp(desiredDir, clamp(MISSILE_TURN_RATE * dt, 0, 0.27)).normalize();
+      data.velocity.copy(currentDir.multiplyScalar(data.cruiseSpeed));
+      m.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), currentDir);
+    }
+
+    m.position.addScaledVector(data.velocity, dt);
+
+    data.motorTick += dt;
+    if (data.motorTick > 0.03) {
+      data.motorTick = 0;
+      const jet = new THREE.Mesh(
+        new THREE.SphereGeometry(0.62, 10, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffb86d, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      jet.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.9);
+      world.add(jet);
+      game.effects.push({ mesh: jet, life: 0.2, scaleRate: 8.8 });
+    }
+    data.smokeTick += dt;
+    if (data.smokeTick > 0.06) {
+      data.smokeTick = 0;
+      const smoke = new THREE.Mesh(
+        new THREE.SphereGeometry(0.9, 10, 8),
+        new THREE.MeshBasicMaterial({ color: 0x768190, transparent: true, opacity: 0.56, depthWrite: false })
+      );
+      smoke.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.4);
+      world.add(smoke);
+      game.effects.push({ mesh: smoke, life: 0.52, scaleRate: 4.4 });
+    }
+
+    let exploded = false;
+
+    const targets = data.team === "player" ? game.bots : [game.player];
+    for (const t of targets) {
+      if (!t?.alive) continue;
+      const seg = tmpVecA.subVectors(m.position, prevPos);
+      const segLenSq = Math.max(1e-6, seg.lengthSq());
+      const targetCenter = t.mesh.getWorldPosition(new THREE.Vector3());
+      const toCenter = tmpVecB.subVectors(targetCenter, prevPos);
+      const proj = clamp(toCenter.dot(seg) / segLenSq, 0, 1);
+      const closest = tmpVecC.copy(prevPos).addScaledVector(seg, proj);
+      if (closest.distanceToSquared(targetCenter) < 30 * 30) {
+        hitPlane(t, 30, data.team);
+        exploded = true;
+        break;
+      }
+    }
+
+    if (!exploded && intersectsObstacle(m.position, MISSILE_BODY_COLLISION_RADIUS)) {
+      if (target?.alive && m.position.distanceToSquared(target.mesh.getWorldPosition(new THREE.Vector3())) < 95 * 95) {
+        hitPlane(target, 30, data.team);
+      }
+      exploded = true;
+    }
+    if (!exploded && (Math.abs(m.position.x) > ARENA * 1.02 || Math.abs(m.position.z) > ARENA * 1.02 || m.position.y < FLOOR_Y + 4 || m.position.y > 980)) exploded = true;
+
+    if (!exploded && playerPos && data.team === "bot") {
+      const toPlayer = playerPos.clone().sub(m.position).normalize();
+      const facingPlayer = data.velocity.clone().normalize().dot(toPlayer);
+      const distPlayer = m.position.distanceTo(playerPos);
+      if (facingPlayer > 0.66 && distPlayer < 760) game.missileIncomingTimer = 0.24;
+    }
+
+    if (exploded || data.life <= 0) {
+      spawnMissileExplosion(m.position);
+      world.remove(m);
+      game.missiles.splice(i, 1);
     }
   }
 }
@@ -1381,10 +1968,42 @@ function updateCamera(dt) {
 
 function updateState() {
   const alive = game.bots.filter((b) => b.alive).length;
-  updateHudHealthPanel();
-  ammoEl.textContent = `AMMO ${Math.round(game.ammo)}`;
-  boostStatEl.textContent = `BOOST ${Math.round(game.boostFuel)}%`;
+  const lockTarget = game.missileLockTarget;
+  game.bots.forEach((bot) => {
+    if (!bot.lockOutline) return;
+    const visible = bot === lockTarget && bot.alive;
+    bot.lockOutline.visible = visible;
+    if (!visible) return;
 
+    const dist = game.player?.mesh?.position?.distanceTo(bot.mesh.position) ?? 600;
+    const emphasis = clamp((dist - 220) / 1500, 0, 1);
+    const lineOpacity = clamp((0.58 + emphasis * 0.26) * 1.8, 0, 0.70);
+    const scaleMul = 1.08 + emphasis * 0.16;
+    const lineMat = bot.lockOutline.userData?.lineMat;
+    if (lineMat) lineMat.opacity = lineOpacity;
+
+    bot.lockOutline.children.forEach((child) => {
+      const base = child.userData.baseScale;
+      if (base) child.scale.copy(base).multiplyScalar(scaleMul);
+    });
+  });
+
+  updateHudHealthPanel();
+  ammoEl.textContent = `MSL ${game.player?.missileAmmo ?? 0} | AMMO ${Math.round(game.ammo)}`;
+  boostStatEl.textContent = `BOOST ${Math.round((game.boostFuel / BOOST_FUEL_MAX) * 100)}%`;
+  if (missileBtn) missileBtn.textContent = lockTarget ? "LOCK OFF" : "LOCK ON";
+  if (lockOnCueEl) {
+    if (lockTarget?.alive) {
+      lockOnCueEl.hidden = false;
+      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(lockTarget) + 1)}`;
+    } else {
+      lockOnCueEl.hidden = true;
+    }
+  }
+  if (lockCancelBtn) {
+    lockCancelBtn.textContent = "LAUNCH";
+    lockCancelBtn.hidden = !lockTarget;
+  }
 
   if (!game.player.alive && !game.over) {
     game.over = true;
@@ -1401,14 +2020,21 @@ function updateState() {
 
 
 function clearPlaneHpLabel(plane) {
-  if (!plane?.hpLabel) return;
-  world.remove(plane.hpLabel);
-  plane.hpLabel = null;
+  if (plane?.hpLabel) {
+    world.remove(plane.hpLabel);
+    plane.hpLabel = null;
+  }
+  if (plane?.lockOutline) {
+    plane.mesh?.remove?.(plane.lockOutline);
+    plane.lockOutline = null;
+  }
 }
 
 function resetMatch() {
   for (const b of game.bullets) world.remove(b);
   game.bullets = [];
+  for (const m of game.missiles) world.remove(m);
+  game.missiles = [];
   if (game.player) {
     clearPlaneHpLabel(game.player);
     world.remove(game.player.mesh);
@@ -1422,10 +2048,19 @@ function resetMatch() {
 
   game.score = 0;
   game.ammo = 60;
-  game.boostFuel = 100;
+  game.boostFuel = BOOST_FUEL_MAX;
   game.playerHitTimer = 0;
   game.hitConfirmTimer = 0;
   game.boostAutoDropAt = null;
+  game.missileLockTarget = null;
+  game.missileIncomingTimer = 0;
+  game.missileLockLostTimer = 0;
+  game.shiftBoostRelatchRequired = false;
+  game.lockToggleButtonLatch = false;
+  game.lockToggleTapQueuedCount = 0;
+  game.missileLaunchTapQueuedCount = 0;
+  game.matchElapsed = 0;
+  game.playerBoostWasActive = false;
   healthEl.classList.remove("flash");
   crosshairEl.classList.remove("hit");
   game.over = false;
@@ -1466,9 +2101,13 @@ function resetMatch() {
 }
 
 function syncInput() {
-  const kRoll = (keys.has("KeyA") ? -1 : 0) + (keys.has("KeyD") ? 1 : 0);
-  const kPitch = (keys.has("KeyW") ? 1 : 0) + (keys.has("KeyS") ? -1 : 0);
+  const kRoll = (keys.has("KeyA") ? 1 : 0) + (keys.has("KeyD") ? -1 : 0);
+  const kPitch = (keys.has("KeyW") ? -1 : 0) + (keys.has("KeyS") ? 1 : 0);
   const kThr = (keys.has("ArrowDown") ? -1 : 0) + (keys.has("ArrowUp") ? 1 : 0);
+  const shiftBoostHeld = keys.has("ShiftLeft") || keys.has("ShiftRight");
+
+  if (!shiftBoostHeld) game.shiftBoostRelatchRequired = false;
+  const shiftBoostEnabled = shiftBoostHeld && (isMobile || !game.shiftBoostRelatchRequired);
 
   const stickRoll = Math.abs(stickInput.yaw) > 0.01 ? stickInput.yaw : 0;
   const stickPitch = Math.abs(stickInput.pitch) > 0.01 ? stickInput.pitch : 0;
@@ -1484,9 +2123,20 @@ function syncInput() {
   const throttleTarget = Math.abs(kThr) > 0 ? kThr : 0.35;
   input.throttle = clamp(input.throttle + (throttleTarget - input.throttle) * 0.24, -1, 1);
 
-  input.boostLevel = clamp(Math.max(boostLeverState.level, keys.has("ShiftLeft") || keys.has("ShiftRight") ? 1 : 0), 0, 1);
+  input.boostLevel = clamp(Math.max(boostLeverState.level, shiftBoostEnabled ? 1 : 0), 0, 1);
   input.boost = input.boostLevel > 0.01;
   input.fire = keys.has("Space") || fireBtn.classList.contains("active");
+  input.lockToggle = keys.has("KeyM");
+  const keyEdgePress = input.lockToggle && !game.lockToggleButtonLatch;
+  input.lockTogglePressed = keyEdgePress || game.lockToggleTapQueuedCount > 0;
+  if (!keyEdgePress && game.lockToggleTapQueuedCount > 0) {
+    game.lockToggleTapQueuedCount = Math.max(0, game.lockToggleTapQueuedCount - 1);
+  }
+  input.missileLaunchPressed = keys.has("KeyN") || game.missileLaunchTapQueuedCount > 0;
+  if (game.missileLaunchTapQueuedCount > 0) {
+    game.missileLaunchTapQueuedCount = Math.max(0, game.missileLaunchTapQueuedCount - 1);
+  }
+  game.lockToggleButtonLatch = input.lockToggle;
 }
 
 function setupJoystick(stickId, onMove) {
@@ -1635,16 +2285,16 @@ function setupBoostLever() {
 }
 
 
-function bindActionButton(btn) {
+function bindActionButton(btn, onPress = null, onRelease = null) {
   const press = (e) => {
     e.preventDefault();
     btn.classList.add("active");
-    syncInput();
+    onPress?.();
   };
   const release = (e) => {
     e.preventDefault();
     btn.classList.remove("active");
-    syncInput();
+    onRelease?.(e);
   };
   btn.addEventListener("pointerdown", press);
   btn.addEventListener("pointerup", release);
@@ -1771,11 +2421,17 @@ setupJoystick("leftStick", (x, y) => {
   stickInput.pitch = y;
 });
 bindActionButton(fireBtn);
+bindActionButton(missileBtn, () => { game.lockToggleTapQueuedCount += 1; });
+if (lockCancelBtn) bindActionButton(lockCancelBtn, () => { game.missileLaunchTapQueuedCount += 1; });
 setupBoostLever();
 
 window.addEventListener("keydown", (e) => {
   keys.add(e.code);
-  if (["ArrowUp", "ArrowDown", "Space"].includes(e.code)) e.preventDefault();
+  if (["ArrowUp", "ArrowDown", "Space", "KeyM", "KeyN", "Escape", "KeyC"].includes(e.code)) e.preventDefault();
+  if (e.code === "Escape" || e.code === "KeyC") {
+    game.missileLockTarget = null;
+    game.missileLockLostTimer = 0;
+  }
 });
 window.addEventListener("keyup", (e) => {
   keys.delete(e.code);
@@ -1842,10 +2498,12 @@ function tick(now) {
     const dt = Math.min((now - last) / 1000, 0.033);
     last = now;
 
+    game.matchElapsed += dt;
     syncInput();
     updatePlayer(dt);
     updateBots(dt);
     updateBullets(dt);
+    updateMissiles(dt);
     updateEffects(dt);
     updateCamera(dt);
     updateState();

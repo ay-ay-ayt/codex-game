@@ -7,8 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>Sky Ace Duel 3D</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=85" />
-  <link rel="stylesheet" href="./style.css?v=85" />
+  <link rel="manifest" href="./manifest.webmanifest?v=192" />
+  <link rel="stylesheet" href="./style.css?v=192" />
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -18,6 +18,7 @@
     <div id="health">HP 100</div>
     <div id="ammo">AMMO 60</div>
     <div id="boostStat">BOOST 100%</div>
+    <div id="missileWarning" hidden>MISSILE ALERT</div>
     <button id="menuBtn" type="button" aria-expanded="false">MENU</button>
   </div>
 
@@ -43,6 +44,7 @@
   </div>
 
   <div id="crosshair" aria-hidden="true"></div>
+  <div id="lockOnCue" hidden>LOCK ON</div>
   <div id="message" hidden></div>
   <div id="buildDebug" aria-hidden="true"></div>
 
@@ -53,7 +55,11 @@
     </div>
 
     <div class="action-wrap">
-      <button id="fireBtn" class="action">FIRE</button>
+      <div class="weapon-buttons">
+        <button id="lockCancelBtn" class="action action-sub" hidden>LAUNCH</button>
+        <button id="missileBtn" class="action">LOCK ON</button>
+        <button id="fireBtn" class="action">FIRE</button>
+      </div>
       <div class="lever-wrap">
         <div class="stick-label">BOOST LEVER</div>
         <div class="lever" id="boostLever"><div class="lever-knob"></div></div>
@@ -66,6 +72,6 @@
     <small>ブラウザUIが狭い場合は「ホーム画面に追加」で全画面化できます。</small>
   </div>
 
-  <script type="module" src="./main.js?v=85"></script>
+  <script type="module" src="./main.js?v=192"></script>
 </body>
 </html>
