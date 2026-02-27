@@ -29,7 +29,7 @@ const buildDebugEl = document.getElementById("buildDebug");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 188;
+const DEBUG_BUILD_NUMBER = 189;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1353,8 +1353,8 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
       + Math.sin(ringState.pulseBAcc + offset * 0.7 + plane.mesh.id * 0.03) * 0.03;
     const boostScaleTarget = shockRingBoostScaleByOffset[offset] ?? 1.1;
     const boostScale = THREE.MathUtils.lerp(0.9, boostScaleTarget, Math.pow(boostMix, 0.68));
-    const boostBackShift = THREE.MathUtils.lerp(0.04, 0.44, boostMix);
-    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.32, 1.45, boostMix) - boostBackShift;
+    const boostBackShift = THREE.MathUtils.lerp(0.04, 0.35, boostMix);
+    ring.position.x = baseX - travel * THREE.MathUtils.lerp(0.32, 1.30, boostMix) - boostBackShift;
     ring.scale.setScalar(shockRingSizeMultiplier * boostScale * ringPulse);
     const ringOpacityBase = 0.14 + boostMix * 0.22;
     ring.material.opacity = clamp(ringOpacityBase + Math.sin(ringState.opacityAcc + offset * 0.9) * 0.04, 0.08, 0.5);
@@ -1844,7 +1844,7 @@ function updateBullets(dt) {
     const targets = b.userData.team === "player" ? game.bots : [game.player];
     for (const t of targets) {
       if (!t || !t.alive) continue;
-      if (b.position.distanceToSquared(t.mesh.position) < 18 * 18) {
+      if (b.position.distanceToSquared(t.mesh.position) < 23 * 23) {
         hitPlane(t, 1, b.userData.team);
         b.userData.life = -1;
         break;
