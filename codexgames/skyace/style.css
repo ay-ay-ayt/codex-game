@@ -213,7 +213,7 @@ body {
   border-bottom-color: rgba(186, 220, 242, 0.48);
   background: linear-gradient(180deg, rgba(211, 236, 252, 0.2), rgba(149, 200, 233, 0.1) 58%, rgba(105, 159, 202, 0.14));
   filter: drop-shadow(0 0 4px rgba(176, 228, 255, 0.18));
-  clip-path: polygon(37% 0%, 63% 0%, 100% 24%, 76% 92%, 24% 92%, 0% 24%);
+  clip-path: polygon(40% 0%, 60% 0%, 92% 26%, 74% 92%, 26% 92%, 8% 26%);
 }
 
 .tap-btn {

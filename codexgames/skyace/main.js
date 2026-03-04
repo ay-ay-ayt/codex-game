@@ -33,7 +33,7 @@ const gunsightGlassEl = document.getElementById("gunsightGlass");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 209;
+const DEBUG_BUILD_NUMBER = 210;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 function mapZoomSliderToTarget(raw) {
@@ -80,7 +80,7 @@ function updateCockpitOverlayLayout() {
   if (rect.width < 20 || rect.height < 20) return;
 
   const x = rect.left + rect.width * 0.5;
-  const y = rect.top + rect.height * 0.432;
+  const y = rect.top + rect.height * 0.418;
   const wByWidth = rect.width * 0.11;
   const wByHeight = rect.height * 0.2;
   const w = Math.min(wByWidth, wByHeight);
@@ -281,6 +281,8 @@ const tmpVecA = new THREE.Vector3();
 const tmpVecB = new THREE.Vector3();
 const tmpVecC = new THREE.Vector3();
 const tmpVecD = new THREE.Vector3();
+const playerAimProbe = new THREE.Vector3();
+const playerAimDir = new THREE.Vector3();
 const losRaycaster = new THREE.Raycaster();
 
 const ARENA = 3600;
@@ -1531,7 +1533,7 @@ function spawnBullet(owner, color) {
     new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9, roughness: 0.2, metalness: 0.1 })
   );
   const dir = owner === game.player
-    ? new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize()
+    ? getPlayerAimDirection()
     : new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
   if (owner === game.player) {
     b.position.copy(camera.position).addScaledVector(dir, 20);
@@ -1545,6 +1547,24 @@ function spawnBullet(owner, color) {
   };
   world.add(b);
   game.bullets.push(b);
+}
+
+function getPlayerAimDirection() {
+  const viewportWidth = Math.max(1, window.visualViewport?.width || window.innerWidth);
+  const viewportHeight = Math.max(1, window.visualViewport?.height || window.innerHeight);
+
+  let aimX = viewportWidth * 0.5;
+  let aimY = viewportHeight * 0.5;
+  if (document.body.classList.contains("cockpit-active") && cockpitFrameEl) {
+    const frameRect = cockpitFrameEl.getBoundingClientRect();
+    aimX = frameRect.left + frameRect.width * 0.5;
+    aimY = frameRect.top + frameRect.height * 0.418;
+  }
+
+  const ndcX = (aimX / viewportWidth) * 2 - 1;
+  const ndcY = -(aimY / viewportHeight) * 2 + 1;
+  playerAimProbe.set(ndcX, ndcY, 0.25).unproject(camera);
+  return playerAimDir.copy(playerAimProbe).sub(camera.position).normalize();
 }
 
 function spawnImpactFx(position, color) {
