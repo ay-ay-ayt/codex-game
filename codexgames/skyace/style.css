@@ -1,6 +1,10 @@
 :root {
   --glass: rgba(6, 15, 28, 0.58);
   --line: rgba(173, 232, 255, 0.42);
+  --gunsight-center-y: 43.9%;
+  --gunsight-x: 50%;
+  --gunsight-y: 43.9%;
+  --gunsight-width: min(15vw, 150px);
 }
 
 * {
@@ -199,9 +203,9 @@ body {
 
 #gunsightGlass {
   position: absolute;
-  left: 50%;
-  top: 44.8%;
-  width: min(15vw, 150px);
+  left: var(--gunsight-x);
+  top: var(--gunsight-y);
+  width: var(--gunsight-width);
   aspect-ratio: 1 / 1.24;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -329,6 +333,11 @@ body {
   box-shadow: 0 0 14px rgba(109, 214, 255, 0.5);
   pointer-events: none;
   z-index: 10;
+}
+
+body.cockpit-active #crosshair {
+  top: var(--gunsight-y);
+  left: var(--gunsight-x);
 }
 
 #crosshair.hit {

@@ -29,10 +29,11 @@ const lockCancelBtn = document.getElementById("lockCancelBtn");
 const buildDebugEl = document.getElementById("buildDebug");
 const cockpitOverlayEl = document.getElementById("cockpitOverlay");
 const cockpitFrameEl = document.getElementById("cockpitFrame");
+const gunsightGlassEl = document.getElementById("gunsightGlass");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 205;
+const DEBUG_BUILD_NUMBER = 207;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 function mapZoomSliderToTarget(raw) {
@@ -70,6 +71,19 @@ if (zoomSliderEl) {
 
 if (cockpitFrameEl) {
   prepareCockpitOverlay(cockpitFrameEl, cockpitOverlayEl);
+}
+
+function updateCockpitOverlayLayout() {
+  if (!cockpitFrameEl || !gunsightGlassEl) return;
+  const rect = cockpitFrameEl.getBoundingClientRect();
+  if (rect.width < 20 || rect.height < 20) return;
+
+  const x = rect.left + rect.width * 0.5;
+  const y = rect.top + rect.height * 0.435;
+  const w = rect.width * 0.118;
+  document.documentElement.style.setProperty("--gunsight-x", `${x}px`);
+  document.documentElement.style.setProperty("--gunsight-y", `${y}px`);
+  document.documentElement.style.setProperty("--gunsight-width", `${w}px`);
 }
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -1505,8 +1519,14 @@ function spawnBullet(owner, color) {
     new THREE.SphereGeometry(2.5, 12, 10),
     new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9, roughness: 0.2, metalness: 0.1 })
   );
-  const dir = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
-  b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
+  const dir = owner === game.player
+    ? new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize()
+    : new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+  if (owner === game.player) {
+    b.position.copy(camera.position).addScaledVector(dir, 20);
+  } else {
+    b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
+  }
   b.userData = {
     vel: dir.multiplyScalar(1350),
     life: 1.9,
@@ -2097,6 +2117,8 @@ function updateCamera(dt) {
     const cockpitBlend = cameraZoom.target;
     const cockpitActive = cockpitReady && cockpitBlend >= 0.965;
     cockpitOverlayEl.classList.toggle("is-active", cockpitActive);
+    document.body.classList.toggle("cockpit-active", cockpitActive);
+    if (cockpitActive) updateCockpitOverlayLayout();
   }
 
   const p = game.player;
@@ -2586,6 +2608,7 @@ window.addEventListener("unhandledrejection", (event) => {
 });
 
 updateMenuPanelPosition();
+updateCockpitOverlayLayout();
 setupJoystick("leftStick", (x, y) => {
   stickInput.yaw = x;
   stickInput.pitch = y;
@@ -2646,10 +2669,12 @@ window.addEventListener("resize", () => {
   fitViewport();
   updateMenuPanelPosition();
   updateOrientationHint();
+  updateCockpitOverlayLayout();
 });
 window.visualViewport?.addEventListener("resize", () => {
   fitViewport();
   updateMenuPanelPosition();
+  updateCockpitOverlayLayout();
 });
 
 window.addEventListener(
