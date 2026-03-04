@@ -7,8 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>Sky Ace Duel 3D</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=192" />
-  <link rel="stylesheet" href="./style.css?v=192" />
+  <link rel="manifest" href="./manifest.webmanifest?v=197" />
+  <link rel="stylesheet" href="./style.css?v=197" />
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -41,6 +41,14 @@
         <button type="button" class="tap-btn" data-map-type="forest">FOREST</button>
       </div>
     </div>
+    <label class="menu-control" id="zoomWrap" for="zoomSlider">
+      <span class="menu-label">ZOOM</span>
+      <input id="zoomSlider" type="range" min="0" max="100" step="1" value="0" aria-label="視野ズーム" />
+    </label>
+  </div>
+
+  <div id="cockpitOverlay" aria-hidden="true">
+    <img id="cockpitFrame" src="../../assets/ChatGPT_Image_skyace.svg" alt="" decoding="async" />
   </div>
 
   <div id="crosshair" aria-hidden="true"></div>
@@ -72,6 +80,6 @@
     <small>ブラウザUIが狭い場合は「ホーム画面に追加」で全画面化できます。</small>
   </div>
 
-  <script type="module" src="./main.js?v=192"></script>
+  <script type="module" src="./main.js?v=197"></script>
 </body>
 </html>
