@@ -8,6 +8,7 @@ const botCountEl = document.getElementById("botCount");
 const mapTypeEl = document.getElementById("mapType");
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
+const zoomSliderEl = document.getElementById("zoomSlider");
 const botCountButtons = Array.from(botCountEl.querySelectorAll(".tap-btn[data-bot-count]"));
 const mapTypeButtons = Array.from(mapTypeEl.querySelectorAll(".tap-btn[data-map-type]"));
 
@@ -26,11 +27,50 @@ const missileWarningEl = document.getElementById("missileWarning");
 const lockOnCueEl = document.getElementById("lockOnCue");
 const lockCancelBtn = document.getElementById("lockCancelBtn");
 const buildDebugEl = document.getElementById("buildDebug");
+const cockpitOverlayEl = document.getElementById("cockpitOverlay");
+const cockpitFrameEl = document.getElementById("cockpitFrame");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 192;
+const DEBUG_BUILD_NUMBER = 198;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
+
+function mapZoomSliderToTarget(raw) {
+  const normalized = clamp(raw, 0, 1);
+  const detentStart = 0.88;
+  const detentSnap = 0.97;
+  const preCockpitCap = 0.86;
+  if (normalized <= detentStart) {
+    return (normalized / detentStart) * preCockpitCap;
+  }
+
+  const push = (normalized - detentStart) / (1 - detentStart);
+  if (push < ((detentSnap - detentStart) / (1 - detentStart))) {
+    const hold = (push / ((detentSnap - detentStart) / (1 - detentStart)));
+    return THREE.MathUtils.lerp(preCockpitCap, 0.91, hold);
+  }
+
+  const finalPush = (normalized - detentSnap) / (1 - detentSnap);
+  return THREE.MathUtils.lerp(0.91, 1, clamp(finalPush, 0, 1));
+}
+
+const initialRawZoom = clamp(Number(zoomSliderEl?.value || 0) / 100, 0, 1);
+const cameraZoom = {
+  raw: initialRawZoom,
+  target: mapZoomSliderToTarget(initialRawZoom),
+  value: mapZoomSliderToTarget(initialRawZoom),
+};
+
+if (zoomSliderEl) {
+  zoomSliderEl.addEventListener("input", () => {
+    cameraZoom.raw = clamp(Number(zoomSliderEl.value) / 100, 0, 1);
+    cameraZoom.target = mapZoomSliderToTarget(cameraZoom.raw);
+  });
+}
+
+if (cockpitFrameEl) {
+  prepareCockpitOverlay(cockpitFrameEl, cockpitOverlayEl);
+}
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
   || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -186,6 +226,18 @@ const worldTextures = {
 };
 
 const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
+const CAMERA_DEFAULT_FOV = 72;
+const CAMERA_COCKPIT_FOV = 58;
+const CAMERA_DEFAULT_NEAR = 0.1;
+const CAMERA_COCKPIT_NEAR = 0.03;
+const CAMERA_THIRD_PERSON_OFFSET = new THREE.Vector3(-72, 25, 0);
+const CAMERA_COCKPIT_OFFSET = new THREE.Vector3(2.8, 2.45, 0);
+const camForwardVec = new THREE.Vector3();
+const camUpVec = new THREE.Vector3();
+const camRightVec = new THREE.Vector3();
+const camOffsetVec = new THREE.Vector3();
+const camPosTarget = new THREE.Vector3();
+const camLookTarget = new THREE.Vector3();
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
 const sun = new THREE.DirectionalLight(0xffffff, 1.15);
 sun.position.set(700, 900, 300);
@@ -325,6 +377,85 @@ function rand(a, b) {
 function smoothApproach(current, target, rate, dt) {
   const t = 1 - Math.exp(-rate * dt);
   return current + (target - current) * t;
+}
+
+function prepareCockpitOverlay(frameImg, overlayEl) {
+  if (!frameImg) return;
+
+  const isPurpleMarker = (r, g, b) => {
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const chroma = max - min;
+    if (max < 36) return false;
+
+    let hue = 0;
+    if (chroma > 0) {
+      if (max === r) hue = ((g - b) / chroma) % 6;
+      else if (max === g) hue = (b - r) / chroma + 2;
+      else hue = (r - g) / chroma + 4;
+      hue *= 60;
+      if (hue < 0) hue += 360;
+    }
+
+    const sat = max === 0 ? 0 : chroma / max;
+    const rbAvg = (r + b) * 0.5;
+    const purpleBias = rbAvg - g;
+    const huePurple = hue >= 220 && hue <= 340;
+    const channelPurple = r > g + 7 && b > g + 7;
+    const biasStrong = purpleBias >= 14;
+    return biasStrong && (huePurple || channelPurple) && (sat >= 0.08 || purpleBias >= 24);
+  };
+
+  const applyMask = () => {
+    const width = frameImg.naturalWidth;
+    const height = frameImg.naturalHeight;
+    if (!width || !height) return;
+
+    const workCanvas = document.createElement("canvas");
+    workCanvas.width = width;
+    workCanvas.height = height;
+    const workCtx = workCanvas.getContext("2d", { willReadFrequently: true });
+    if (!workCtx) return;
+
+    workCtx.drawImage(frameImg, 0, 0);
+    const imageData = workCtx.getImageData(0, 0, width, height);
+    const pixels = imageData.data;
+    const markerMask = new Uint8Array(width * height);
+
+    for (let i = 0, px = 0; i < pixels.length; i += 4, px += 1) {
+      markerMask[px] = isPurpleMarker(pixels[i], pixels[i + 1], pixels[i + 2]) ? 1 : 0;
+    }
+
+    const expandedMask = new Uint8Array(markerMask);
+    for (let y = 1; y < height - 1; y += 1) {
+      for (let x = 1; x < width - 1; x += 1) {
+        const idx = y * width + x;
+        if (markerMask[idx]) continue;
+        if (
+          markerMask[idx - 1] || markerMask[idx + 1]
+          || markerMask[idx - width] || markerMask[idx + width]
+          || markerMask[idx - width - 1] || markerMask[idx - width + 1]
+          || markerMask[idx + width - 1] || markerMask[idx + width + 1]
+        ) {
+          expandedMask[idx] = 1;
+        }
+      }
+    }
+
+    for (let i = 0, px = 0; i < pixels.length; i += 4, px += 1) {
+      pixels[i + 3] = expandedMask[px] ? 0 : 255;
+    }
+
+    workCtx.putImageData(imageData, 0, 0);
+    frameImg.src = workCanvas.toDataURL("image/png");
+    if (overlayEl) overlayEl.dataset.maskReady = "true";
+  };
+
+  if (frameImg.complete && frameImg.naturalWidth) {
+    applyMask();
+  } else {
+    frameImg.addEventListener("load", applyMask, { once: true });
+  }
 }
 
 function addObstacle(mesh, padding = 0) {
@@ -1957,13 +2088,46 @@ function updateMissiles(dt) {
 }
 
 function updateCamera(dt) {
+  cameraZoom.value = smoothApproach(cameraZoom.value, cameraZoom.target, 7.5, dt);
+  if (cockpitOverlayEl) {
+    const cockpitReady = cockpitOverlayEl.dataset.maskReady === "true";
+    const cockpitBlend = cameraZoom.target;
+    const cockpitActive = cockpitReady && cockpitBlend >= 0.965;
+    cockpitOverlayEl.classList.toggle("is-active", cockpitActive);
+  }
+
   const p = game.player;
   if (!p) return;
-  const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
-  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(p.mesh.quaternion).normalize();
-  const camPos = p.mesh.position.clone().addScaledVector(forward, -72).addScaledVector(up, 25);
-  camera.position.lerp(camPos, 1 - Math.exp(-dt * 8));
-  camera.lookAt(p.mesh.position.clone().addScaledVector(forward, 208).addScaledVector(up, 18));
+
+  camForwardVec.set(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
+  camUpVec.set(0, 1, 0).applyQuaternion(p.mesh.quaternion).normalize();
+  camRightVec.crossVectors(camForwardVec, camUpVec).normalize();
+
+  camOffsetVec.copy(CAMERA_THIRD_PERSON_OFFSET).lerp(CAMERA_COCKPIT_OFFSET, cameraZoom.value);
+
+  camPosTarget.copy(p.mesh.position)
+    .addScaledVector(camForwardVec, camOffsetVec.x)
+    .addScaledVector(camUpVec, camOffsetVec.y)
+    .addScaledVector(camRightVec, camOffsetVec.z);
+
+  const lookAhead = THREE.MathUtils.lerp(208, 320, cameraZoom.value);
+  const lookUp = THREE.MathUtils.lerp(18, 4.5, cameraZoom.value);
+  camLookTarget.copy(p.mesh.position)
+    .addScaledVector(camForwardVec, lookAhead)
+    .addScaledVector(camUpVec, lookUp);
+
+  camera.position.lerp(camPosTarget, 1 - Math.exp(-dt * 9.5));
+  camera.lookAt(camLookTarget);
+
+  const nextFov = THREE.MathUtils.lerp(CAMERA_DEFAULT_FOV, CAMERA_COCKPIT_FOV, cameraZoom.value);
+  const nextNear = THREE.MathUtils.lerp(CAMERA_DEFAULT_NEAR, CAMERA_COCKPIT_NEAR, cameraZoom.value);
+  if (Math.abs(camera.fov - nextFov) > 0.01 || Math.abs(camera.near - nextNear) > 0.001) {
+    camera.fov = nextFov;
+    camera.near = nextNear;
+    camera.updateProjectionMatrix();
+  }
+
+  p.mesh.visible = cameraZoom.value < 0.985;
 }
 
 function updateState() {
