@@ -206,14 +206,14 @@ body {
   left: var(--gunsight-x);
   top: var(--gunsight-y);
   width: var(--gunsight-width);
-  aspect-ratio: 1 / 1.24;
+  aspect-ratio: 1 / 1.44;
   transform: translate(-50%, -50%);
   pointer-events: none;
   border: 2px solid rgba(214, 240, 255, 0.66);
   border-bottom-color: rgba(186, 220, 242, 0.48);
   background: linear-gradient(180deg, rgba(211, 236, 252, 0.2), rgba(149, 200, 233, 0.1) 58%, rgba(105, 159, 202, 0.14));
   filter: drop-shadow(0 0 4px rgba(176, 228, 255, 0.18));
-  clip-path: polygon(33% 0%, 67% 0%, 100% 22%, 82% 90%, 18% 90%, 0% 22%);
+  clip-path: polygon(37% 0%, 63% 0%, 100% 24%, 76% 92%, 24% 92%, 0% 24%);
 }
 
 .tap-btn {

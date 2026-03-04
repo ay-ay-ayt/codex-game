@@ -33,7 +33,7 @@ const gunsightGlassEl = document.getElementById("gunsightGlass");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 207;
+const DEBUG_BUILD_NUMBER = 209;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 function mapZoomSliderToTarget(raw) {
@@ -71,6 +71,7 @@ if (zoomSliderEl) {
 
 if (cockpitFrameEl) {
   prepareCockpitOverlay(cockpitFrameEl, cockpitOverlayEl);
+  cockpitFrameEl.addEventListener("load", () => updateCockpitOverlayLayout());
 }
 
 function updateCockpitOverlayLayout() {
@@ -79,8 +80,10 @@ function updateCockpitOverlayLayout() {
   if (rect.width < 20 || rect.height < 20) return;
 
   const x = rect.left + rect.width * 0.5;
-  const y = rect.top + rect.height * 0.435;
-  const w = rect.width * 0.118;
+  const y = rect.top + rect.height * 0.432;
+  const wByWidth = rect.width * 0.11;
+  const wByHeight = rect.height * 0.2;
+  const w = Math.min(wByWidth, wByHeight);
   document.documentElement.style.setProperty("--gunsight-x", `${x}px`);
   document.documentElement.style.setProperty("--gunsight-y", `${y}px`);
   document.documentElement.style.setProperty("--gunsight-width", `${w}px`);
@@ -185,8 +188,15 @@ function drawRendererFallback() {
 
 const renderer = createRenderer();
 const rendererReady = Boolean(renderer);
+
+function getRenderPixelRatio() {
+  const deviceRatio = window.devicePixelRatio || 1;
+  const maxRatio = isMobile ? 2.5 : 2;
+  return Math.min(deviceRatio, maxRatio);
+}
+
 if (rendererReady) {
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+  renderer.setPixelRatio(getRenderPixelRatio());
   renderer.setClearColor(0x6f9ed4, 1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = !isMobile;
@@ -569,6 +579,7 @@ function fitViewport() {
   const height = Math.max(1, window.visualViewport?.height || window.innerHeight);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
+  renderer.setPixelRatio(getRenderPixelRatio());
   renderer.setSize(width, height, false);
 }
 
