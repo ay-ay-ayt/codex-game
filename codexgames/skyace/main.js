@@ -32,17 +32,39 @@ const cockpitFrameEl = document.getElementById("cockpitFrame");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 197;
+const DEBUG_BUILD_NUMBER = 198;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
+function mapZoomSliderToTarget(raw) {
+  const normalized = clamp(raw, 0, 1);
+  const detentStart = 0.88;
+  const detentSnap = 0.97;
+  const preCockpitCap = 0.86;
+  if (normalized <= detentStart) {
+    return (normalized / detentStart) * preCockpitCap;
+  }
+
+  const push = (normalized - detentStart) / (1 - detentStart);
+  if (push < ((detentSnap - detentStart) / (1 - detentStart))) {
+    const hold = (push / ((detentSnap - detentStart) / (1 - detentStart)));
+    return THREE.MathUtils.lerp(preCockpitCap, 0.91, hold);
+  }
+
+  const finalPush = (normalized - detentSnap) / (1 - detentSnap);
+  return THREE.MathUtils.lerp(0.91, 1, clamp(finalPush, 0, 1));
+}
+
+const initialRawZoom = clamp(Number(zoomSliderEl?.value || 0) / 100, 0, 1);
 const cameraZoom = {
-  target: clamp(Number(zoomSliderEl?.value || 0) / 100, 0, 1),
-  value: clamp(Number(zoomSliderEl?.value || 0) / 100, 0, 1),
+  raw: initialRawZoom,
+  target: mapZoomSliderToTarget(initialRawZoom),
+  value: mapZoomSliderToTarget(initialRawZoom),
 };
 
 if (zoomSliderEl) {
   zoomSliderEl.addEventListener("input", () => {
-    cameraZoom.target = clamp(Number(zoomSliderEl.value) / 100, 0, 1);
+    cameraZoom.raw = clamp(Number(zoomSliderEl.value) / 100, 0, 1);
+    cameraZoom.target = mapZoomSliderToTarget(cameraZoom.raw);
   });
 }
 
@@ -2069,8 +2091,8 @@ function updateCamera(dt) {
   cameraZoom.value = smoothApproach(cameraZoom.value, cameraZoom.target, 7.5, dt);
   if (cockpitOverlayEl) {
     const cockpitReady = cockpitOverlayEl.dataset.maskReady === "true";
-    const cockpitBlend = game.player ? cameraZoom.value : cameraZoom.target;
-    const cockpitActive = cockpitReady && cockpitBlend >= 0.78;
+    const cockpitBlend = cameraZoom.target;
+    const cockpitActive = cockpitReady && cockpitBlend >= 0.965;
     cockpitOverlayEl.classList.toggle("is-active", cockpitActive);
   }
 
