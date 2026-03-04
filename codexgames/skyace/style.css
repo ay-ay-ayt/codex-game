@@ -4,7 +4,7 @@
   --gunsight-center-y: 43.9%;
   --gunsight-x: 50%;
   --gunsight-y: 43.9%;
-  --gunsight-width: min(15vw, 150px);
+  --gunsight-width: min(12vw, 118px);
 }
 
 * {
@@ -179,8 +179,8 @@ body {
 #cockpitOverlay {
   position: fixed;
   inset: 0;
-  --cockpit-shift-y: 8%;
-  --cockpit-scale: 0.92;
+  --cockpit-shift-y: 7.4%;
+  --cockpit-scale: 0.9;
   z-index: 9;
   pointer-events: none;
   opacity: 0;
@@ -192,6 +192,13 @@ body {
   visibility: visible;
 }
 
+@media (pointer: coarse) {
+  #cockpitOverlay {
+    --cockpit-shift-y: 11.6%;
+    --cockpit-scale: 0.84;
+  }
+}
+
 #cockpitFrame {
   width: 100%;
   height: 100%;
@@ -199,6 +206,8 @@ body {
   transform: translateY(var(--cockpit-shift-y)) scale(var(--cockpit-scale));
   transform-origin: center top;
   display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 #gunsightGlass {
@@ -213,7 +222,7 @@ body {
   border-bottom-color: rgba(186, 220, 242, 0.48);
   background: linear-gradient(180deg, rgba(211, 236, 252, 0.2), rgba(149, 200, 233, 0.1) 58%, rgba(105, 159, 202, 0.14));
   filter: drop-shadow(0 0 4px rgba(176, 228, 255, 0.18));
-  clip-path: polygon(40% 0%, 60% 0%, 92% 26%, 74% 92%, 26% 92%, 8% 26%);
+  clip-path: polygon(40.5% 0%, 59.5% 0%, 91% 27%, 72.5% 89%, 27.5% 89%, 9% 27%);
 }
 
 .tap-btn {

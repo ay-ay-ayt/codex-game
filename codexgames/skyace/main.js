@@ -33,7 +33,7 @@ const gunsightGlassEl = document.getElementById("gunsightGlass");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 210;
+const DEBUG_BUILD_NUMBER = 212;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 function mapZoomSliderToTarget(raw) {
@@ -79,11 +79,13 @@ function updateCockpitOverlayLayout() {
   const rect = cockpitFrameEl.getBoundingClientRect();
   if (rect.width < 20 || rect.height < 20) return;
 
+  const onMobileLayout = isMobile || (window.matchMedia?.("(max-width: 900px)")?.matches ?? false);
   const x = rect.left + rect.width * 0.5;
-  const y = rect.top + rect.height * 0.418;
-  const wByWidth = rect.width * 0.11;
-  const wByHeight = rect.height * 0.2;
-  const w = Math.min(wByWidth, wByHeight);
+  const yRatio = onMobileLayout ? 0.426 : 0.421;
+  const y = rect.top + rect.height * yRatio;
+  const widthRatio = onMobileLayout ? 0.092 : 0.084;
+  const heightRatio = onMobileLayout ? 0.144 : 0.128;
+  const w = Math.min(rect.width * widthRatio, rect.height * heightRatio);
   document.documentElement.style.setProperty("--gunsight-x", `${x}px`);
   document.documentElement.style.setProperty("--gunsight-y", `${y}px`);
   document.documentElement.style.setProperty("--gunsight-width", `${w}px`);
@@ -439,31 +441,37 @@ function prepareCockpitOverlay(frameImg, overlayEl) {
     const height = frameImg.naturalHeight;
     if (!width || !height) return;
 
+    const upscale = clamp(Math.ceil(window.devicePixelRatio || 1), 1, 3);
+    const targetWidth = width * upscale;
+    const targetHeight = height * upscale;
+
     const workCanvas = document.createElement("canvas");
-    workCanvas.width = width;
-    workCanvas.height = height;
+    workCanvas.width = targetWidth;
+    workCanvas.height = targetHeight;
     const workCtx = workCanvas.getContext("2d", { willReadFrequently: true });
     if (!workCtx) return;
 
-    workCtx.drawImage(frameImg, 0, 0);
-    const imageData = workCtx.getImageData(0, 0, width, height);
+    workCtx.imageSmoothingEnabled = true;
+    workCtx.imageSmoothingQuality = "high";
+    workCtx.drawImage(frameImg, 0, 0, targetWidth, targetHeight);
+    const imageData = workCtx.getImageData(0, 0, targetWidth, targetHeight);
     const pixels = imageData.data;
-    const markerMask = new Uint8Array(width * height);
+    const markerMask = new Uint8Array(targetWidth * targetHeight);
 
     for (let i = 0, px = 0; i < pixels.length; i += 4, px += 1) {
       markerMask[px] = isPurpleMarker(pixels[i], pixels[i + 1], pixels[i + 2]) ? 1 : 0;
     }
 
     const expandedMask = new Uint8Array(markerMask);
-    for (let y = 1; y < height - 1; y += 1) {
-      for (let x = 1; x < width - 1; x += 1) {
-        const idx = y * width + x;
+    for (let y = 1; y < targetHeight - 1; y += 1) {
+      for (let x = 1; x < targetWidth - 1; x += 1) {
+        const idx = y * targetWidth + x;
         if (markerMask[idx]) continue;
         if (
           markerMask[idx - 1] || markerMask[idx + 1]
-          || markerMask[idx - width] || markerMask[idx + width]
-          || markerMask[idx - width - 1] || markerMask[idx - width + 1]
-          || markerMask[idx + width - 1] || markerMask[idx + width + 1]
+          || markerMask[idx - targetWidth] || markerMask[idx + targetWidth]
+          || markerMask[idx - targetWidth - 1] || markerMask[idx - targetWidth + 1]
+          || markerMask[idx + targetWidth - 1] || markerMask[idx + targetWidth + 1]
         ) {
           expandedMask[idx] = 1;
         }
@@ -1557,8 +1565,10 @@ function getPlayerAimDirection() {
   let aimY = viewportHeight * 0.5;
   if (document.body.classList.contains("cockpit-active") && cockpitFrameEl) {
     const frameRect = cockpitFrameEl.getBoundingClientRect();
+    const onMobileLayout = isMobile || (window.matchMedia?.("(max-width: 900px)")?.matches ?? false);
+    const yRatio = onMobileLayout ? 0.426 : 0.421;
     aimX = frameRect.left + frameRect.width * 0.5;
-    aimY = frameRect.top + frameRect.height * 0.418;
+    aimY = frameRect.top + frameRect.height * yRatio;
   }
 
   const ndcX = (aimX / viewportWidth) * 2 - 1;
