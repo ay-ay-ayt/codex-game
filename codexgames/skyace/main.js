@@ -29,10 +29,11 @@ const lockCancelBtn = document.getElementById("lockCancelBtn");
 const buildDebugEl = document.getElementById("buildDebug");
 const cockpitOverlayEl = document.getElementById("cockpitOverlay");
 const cockpitFrameEl = document.getElementById("cockpitFrame");
+const cockpitGlassEl = document.getElementById("cockpitGlass");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 198;
+const DEBUG_BUILD_NUMBER = 204;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 function mapZoomSliderToTarget(raw) {
@@ -69,7 +70,7 @@ if (zoomSliderEl) {
 }
 
 if (cockpitFrameEl) {
-  prepareCockpitOverlay(cockpitFrameEl, cockpitOverlayEl);
+  prepareCockpitOverlay(cockpitFrameEl, cockpitOverlayEl, cockpitGlassEl);
 }
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -238,6 +239,8 @@ const camRightVec = new THREE.Vector3();
 const camOffsetVec = new THREE.Vector3();
 const camPosTarget = new THREE.Vector3();
 const camLookTarget = new THREE.Vector3();
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
+const camBlendedUp = new THREE.Vector3();
 scene.add(new THREE.HemisphereLight(0xdaf2ff, 0x5e8060, 0.95));
 const sun = new THREE.DirectionalLight(0xffffff, 1.15);
 sun.position.set(700, 900, 300);
@@ -379,7 +382,7 @@ function smoothApproach(current, target, rate, dt) {
   return current + (target - current) * t;
 }
 
-function prepareCockpitOverlay(frameImg, overlayEl) {
+function prepareCockpitOverlay(frameImg, overlayEl, glassEl) {
   if (!frameImg) return;
 
   const isPurpleMarker = (r, g, b) => {
@@ -448,6 +451,43 @@ function prepareCockpitOverlay(frameImg, overlayEl) {
 
     workCtx.putImageData(imageData, 0, 0);
     frameImg.src = workCanvas.toDataURL("image/png");
+
+    if (glassEl) {
+      const glassMask = new Uint8Array(expandedMask);
+      for (let y = 1; y < height - 1; y += 1) {
+        for (let x = 1; x < width - 1; x += 1) {
+          const idx = y * width + x;
+          if (!glassMask[idx]) continue;
+          const neighbors =
+            Number(expandedMask[idx - 1])
+            + Number(expandedMask[idx + 1])
+            + Number(expandedMask[idx - width])
+            + Number(expandedMask[idx + width]);
+          if (neighbors <= 1) glassMask[idx] = 0;
+        }
+      }
+
+      const maskCanvas = document.createElement("canvas");
+      maskCanvas.width = width;
+      maskCanvas.height = height;
+      const maskCtx = maskCanvas.getContext("2d");
+      if (maskCtx) {
+        const maskData = maskCtx.createImageData(width, height);
+        const maskPixels = maskData.data;
+        for (let i = 0, px = 0; i < maskPixels.length; i += 4, px += 1) {
+          const a = glassMask[px] ? 255 : 0;
+          maskPixels[i] = 255;
+          maskPixels[i + 1] = 255;
+          maskPixels[i + 2] = 255;
+          maskPixels[i + 3] = a;
+        }
+        maskCtx.putImageData(maskData, 0, 0);
+        const maskUrl = `url(${maskCanvas.toDataURL("image/png")})`;
+        glassEl.style.maskImage = maskUrl;
+        glassEl.style.webkitMaskImage = maskUrl;
+      }
+    }
+
     if (overlayEl) overlayEl.dataset.maskReady = "true";
   };
 
@@ -2117,6 +2157,9 @@ function updateCamera(dt) {
     .addScaledVector(camUpVec, lookUp);
 
   camera.position.lerp(camPosTarget, 1 - Math.exp(-dt * 9.5));
+  const cockpitImmersion = clamp((cameraZoom.value - 0.9) / 0.1, 0, 1);
+  camBlendedUp.copy(WORLD_UP).lerp(camUpVec, cockpitImmersion).normalize();
+  camera.up.copy(camBlendedUp);
   camera.lookAt(camLookTarget);
 
   const nextFov = THREE.MathUtils.lerp(CAMERA_DEFAULT_FOV, CAMERA_COCKPIT_FOV, cameraZoom.value);

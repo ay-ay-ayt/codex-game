@@ -175,6 +175,8 @@ body {
 #cockpitOverlay {
   position: fixed;
   inset: 0;
+  --cockpit-shift-y: 8%;
+  --cockpit-scale: 0.92;
   z-index: 9;
   pointer-events: none;
   opacity: 0;
@@ -189,8 +191,44 @@ body {
 #cockpitFrame {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  transform: translateY(var(--cockpit-shift-y)) scale(var(--cockpit-scale));
+  transform-origin: center top;
   display: block;
+}
+
+#cockpitGlass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(180deg, rgba(208, 235, 255, 0.24), rgba(149, 203, 240, 0.12) 52%, rgba(100, 156, 203, 0.16));
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center top;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  mask-position: center top;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  -webkit-mask-position: center top;
+  transform: translateY(var(--cockpit-shift-y)) scale(var(--cockpit-scale));
+  transform-origin: center top;
+  opacity: 0;
+}
+
+#gunsightGlass {
+  position: absolute;
+  left: 50%;
+  top: 46.6%;
+  width: min(16.2vw, 164px);
+  aspect-ratio: 1 / 1.18;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  border: 2px solid rgba(214, 240, 255, 0.68);
+  border-bottom-color: rgba(186, 220, 242, 0.56);
+  background: linear-gradient(180deg, rgba(211, 236, 252, 0.24), rgba(149, 200, 233, 0.14) 60%, rgba(105, 159, 202, 0.18));
+  filter: drop-shadow(0 0 5px rgba(176, 228, 255, 0.22));
+  clip-path: polygon(27% 0%, 73% 0%, 100% 21%, 100% 100%, 0% 100%, 0% 21%);
 }
 
 .tap-btn {
@@ -309,7 +347,7 @@ body {
   border-radius: 50%;
   box-shadow: 0 0 14px rgba(109, 214, 255, 0.5);
   pointer-events: none;
-  z-index: 6;
+  z-index: 10;
 }
 
 #crosshair.hit {
