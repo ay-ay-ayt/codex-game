@@ -29,11 +29,10 @@ const lockCancelBtn = document.getElementById("lockCancelBtn");
 const buildDebugEl = document.getElementById("buildDebug");
 const cockpitOverlayEl = document.getElementById("cockpitOverlay");
 const cockpitFrameEl = document.getElementById("cockpitFrame");
-const cockpitGlassEl = document.getElementById("cockpitGlass");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 204;
+const DEBUG_BUILD_NUMBER = 205;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 function mapZoomSliderToTarget(raw) {
@@ -70,7 +69,7 @@ if (zoomSliderEl) {
 }
 
 if (cockpitFrameEl) {
-  prepareCockpitOverlay(cockpitFrameEl, cockpitOverlayEl, cockpitGlassEl);
+  prepareCockpitOverlay(cockpitFrameEl, cockpitOverlayEl);
 }
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -382,7 +381,7 @@ function smoothApproach(current, target, rate, dt) {
   return current + (target - current) * t;
 }
 
-function prepareCockpitOverlay(frameImg, overlayEl, glassEl) {
+function prepareCockpitOverlay(frameImg, overlayEl) {
   if (!frameImg) return;
 
   const isPurpleMarker = (r, g, b) => {
@@ -451,42 +450,6 @@ function prepareCockpitOverlay(frameImg, overlayEl, glassEl) {
 
     workCtx.putImageData(imageData, 0, 0);
     frameImg.src = workCanvas.toDataURL("image/png");
-
-    if (glassEl) {
-      const glassMask = new Uint8Array(expandedMask);
-      for (let y = 1; y < height - 1; y += 1) {
-        for (let x = 1; x < width - 1; x += 1) {
-          const idx = y * width + x;
-          if (!glassMask[idx]) continue;
-          const neighbors =
-            Number(expandedMask[idx - 1])
-            + Number(expandedMask[idx + 1])
-            + Number(expandedMask[idx - width])
-            + Number(expandedMask[idx + width]);
-          if (neighbors <= 1) glassMask[idx] = 0;
-        }
-      }
-
-      const maskCanvas = document.createElement("canvas");
-      maskCanvas.width = width;
-      maskCanvas.height = height;
-      const maskCtx = maskCanvas.getContext("2d");
-      if (maskCtx) {
-        const maskData = maskCtx.createImageData(width, height);
-        const maskPixels = maskData.data;
-        for (let i = 0, px = 0; i < maskPixels.length; i += 4, px += 1) {
-          const a = glassMask[px] ? 255 : 0;
-          maskPixels[i] = 255;
-          maskPixels[i + 1] = 255;
-          maskPixels[i + 2] = 255;
-          maskPixels[i + 3] = a;
-        }
-        maskCtx.putImageData(maskData, 0, 0);
-        const maskUrl = `url(${maskCanvas.toDataURL("image/png")})`;
-        glassEl.style.maskImage = maskUrl;
-        glassEl.style.webkitMaskImage = maskUrl;
-      }
-    }
 
     if (overlayEl) overlayEl.dataset.maskReady = "true";
   };
