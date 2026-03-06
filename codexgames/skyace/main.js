@@ -33,7 +33,7 @@ const gunsightGlassEl = document.getElementById("gunsightGlass");
 let hpPanelReady = false;
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 212;
+const DEBUG_BUILD_NUMBER = 254;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 function mapZoomSliderToTarget(raw) {
@@ -62,6 +62,27 @@ const cameraZoom = {
   value: mapZoomSliderToTarget(initialRawZoom),
 };
 
+let cockpitMarkerRatios = null;
+const DEFAULT_COCKPIT_MARKER_RATIOS = Object.freeze({
+  centerX: 0.5,
+  centerY: 0.384,
+  width: 0.154,
+  height: 0.194,
+});
+
+function isValidCockpitRatios(r) {
+  if (!r) return false;
+  return (
+    r.centerX >= 0.42 && r.centerX <= 0.58
+    && r.centerY >= 0.3 && r.centerY <= 0.58
+    && r.width >= 0.05 && r.width <= 0.42
+    && r.height >= 0.08 && r.height <= 0.5
+  );
+}
+
+function getActiveCockpitRatios() {
+  return isValidCockpitRatios(cockpitMarkerRatios) ? cockpitMarkerRatios : DEFAULT_COCKPIT_MARKER_RATIOS;
+}
 if (zoomSliderEl) {
   zoomSliderEl.addEventListener("input", () => {
     cameraZoom.raw = clamp(Number(zoomSliderEl.value) / 100, 0, 1);
@@ -74,21 +95,62 @@ if (cockpitFrameEl) {
   cockpitFrameEl.addEventListener("load", () => updateCockpitOverlayLayout());
 }
 
+function getCockpitFrameContentRect() {
+  if (!cockpitFrameEl) return null;
+  const frameRect = cockpitFrameEl.getBoundingClientRect();
+  if (frameRect.width < 20 || frameRect.height < 20) return null;
+
+  const naturalWidth = cockpitFrameEl.naturalWidth;
+  const naturalHeight = cockpitFrameEl.naturalHeight;
+  if (!naturalWidth || !naturalHeight) return frameRect;
+
+  const imageAspect = naturalWidth / naturalHeight;
+  const frameAspect = frameRect.width / frameRect.height;
+
+  if (frameAspect > imageAspect) {
+    const height = frameRect.height;
+    const width = height * imageAspect;
+    return {
+      left: frameRect.left + (frameRect.width - width) * 0.5,
+      top: frameRect.top,
+      width,
+      height,
+    };
+  }
+
+  const width = frameRect.width;
+  const height = width / imageAspect;
+  return {
+    left: frameRect.left,
+    top: frameRect.top + (frameRect.height - height),
+    width,
+    height,
+  };
+}
+
+function getCockpitCenterRatios() {
+  const marker = getActiveCockpitRatios();
+  return {
+    centerX: marker.centerX,
+    centerY: marker.centerY,
+  };
+}
+
 function updateCockpitOverlayLayout() {
   if (!cockpitFrameEl || !gunsightGlassEl) return;
-  const rect = cockpitFrameEl.getBoundingClientRect();
-  if (rect.width < 20 || rect.height < 20) return;
+  const rect = getCockpitFrameContentRect();
+  if (!rect) return;
 
-  const onMobileLayout = isMobile || (window.matchMedia?.("(max-width: 900px)")?.matches ?? false);
-  const x = rect.left + rect.width * 0.5;
-  const yRatio = onMobileLayout ? 0.426 : 0.421;
-  const y = rect.top + rect.height * yRatio;
-  const widthRatio = onMobileLayout ? 0.092 : 0.084;
-  const heightRatio = onMobileLayout ? 0.144 : 0.128;
-  const w = Math.min(rect.width * widthRatio, rect.height * heightRatio);
+  const marker = getActiveCockpitRatios();
+  const x = rect.left + rect.width * marker.centerX;
+  const y = rect.top + rect.height * marker.centerY;
+  const w = rect.width * marker.width;
+  const h = rect.height * marker.height;
+
   document.documentElement.style.setProperty("--gunsight-x", `${x}px`);
   document.documentElement.style.setProperty("--gunsight-y", `${y}px`);
   document.documentElement.style.setProperty("--gunsight-width", `${w}px`);
+  document.documentElement.style.setProperty("--gunsight-height", `${h}px`);
 }
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -258,6 +320,26 @@ const CAMERA_DEFAULT_NEAR = 0.1;
 const CAMERA_COCKPIT_NEAR = 0.03;
 const CAMERA_THIRD_PERSON_OFFSET = new THREE.Vector3(-72, 25, 0);
 const CAMERA_COCKPIT_OFFSET = new THREE.Vector3(2.8, 2.45, 0);
+
+const GUN_ZERO_DISTANCE_FALLBACK = 1200;
+const GUN_ZERO_DISTANCE_MIN = 320;
+const GUN_ZERO_DISTANCE_MAX = 2600;
+const GUN_BARREL_LENGTH = 3.0;
+const GUN_BARREL_RADIUS = 0.082;
+const GUN_MUZZLE_LOCAL_LEFT = new THREE.Vector3(13.88, 1.22, 0.86);
+const GUN_MUZZLE_LOCAL_RIGHT = new THREE.Vector3(13.88, 1.22, -0.86);
+
+const TRACER_SPEED = 1350;
+const TRACER_LENGTH = 15.2;
+const TRACER_RADIUS_FRONT = 0.24;
+const TRACER_RADIUS_REAR = 0.42;
+const MUZZLE_FLASH_LIFE = 0.095;
+const MUZZLE_FLASH_SCALE_RATE = 9;
+const MUZZLE_FLASH_FORWARD_OFFSET = 1.06;
+const MUZZLE_FLASH_BASE_OPACITY = 1.0;
+const COCKPIT_GUN_DROP = 0.16;
+const COCKPIT_GUN_FORWARD_BIAS = 0.22;
+
 const camForwardVec = new THREE.Vector3();
 const camUpVec = new THREE.Vector3();
 const camRightVec = new THREE.Vector3();
@@ -285,7 +367,101 @@ const tmpVecC = new THREE.Vector3();
 const tmpVecD = new THREE.Vector3();
 const playerAimProbe = new THREE.Vector3();
 const playerAimDir = new THREE.Vector3();
+const bulletAimDir = new THREE.Vector3();
+const bulletMuzzlePos = new THREE.Vector3();
+const bulletConvergencePos = new THREE.Vector3();
+const bulletFlightDir = new THREE.Vector3();
+const bulletMuzzleForwardDir = new THREE.Vector3();
+
+const bulletTracerGeometry = new THREE.CylinderGeometry(TRACER_RADIUS_FRONT, TRACER_RADIUS_REAR, TRACER_LENGTH, 12, 1, false);
+bulletTracerGeometry.rotateZ(-Math.PI * 0.5);
+bulletTracerGeometry.translate(TRACER_LENGTH * 0.5, 0, 0);
+const bulletTracerMaterialPlayer = new THREE.MeshBasicMaterial({
+  color: 0xfff4cd,
+  transparent: true,
+  opacity: 1,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  depthTest: false,
+});
+const bulletTracerMaterialBot = new THREE.MeshBasicMaterial({
+  color: 0xff975e,
+  transparent: true,
+  opacity: 0.95,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  depthTest: true,
+});
+const muzzleFlashCoreGeometry = new THREE.ConeGeometry(0.34, 1.45, 10, 1, true);
+muzzleFlashCoreGeometry.rotateZ(-Math.PI * 0.5);
+muzzleFlashCoreGeometry.translate(0.72, 0, 0);
+const muzzleFlashRingGeometry = new THREE.RingGeometry(0.1, 0.58, 16);
+const muzzleFlashStreakGeometry = new THREE.PlaneGeometry(1.45, 0.16);
+
+const muzzleFlashMaterials = {
+  player: {
+    core: new THREE.MeshBasicMaterial({
+      color: 0xffc8aa,
+      transparent: true,
+      opacity: MUZZLE_FLASH_BASE_OPACITY,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: true,
+    }),
+    ring: new THREE.MeshBasicMaterial({
+      color: 0xff5a3a,
+      transparent: true,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.78,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: true,
+    }),
+    streak: new THREE.MeshBasicMaterial({
+      color: 0xffb6a6,
+      transparent: true,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.7,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: true,
+    }),
+  },
+  bot: {
+    core: new THREE.MeshBasicMaterial({
+      color: 0xffb58f,
+      transparent: true,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.88,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: true,
+    }),
+    ring: new THREE.MeshBasicMaterial({
+      color: 0xff4a32,
+      transparent: true,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.66,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: true,
+    }),
+    streak: new THREE.MeshBasicMaterial({
+      color: 0xffa79a,
+      transparent: true,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.6,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: true,
+    }),
+  },
+};
+
 const losRaycaster = new THREE.Raycaster();
+const bulletRaycaster = new THREE.Raycaster();
+const bulletStepRaycaster = new THREE.Raycaster();
 
 const ARENA = 3600;
 const FLOOR_Y = 40;
@@ -435,7 +611,201 @@ function prepareCockpitOverlay(frameImg, overlayEl) {
     const biasStrong = purpleBias >= 14;
     return biasStrong && (huePurple || channelPurple) && (sat >= 0.08 || purpleBias >= 24);
   };
+  const isRedMarker = (r, g, b) => {
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const chroma = max - min;
+    if (max < 72 || chroma < 38) return false;
 
+    let hue = 0;
+    if (chroma > 0) {
+      if (max === r) hue = ((g - b) / chroma) % 6;
+      else if (max === g) hue = (b - r) / chroma + 2;
+      else hue = (r - g) / chroma + 4;
+      hue *= 60;
+      if (hue < 0) hue += 360;
+    }
+
+    const sat = max === 0 ? 0 : chroma / max;
+    const redHue = hue <= 24 || hue >= 336;
+    return redHue && sat >= 0.42 && r >= g + 42 && r >= b + 42;
+  };
+
+  const detectRedMarkerRatios = (pixels, targetWidth, targetHeight) => {
+    const total = targetWidth * targetHeight;
+    const redMask = new Uint8Array(total);
+    for (let i = 0, px = 0; i < pixels.length; i += 4, px += 1) {
+      redMask[px] = isRedMarker(pixels[i], pixels[i + 1], pixels[i + 2]) ? 1 : 0;
+    }
+
+    const visited = new Uint8Array(total);
+    const stack = [];
+    const components = [];
+
+    for (let y = 0; y < targetHeight; y += 1) {
+      for (let x = 0; x < targetWidth; x += 1) {
+        const start = y * targetWidth + x;
+        if (!redMask[start] || visited[start]) continue;
+
+        let minX = x;
+        let maxX = x;
+        let minY = y;
+        let maxY = y;
+        let count = 0;
+        visited[start] = 1;
+        stack.push(start);
+
+        while (stack.length > 0) {
+          const idx = stack.pop();
+          const px = idx % targetWidth;
+          const py = Math.floor(idx / targetWidth);
+          count += 1;
+          if (px < minX) minX = px;
+          if (px > maxX) maxX = px;
+          if (py < minY) minY = py;
+          if (py > maxY) maxY = py;
+
+          for (let ny = Math.max(0, py - 1); ny <= Math.min(targetHeight - 1, py + 1); ny += 1) {
+            for (let nx = Math.max(0, px - 1); nx <= Math.min(targetWidth - 1, px + 1); nx += 1) {
+              if (nx === px && ny === py) continue;
+              const nIdx = ny * targetWidth + nx;
+              if (!redMask[nIdx] || visited[nIdx]) continue;
+              visited[nIdx] = 1;
+              stack.push(nIdx);
+            }
+          }
+        }
+
+        const width = maxX - minX + 1;
+        const height = maxY - minY + 1;
+        const centerX = (minX + maxX + 1) * 0.5 / targetWidth;
+        const centerY = (minY + maxY + 1) * 0.5 / targetHeight;
+        const widthRatio = width / targetWidth;
+        const heightRatio = height / targetHeight;
+
+        if (count < 1) continue;
+        if (widthRatio > 0.02 || heightRatio > 0.02) continue;
+        if (centerX < 0.2 || centerX > 0.8) continue;
+        if (centerY < 0.1 || centerY > 0.75) continue;
+
+        components.push({ minX, maxX, minY, maxY, count, centerX, centerY });
+      }
+    }
+
+    if (components.length < 4) return null;
+
+    const pool = components.sort((a, b) => b.count - a.count).slice(0, 18);
+    if (pool.length < 4) return null;
+
+    let best = null;
+    let bestScore = -Infinity;
+
+    for (let i = 0; i <= pool.length - 4; i += 1) {
+      for (let j = i + 1; j <= pool.length - 3; j += 1) {
+        for (let k = j + 1; k <= pool.length - 2; k += 1) {
+          for (let l = k + 1; l <= pool.length - 1; l += 1) {
+            const set = [pool[i], pool[j], pool[k], pool[l]];
+            let minX = targetWidth;
+            let minY = targetHeight;
+            let maxX = -1;
+            let maxY = -1;
+            let signal = 0;
+
+            set.forEach((c) => {
+              if (c.minX < minX) minX = c.minX;
+              if (c.minY < minY) minY = c.minY;
+              if (c.maxX > maxX) maxX = c.maxX;
+              if (c.maxY > maxY) maxY = c.maxY;
+              signal += c.count;
+            });
+
+            const midX = (minX + maxX + 1) * 0.5;
+            const midY = (minY + maxY + 1) * 0.5;
+            let tl = null;
+            let tr = null;
+            let bl = null;
+            let br = null;
+
+            set.forEach((c) => {
+              const px = (c.minX + c.maxX + 1) * 0.5;
+              const py = (c.minY + c.maxY + 1) * 0.5;
+              const point = { x: px, y: py, count: c.count, minX: c.minX, maxX: c.maxX, minY: c.minY, maxY: c.maxY };
+              if (px <= midX && py <= midY && (!tl || point.count > tl.count)) tl = point;
+              if (px > midX && py <= midY && (!tr || point.count > tr.count)) tr = point;
+              if (px <= midX && py > midY && (!bl || point.count > bl.count)) bl = point;
+              if (px > midX && py > midY && (!br || point.count > br.count)) br = point;
+            });
+
+            if (!(tl && tr && bl && br)) continue;
+
+            const topY = (tl.y + tr.y) * 0.5;
+            const bottomY = (bl.y + br.y) * 0.5;
+            const topSpan = tr.x - tl.x;
+            const bottomSpan = br.x - bl.x;
+            const verticalSpan = bottomY - topY;
+            if (topSpan <= 2 || bottomSpan <= 2 || verticalSpan <= 2) continue;
+            if (topSpan <= bottomSpan * 1.06) continue;
+
+            const widthFromTop = topSpan / 0.82;
+            const widthFromBottom = bottomSpan / 0.45;
+            const markerWidthPx = (widthFromTop * 0.62) + (widthFromBottom * 0.38);
+            const markerHeightPx = verticalSpan / 0.62;
+            if (markerWidthPx <= 8 || markerHeightPx <= 8) continue;
+
+            const leftFromTL = tl.x - markerWidthPx * 0.09;
+            const leftFromTR = tr.x - markerWidthPx * 0.91;
+            const leftFromBL = bl.x - markerWidthPx * 0.275;
+            const leftFromBR = br.x - markerWidthPx * 0.725;
+            const markerLeft = (leftFromTL + leftFromTR + leftFromBL + leftFromBR) * 0.25;
+
+            const topFromTop = topY - markerHeightPx * 0.27;
+            const topFromBottom = bottomY - markerHeightPx * 0.89;
+            const markerTop = (topFromTop * 0.65) + (topFromBottom * 0.35);
+
+            const centerX = (markerLeft + markerWidthPx * 0.5) / targetWidth;
+            const centerY = (markerTop + markerHeightPx * 0.5) / targetHeight;
+            const markerWidthRatio = markerWidthPx / targetWidth;
+            const markerHeightRatio = markerHeightPx / targetHeight;
+
+            if (centerX < 0.38 || centerX > 0.62) continue;
+            if (centerY < 0.24 || centerY > 0.62) continue;
+            if (markerWidthRatio < 0.08 || markerWidthRatio > 0.42) continue;
+            if (markerHeightRatio < 0.1 || markerHeightRatio > 0.5) continue;
+
+            const skewPenalty = (
+              Math.abs(tl.y - tr.y)
+              + Math.abs(bl.y - br.y)
+              + Math.abs((tl.x - bl.x) - (tr.x - br.x))
+            ) * 1.6;
+            const fitPenalty = (
+              Math.abs(leftFromTL - leftFromTR)
+              + Math.abs(leftFromTL - leftFromBL)
+              + Math.abs(leftFromTL - leftFromBR)
+              + Math.abs(topFromTop - topFromBottom)
+            ) * 0.5;
+            const penalty = (
+              Math.abs(centerX - 0.5) * 620
+              + Math.abs(centerY - DEFAULT_COCKPIT_MARKER_RATIOS.centerY) * 720
+              + Math.abs(markerWidthRatio - DEFAULT_COCKPIT_MARKER_RATIOS.width) * 440
+              + Math.abs(markerHeightRatio - DEFAULT_COCKPIT_MARKER_RATIOS.height) * 440
+            );
+            const score = signal - penalty - skewPenalty - fitPenalty;
+            if (score > bestScore) {
+              bestScore = score;
+              best = {
+                centerX,
+                centerY,
+                width: markerWidthRatio,
+                height: markerHeightRatio,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    return isValidCockpitRatios(best) ? best : null;
+  };
   const applyMask = () => {
     const width = frameImg.naturalWidth;
     const height = frameImg.naturalHeight;
@@ -457,10 +827,13 @@ function prepareCockpitOverlay(frameImg, overlayEl) {
     const imageData = workCtx.getImageData(0, 0, targetWidth, targetHeight);
     const pixels = imageData.data;
     const markerMask = new Uint8Array(targetWidth * targetHeight);
-
     for (let i = 0, px = 0; i < pixels.length; i += 4, px += 1) {
-      markerMask[px] = isPurpleMarker(pixels[i], pixels[i + 1], pixels[i + 2]) ? 1 : 0;
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+      markerMask[px] = isPurpleMarker(r, g, b) ? 1 : 0;
     }
+    cockpitMarkerRatios = null;
 
     const expandedMask = new Uint8Array(markerMask);
     for (let y = 1; y < targetHeight - 1; y += 1) {
@@ -486,6 +859,7 @@ function prepareCockpitOverlay(frameImg, overlayEl) {
     frameImg.src = workCanvas.toDataURL("image/png");
 
     if (overlayEl) overlayEl.dataset.maskReady = "true";
+    updateCockpitOverlayLayout();
   };
 
   if (frameImg.complete && frameImg.naturalWidth) {
@@ -494,7 +868,6 @@ function prepareCockpitOverlay(frameImg, overlayEl) {
     frameImg.addEventListener("load", applyMask, { once: true });
   }
 }
-
 function addObstacle(mesh, padding = 0) {
   if (!mesh) return;
   mesh.updateWorldMatrix(true, false);
@@ -1057,6 +1430,30 @@ function createFighter(colorOrPalette, isPlayer = false) {
   noseCone.scale.set(1, 0.34, 0.72);
   noseCone.position.set(14.35 + forwardAxisShiftX, 1.52, 0);
 
+  const gunBarrelL = new THREE.Mesh(
+    new THREE.CylinderGeometry(GUN_BARREL_RADIUS * 0.78, GUN_BARREL_RADIUS, GUN_BARREL_LENGTH, 12),
+    nozzleMetalMat
+  );
+  gunBarrelL.rotation.z = -Math.PI * 0.5;
+  gunBarrelL.position.copy(GUN_MUZZLE_LOCAL_LEFT).addScaledVector(AXIS_X, -GUN_BARREL_LENGTH * 0.5);
+  gunBarrelL.position.y -= 0.015;
+
+  const gunBarrelR = gunBarrelL.clone();
+  gunBarrelR.position.copy(GUN_MUZZLE_LOCAL_RIGHT).addScaledVector(AXIS_X, -GUN_BARREL_LENGTH * 0.5);
+  gunBarrelR.position.y -= 0.015;
+
+  const gunBaseL = new THREE.Mesh(
+    new THREE.CylinderGeometry(GUN_BARREL_RADIUS * 1.58, GUN_BARREL_RADIUS * 1.9, GUN_BARREL_LENGTH * 0.95, 12),
+    bodyMat
+  );
+  gunBaseL.rotation.z = -Math.PI * 0.5;
+  gunBaseL.position.copy(GUN_MUZZLE_LOCAL_LEFT).addScaledVector(AXIS_X, -GUN_BARREL_LENGTH * 1.42);
+  gunBaseL.position.y -= 0.02;
+
+  const gunBaseR = gunBaseL.clone();
+  gunBaseR.position.copy(GUN_MUZZLE_LOCAL_RIGHT).addScaledVector(AXIS_X, -GUN_BARREL_LENGTH * 1.42);
+  gunBaseR.position.y -= 0.02;
+
   // Main wing: even shorter fore-aft depth and moved further aft
   const mainWingPoints = [
     [8.6, 0.7],
@@ -1130,7 +1527,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   mainWingR.add(wingPatternR);
 
 
-  // Tail section rebuilt from scratch (主翼はそのまま): horizontal tailplanes + vertical stabilizers + jet units
+  // Tail section rebuilt from scratch (主翼はそ�Eまま): horizontal tailplanes + vertical stabilizers + jet units
   // Horizontal tail is defined independently, but keeps exactly the same shape as the main wing (uniform scale only).
   const tailplaneBaseShape = [
     [8.6, 0.7],
@@ -1330,7 +1727,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   const wingMissileR = buildWingMissile(-1);
 
   g.add(
-    centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone,
+    centerSpine, forwardSpineTaper, forwardTaperTopBulge, dorsalFlowHump, cockpitShoulderBulge, upperSpineBlendBulge, cockpitBlend, cockpitBody, cockpitFairing, dorsalDeck, cockpitGlass, noseSection, noseCone, gunBaseL, gunBaseR, gunBarrelL, gunBarrelR,
     mainWingL, mainWingR,
     wingMissileL, wingMissileR,
     tailplaneL, tailplaneR, finCenter,
@@ -1390,6 +1787,8 @@ function createFighter(colorOrPalette, isPlayer = false) {
     yaw: 0,
     pitch: 0,
     roll: 0,
+    nextGunSide: 0,
+    gunHardpoints: [GUN_MUZZLE_LOCAL_LEFT.clone(), GUN_MUZZLE_LOCAL_RIGHT.clone()],
     hpLabel: null,
     lockOutline,
     exhaust: {
@@ -1536,27 +1935,83 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
 }
 
 function spawnBullet(owner, color) {
+  if (!owner?.mesh) return;
+
+  const team = owner === game.player ? "player" : "bot";
   const b = new THREE.Mesh(
-    new THREE.SphereGeometry(2.5, 12, 10),
-    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9, roughness: 0.2, metalness: 0.1 })
+    bulletTracerGeometry,
+    team === "player" ? bulletTracerMaterialPlayer : bulletTracerMaterialBot
   );
-  const dir = owner === game.player
-    ? getPlayerAimDirection()
-    : new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
-  if (owner === game.player) {
-    b.position.copy(camera.position).addScaledVector(dir, 20);
-  } else {
-    b.position.copy(owner.mesh.position).addScaledVector(dir, 28);
+
+  const useRightGun = owner.nextGunSide === 1;
+  if (typeof owner.nextGunSide === "number") {
+    owner.nextGunSide = useRightGun ? 0 : 1;
   }
+
+  const muzzleLocal = owner.gunHardpoints?.[useRightGun ? 1 : 0]
+    || (useRightGun ? GUN_MUZZLE_LOCAL_RIGHT : GUN_MUZZLE_LOCAL_LEFT);
+
+  if (owner === game.player) {
+    bulletAimDir.copy(getPlayerAimDirection());
+  } else {
+    getBotAimPoint(owner, bulletConvergencePos);
+    bulletAimDir.copy(bulletConvergencePos).sub(owner.mesh.position);
+    if (bulletAimDir.lengthSq() <= 1e-6) {
+      bulletAimDir.set(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+    } else {
+      bulletAimDir.normalize();
+    }
+  }
+
+  let muzzleResolved = false;
+  if (owner.mesh.localToWorld && muzzleLocal) {
+    bulletMuzzlePos.copy(muzzleLocal);
+    owner.mesh.localToWorld(bulletMuzzlePos);
+    if (Number.isFinite(bulletMuzzlePos.x) && Number.isFinite(bulletMuzzlePos.y) && Number.isFinite(bulletMuzzlePos.z)) {
+      b.position.copy(bulletMuzzlePos);
+      muzzleResolved = true;
+    }
+  }
+
+  if (!muzzleResolved) {
+    const fallbackDistance = owner === game.player ? 20 : 28;
+    b.position.copy(owner.mesh.position).addScaledVector(bulletAimDir, fallbackDistance);
+  }
+
+  if (owner === game.player && document.body.classList.contains("cockpit-active")) {
+    tmpVecA.set(0, -COCKPIT_GUN_DROP, 0).applyQuaternion(owner.mesh.quaternion);
+    b.position.add(tmpVecA);
+    b.position.addScaledVector(bulletAimDir, COCKPIT_GUN_FORWARD_BIAS);
+  }
+
+  if (owner === game.player) {
+    getPlayerAimPoint(bulletConvergencePos, bulletAimDir, b.position);
+  } else {
+    getBotAimPoint(owner, bulletConvergencePos);
+  }
+
+  bulletFlightDir.copy(bulletConvergencePos).sub(b.position);
+  if (bulletFlightDir.lengthSq() <= 1e-6) {
+    bulletFlightDir.copy(bulletAimDir);
+  } else {
+    bulletFlightDir.normalize();
+  }
+
+  b.quaternion.setFromUnitVectors(AXIS_X, bulletFlightDir);
+  b.frustumCulled = false;
+  b.renderOrder = 130;
+
+  bulletMuzzleForwardDir.set(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+  spawnMuzzleFlash(b.position, bulletMuzzleForwardDir, team, owner, muzzleLocal);
+
   b.userData = {
-    vel: dir.multiplyScalar(1350),
-    life: 1.9,
-    team: owner === game.player ? "player" : "bot",
+    vel: bulletFlightDir.multiplyScalar(TRACER_SPEED),
+    life: 2.05,
+    team,
   };
   world.add(b);
   game.bullets.push(b);
 }
-
 function getPlayerAimDirection() {
   const viewportWidth = Math.max(1, window.visualViewport?.width || window.innerWidth);
   const viewportHeight = Math.max(1, window.visualViewport?.height || window.innerHeight);
@@ -1564,17 +2019,128 @@ function getPlayerAimDirection() {
   let aimX = viewportWidth * 0.5;
   let aimY = viewportHeight * 0.5;
   if (document.body.classList.contains("cockpit-active") && cockpitFrameEl) {
-    const frameRect = cockpitFrameEl.getBoundingClientRect();
-    const onMobileLayout = isMobile || (window.matchMedia?.("(max-width: 900px)")?.matches ?? false);
-    const yRatio = onMobileLayout ? 0.426 : 0.421;
-    aimX = frameRect.left + frameRect.width * 0.5;
-    aimY = frameRect.top + frameRect.height * yRatio;
+    const frameRect = getCockpitFrameContentRect();
+    if (frameRect) {
+      const center = getCockpitCenterRatios();
+      aimX = frameRect.left + frameRect.width * center.centerX;
+      aimY = frameRect.top + frameRect.height * center.centerY;
+    }
   }
 
   const ndcX = (aimX / viewportWidth) * 2 - 1;
   const ndcY = -(aimY / viewportHeight) * 2 + 1;
   playerAimProbe.set(ndcX, ndcY, 0.25).unproject(camera);
   return playerAimDir.copy(playerAimProbe).sub(camera.position).normalize();
+}
+
+function getPlayerAimPoint(out = bulletConvergencePos, direction = null, muzzleWorldPos = null) {
+  const dir = direction || getPlayerAimDirection();
+  let aimDistance = GUN_ZERO_DISTANCE_FALLBACK;
+  let hitObstacle = false;
+
+  if (staticObstacleMeshes.length > 0) {
+    bulletRaycaster.set(camera.position, dir);
+    bulletRaycaster.near = 1;
+    bulletRaycaster.far = GUN_ZERO_DISTANCE_MAX;
+    const hits = bulletRaycaster.intersectObjects(staticObstacleMeshes, false);
+    if (hits.length > 0) {
+      aimDistance = hits[0].distance;
+      hitObstacle = true;
+    }
+  }
+
+  if (hitObstacle) {
+    aimDistance = clamp(aimDistance, 6, GUN_ZERO_DISTANCE_MAX);
+  } else {
+    aimDistance = clamp(aimDistance, GUN_ZERO_DISTANCE_MIN, GUN_ZERO_DISTANCE_MAX);
+  }
+
+  out.copy(camera.position).addScaledVector(dir, aimDistance);
+
+  if (muzzleWorldPos) {
+    const forwardDistance = tmpVecB.copy(out).sub(muzzleWorldPos).dot(dir);
+    if (forwardDistance < 8) {
+      out.copy(muzzleWorldPos).addScaledVector(dir, 8);
+    }
+
+    if (staticObstacleMeshes.length > 0) {
+      bulletRaycaster.set(muzzleWorldPos, dir);
+      bulletRaycaster.near = 0.25;
+      bulletRaycaster.far = GUN_ZERO_DISTANCE_MAX;
+      const muzzleHits = bulletRaycaster.intersectObjects(staticObstacleMeshes, false);
+      if (muzzleHits.length > 0) {
+        const muzzleHitDistance = muzzleHits[0].distance;
+        const currentDistance = tmpVecB.copy(out).sub(muzzleWorldPos).dot(dir);
+        if (muzzleHitDistance < currentDistance) {
+          out.copy(muzzleWorldPos).addScaledVector(dir, Math.max(2.2, muzzleHitDistance - 0.75));
+        }
+      }
+    }
+  }
+
+  return out;
+}
+function getBotAimPoint(owner, out = bulletConvergencePos) {
+  if (owner?.target?.alive) {
+    const targetPos = getLockAimPoint(owner.target, tmpVecA);
+    const dist = owner.mesh.position.distanceTo(targetPos);
+    const leadTime = clamp(dist / TRACER_SPEED, 0.04, 1.1);
+    return out.copy(targetPos).addScaledVector(owner.target.velocity, leadTime * 0.9);
+  }
+
+  bulletAimDir.set(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+  return out.copy(owner.mesh.position).addScaledVector(bulletAimDir, GUN_ZERO_DISTANCE_FALLBACK);
+}
+
+function spawnMuzzleFlash(position, direction, team = "player", owner = null, muzzleLocal = null) {
+  if (team === "player" && document.body.classList.contains("cockpit-active")) return;
+
+  const preset = muzzleFlashMaterials[team] || muzzleFlashMaterials.bot;
+  const coreMat = preset.core.clone();
+  const ringMat = preset.ring.clone();
+  const streakMatA = preset.streak.clone();
+  const streakMatB = preset.streak.clone();
+
+  const flash = new THREE.Group();
+
+  const core = new THREE.Mesh(muzzleFlashCoreGeometry, coreMat);
+  core.renderOrder = 132;
+
+  const ring = new THREE.Mesh(muzzleFlashRingGeometry, ringMat);
+  ring.rotation.y = Math.PI * 0.5;
+  ring.renderOrder = 133;
+
+  const streakA = new THREE.Mesh(muzzleFlashStreakGeometry, streakMatA);
+  streakA.rotation.y = Math.PI * 0.5;
+  streakA.renderOrder = 134;
+
+  const streakB = new THREE.Mesh(muzzleFlashStreakGeometry, streakMatB);
+  streakB.rotation.set(Math.PI * 0.5, Math.PI * 0.5, 0);
+  streakB.renderOrder = 134;
+
+  ring.position.x = 0.24;
+  streakA.position.x = 0.52;
+  streakB.position.x = 0.52;
+
+  flash.add(core, ring, streakA, streakB);
+  flash.position.copy(position).addScaledVector(direction, MUZZLE_FLASH_FORWARD_OFFSET);
+  flash.quaternion.setFromUnitVectors(AXIS_X, direction);
+  flash.scale.setScalar(team === "player" ? 0.82 : 0.78);
+  world.add(flash);
+
+  game.effects.push({
+    mesh: flash,
+    life: MUZZLE_FLASH_LIFE,
+    maxLife: MUZZLE_FLASH_LIFE,
+    scaleRate: MUZZLE_FLASH_SCALE_RATE,
+    baseOpacity: MUZZLE_FLASH_BASE_OPACITY,
+    kind: "muzzle",
+    materials: [coreMat, ringMat, streakMatA, streakMatB],
+    materialOpacityScales: [1, 0.6, 0.52, 0.52],
+    followOwner: owner?.mesh ? owner : null,
+    followLocal: muzzleLocal?.clone ? muzzleLocal.clone() : null,
+    followForwardOffset: MUZZLE_FLASH_FORWARD_OFFSET,
+  });
 }
 
 function spawnImpactFx(position, color) {
@@ -1677,9 +2243,40 @@ function updateEffects(dt) {
   for (let i = game.effects.length - 1; i >= 0; i--) {
     const fx = game.effects[i];
     fx.life -= dt;
-    fx.mesh.scale.multiplyScalar(1 + fx.scaleRate * dt);
-    fx.mesh.material.opacity = Math.max(0, fx.life / 0.24);
+    fx.mesh.scale.multiplyScalar(1 + (fx.scaleRate ?? 0) * dt);
+
+    if (fx.kind === "muzzle" && fx.followOwner?.mesh && fx.followLocal) {
+      tmpVecA.copy(fx.followLocal);
+      fx.followOwner.mesh.localToWorld(tmpVecA);
+      tmpVecB.set(1, 0, 0).applyQuaternion(fx.followOwner.mesh.quaternion).normalize();
+      fx.mesh.position.copy(tmpVecA).addScaledVector(tmpVecB, fx.followForwardOffset ?? MUZZLE_FLASH_FORWARD_OFFSET);
+      fx.mesh.quaternion.setFromUnitVectors(AXIS_X, tmpVecB);
+    }
+
+    if (fx.kind === "muzzle") {
+      const maxLife = Math.max(0.001, fx.maxLife ?? MUZZLE_FLASH_LIFE);
+      const lifeRatio = clamp(fx.life / maxLife, 0, 1);
+      const baseOpacity = fx.baseOpacity ?? MUZZLE_FLASH_BASE_OPACITY;
+      if (Array.isArray(fx.materials) && fx.materials.length > 0) {
+        const scales = fx.materialOpacityScales || [];
+        for (let m = 0; m < fx.materials.length; m++) {
+          const mat = fx.materials[m];
+          if (!mat) continue;
+          mat.opacity = baseOpacity * lifeRatio * (scales[m] ?? 1);
+        }
+      } else if (fx.mesh.material) {
+        fx.mesh.material.opacity = baseOpacity * lifeRatio;
+      }
+    } else if (fx.mesh.material) {
+      fx.mesh.material.opacity = Math.max(0, fx.life / 0.24);
+    }
+
     if (fx.life <= 0) {
+      if (fx.kind === "muzzle" && Array.isArray(fx.materials)) {
+        fx.materials.forEach((mat) => mat?.dispose?.());
+      } else if (fx.kind === "muzzle" && fx.mesh.material?.dispose) {
+        fx.mesh.material.dispose();
+      }
       world.remove(fx.mesh);
       game.effects.splice(i, 1);
     }
@@ -2037,10 +2634,30 @@ function hitPlane(plane, dmg, attackerTeam = null) {
 function updateBullets(dt) {
   for (let i = game.bullets.length - 1; i >= 0; i--) {
     const b = game.bullets[i];
+    const prevPos = tmpVecC.copy(b.position);
     b.position.addScaledVector(b.userData.vel, dt);
     b.userData.life -= dt;
 
-    if (intersectsObstacle(b.position, 2.5)) {
+    let hitObstacle = false;
+    if (staticObstacleMeshes.length > 0) {
+      const stepDistance = tmpVecD.copy(b.position).sub(prevPos).length();
+      if (stepDistance > 1e-4) {
+        const stepDir = tmpVecB.copy(b.position).sub(prevPos).normalize();
+        bulletStepRaycaster.set(prevPos, stepDir);
+        bulletStepRaycaster.near = 0;
+        bulletStepRaycaster.far = stepDistance + 1.6;
+        const obstacleHits = bulletStepRaycaster.intersectObjects(staticObstacleMeshes, false);
+        if (obstacleHits.length > 0) {
+          const hitPos = obstacleHits[0].point;
+          b.position.copy(hitPos);
+          spawnImpactFx(hitPos, 0xffee9a);
+          b.userData.life = -1;
+          hitObstacle = true;
+        }
+      }
+    }
+
+    if (!hitObstacle && intersectsObstacle(b.position, 2.5)) {
       spawnImpactFx(b.position, 0xffee9a);
       b.userData.life = -1;
     }
@@ -2061,7 +2678,6 @@ function updateBullets(dt) {
     }
   }
 }
-
 function updateMissiles(dt) {
   const playerPos = game.player?.mesh?.position;
 
@@ -2601,10 +3217,10 @@ function setupTapMenuButtons() {
 if (!rendererReady) {
   drawRendererFallback();
   messageEl.hidden = false;
-  messageEl.textContent = "3D表示を開始できませんでした。再試行してください。";
+  messageEl.textContent = "3D graphics failed to initialize. Please reload the page.";
   const retryBtn = document.createElement("button");
   retryBtn.type = "button";
-  retryBtn.textContent = "再試行";
+  retryBtn.textContent = "Reload";
   retryBtn.style.marginTop = "12px";
   retryBtn.style.padding = "10px 16px";
   retryBtn.style.borderRadius = "999px";
@@ -2620,7 +3236,7 @@ if (!rendererReady) {
 canvas.addEventListener("webglcontextlost", (e) => {
   e.preventDefault();
   messageEl.hidden = false;
-  messageEl.textContent = "描画コンテキストが失われました。再読み込みしてください。";
+  messageEl.textContent = "WebGL context was lost. Please reload the page.";
 });
 
 setupHudHealthPanel();
@@ -2678,6 +3294,8 @@ const restartFromHud = (e) => {
 
 restartBtn.addEventListener("click", restartFromHud);
 restartBtn.addEventListener("pointerup", restartFromHud);
+
+
 
 let lastMenuToggleAt = 0;
 
@@ -2761,3 +3379,97 @@ try {
   showFatalInitError(err, "startup");
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
