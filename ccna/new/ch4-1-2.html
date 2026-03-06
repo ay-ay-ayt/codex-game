@@ -1,0 +1,533 @@
+<div class="page" id="page-4-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-1 NAT・PAT（ネットワークアドレス変換）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            プライベートIPからインターネットに出るための仕組みを根本から理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>なぜNATが必要なのか？ ── 問題の本質を理解する</h2>
+        <p>まず「なぜNATが必要か」を理解しないと、NATの仕組みも設定も暗記になってしまいます。</p>
+        <div class="card">
+            <h4 class="topic-title">IPv4アドレスの枯渇問題</h4>
+            <p>IPv4は32ビット = 約43億個のアドレスしかありません。世界中のデバイスすべてにユニークなパブリックIPを割り当てることは不可能です。</p>
+            <p>そこで考え出されたのが<strong>「社内ではプライベートIP（RFC 1918）を使い、インターネットに出る時だけパブリックIPに変換する」</strong>という仕組み = NATです。</p>
+            <pre style="line-height:1.8; font-size:0.88em;">
+【NATなしの世界（不可能）】
+社内PC 100台すべてにパブリックIP必要 → 非現実的 + 費用莫大
+
+【NATありの世界（現実）】
+社内PC 100台: 192.168.1.1 〜 192.168.1.100（プライベートIP = 無料）
+ルータ:       1つのパブリックIP 203.0.113.50 を持つ
+NATが変換:    192.168.1.x → 203.0.113.50 としてインターネットへ出る
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📌</span>NATの用語 ── 4つのアドレスを区別する</h2>
+        <p>NATでは<strong>4つのアドレス</strong>が登場します。これを混同すると問題が解けません。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>用語</th>
+                        <th>意味</th>
+                        <th>具体例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Inside Local</strong></td>
+                        <td>内部ネットワークのホストに設定されたプライベートIP</td>
+                        <td>192.168.1.10</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Inside Global</strong></td>
+                        <td>内部ホストがインターネット上で使うパブリックIP（変換後）</td>
+                        <td>203.0.113.50</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Outside Local</strong></td>
+                        <td>外部ホストが内部から見えるIP（通常はOutside Globalと同じ）</td>
+                        <td>8.8.8.8</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Outside Global</strong></td>
+                        <td>外部ホストに割り当てられた実際のIP</td>
+                        <td>8.8.8.8</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 覚え方のコツ</div>
+            <strong>Inside/Outside</strong> = 「自社ネットワークの中か外か」<br>
+            <strong>Local/Global</strong> = 「変換前(Local)か変換後(Global)か」<br>
+            Inside Local → Inside Global への変換がNATの本質です。
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">🔎 パケットの変換を追いかけてみよう</h4>
+            <pre style="line-height:2.0; font-size:0.85em;">
+【シナリオ】 社内PC(192.168.1.10) が Google DNS(8.8.8.8) にアクセス
+
+① PCがパケット送信
+   送信元: 192.168.1.10 (Inside Local)   宛先: 8.8.8.8
+
+② ルータのNATがパケットを変換（送信時）
+   送信元: 203.0.113.50 (Inside Global)  宛先: 8.8.8.8
+   ※ NATテーブルに 192.168.1.10 ⇄ 203.0.113.50 のマッピングを記録
+
+③ Google DNSが応答を返す
+   送信元: 8.8.8.8   宛先: 203.0.113.50 (Inside Global)
+
+④ ルータのNATが逆変換（受信時）
+   送信元: 8.8.8.8   宛先: 192.168.1.10 (Inside Local)
+   ※ NATテーブルのマッピングを参照して元のプライベートIPに戻す
+
+⑤ PCがパケットを受信
+   PCは自分が直接 8.8.8.8 と通信したかのように見える
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📊</span>NATの3つの種類 ── 違いを完全に理解する</h2>
+
+        <h3 class="subsection-title">① スタティックNAT（Static NAT）</h3>
+        <div class="card">
+            <h4 class="topic-title">1対1の固定マッピング</h4>
+            <p>1つのプライベートIPと1つのパブリックIPを<strong>永久に固定</strong>で対応させます。Webサーバー等、外部からアクセスされるサーバーに使います。</p>
+            <pre style="font-size:0.88em; line-height:1.8;">
+192.168.1.10 ⇄ 203.0.113.10  （常にこの対応で変換）
+192.168.1.11 ⇄ 203.0.113.11  （別のサーバー用）
+
+メリット: 外部から内部サーバーに常にアクセス可能
+デメリット: パブリックIPを1台ずつ消費 → 費用がかかる
+用途: DMZのWebサーバー、メールサーバー
+</pre>
+        </div>
+
+        <h3 class="subsection-title">② ダイナミックNAT（Dynamic NAT）</h3>
+        <div class="card">
+            <h4 class="topic-title">多対多のプール変換</h4>
+            <p>パブリックIPの「プール」を作り、内部ホストが通信を開始するとプールから1つ割り当てます。プールが空くと別のホストに再割り当て。</p>
+            <pre style="font-size:0.88em; line-height:1.8;">
+パブリックIPプール: 203.0.113.10 〜 203.0.113.14（5個）
+
+PC-A(192.168.1.10)が通信開始 → 203.0.113.10を割り当て
+PC-B(192.168.1.11)が通信開始 → 203.0.113.11を割り当て
+...
+PC-F(192.168.1.15)が通信開始 → プール枯渇！ → 通信できない ✗
+
+メリット: スタティックNATよりは柔軟（プール内で再利用）
+デメリット: 同時接続数 = パブリックIP数の制限あり
+</pre>
+        </div>
+
+        <h3 class="subsection-title">③ PAT / NAT Overload（最重要！）</h3>
+        <div class="card">
+            <h4 class="topic-title">多対1のポート番号変換 ── 実務で最も使われるNAT</h4>
+            <p>PATは<strong>1つのパブリックIPを複数の内部ホストで共有</strong>します。各接続をL4のポート番号で区別します。</p>
+            <pre style="font-size:0.85em; line-height:2.0;">
+変換テーブル:
+  192.168.1.10:50001 → 203.0.113.50:50001
+  192.168.1.11:50002 → 203.0.113.50:50002
+  192.168.1.12:50003 → 203.0.113.50:50003
+  ...（数千〜数万の同時接続が可能！）
+
+パブリックIP = 203.0.113.50 の1つだけで何千台もインターネットに出られる
+
+仕組み:
+  ・送信元ポート番号をNATが書き換えて、各内部ホストを区別
+  ・応答が返ると、宛先ポート番号を見て元の内部ホストに転送
+  ・ポート番号は0〜65535（約65000通り）あるので多くの接続が可能
+</pre>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 試験では「PAT」と「NAT Overload」は同じ意味！</div>
+            「ip nat inside source list 1 interface Gi0/0
+            <strong>overload</strong>」のoverloadがPATを有効にするキーワードです。overloadがないとダイナミックNAT（1対1のプール変換）です。家庭のWi-Fiルータは全部PATを使っています。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>NAT設定 ── 構文と実践的な設定例</h2>
+
+        <h3 class="subsection-title">設定の全体像</h3>
+        <div class="card">
+            <pre style="line-height:1.8; font-size:0.85em;">
+NAT設定に必要な3ステップ:
+① 内側・外側インタフェースの指定（ip nat inside / ip nat outside）
+② 変換対象の定義（ACLまたは手動マッピング）
+③ 変換ルールの設定（ip nat inside source ...）
+</pre>
+        </div>
+
+        <pre><span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 【PAT設定 ── 最も一般的。必ず覚える！】</span>
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+
+<span class="cmd-comment"># ステップ1: 内側インタフェースの指定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/0</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.1.1 255.255.255.0</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip nat inside</span>      <span class="cmd-comment"># ← これがinsideの宣言</span>
+
+<span class="cmd-comment"># ステップ2: 外側インタフェースの指定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/1</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">203.0.113.50 255.255.255.0</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip nat outside</span>     <span class="cmd-comment"># ← これがoutsideの宣言</span>
+
+<span class="cmd-comment"># ステップ3: 変換対象のACL作成</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">access-list</span> <span class="cmd-value">1</span> <span class="cmd-keyword">permit</span> <span class="cmd-value">192.168.1.0 0.0.0.255</span>
+
+<span class="cmd-comment"># ステップ4: PATの設定（overloadがPATのポイント！）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip nat inside source list</span> <span class="cmd-value">1</span> <span class="cmd-keyword">interface GigabitEthernet0/1 overload</span>
+<span class="cmd-comment"># ↑ ACL 1に該当する通信をGi0/1のIPでPAT変換 + overload = ポート共有</span>
+
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 【スタティックNAT設定 ── サーバー用】</span>
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip nat inside source static</span> <span class="cmd-value">192.168.1.100</span> <span class="cmd-value">203.0.113.100</span>
+<span class="cmd-comment"># ↑ 192.168.1.100 と 203.0.113.100 を1対1で固定変換</span>
+
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 【NATの確認・トラブルシューティング】</span>
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip nat translations</span>
+Pro  Inside global     Inside local       Outside local      Outside global
+tcp  203.0.113.50:1024 192.168.1.10:50001 8.8.8.8:53         8.8.8.8:53
+tcp  203.0.113.50:1025 192.168.1.11:60010 142.250.80.46:443  142.250.80.46:443
+---  203.0.113.100     192.168.1.100      ---                ---
+
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip nat statistics</span>     <span class="cmd-comment"># 変換回数・ヒット数の統計</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">clear ip nat translation *</span>   <span class="cmd-comment"># NATテーブルをクリア（トラブル時に使用）</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">debug ip nat</span>              <span class="cmd-comment"># リアルタイムでNAT変換を監視（デバッグ用）</span></pre>
+
+        <h3 class="subsection-title">🔧 NATのトラブルシューティング</h3>
+        <div class="card">
+            <h4 class="topic-title">NATが動かない時のチェックリスト</h4>
+            <ol>
+                <li><strong>ip nat inside / ip nat outside</strong> がインタフェースに設定されているか？ → show ip nat statistics で確認</li>
+                <li><strong>ACLが正しいか？</strong> ワイルドカードマスクの範囲が変換対象をカバーしているか？</li>
+                <li><strong>overload</strong>を忘れていないか？（PATの場合）</li>
+                <li><strong>inside / outside</strong>の方向が逆になっていないか？（よくあるミス！）</li>
+                <li>スタティックNATの場合、<strong>ip nat inside source static</strong>の引数の順序（local → global）が正しいか？</li>
+            </ol>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q4-1">
+            <h3>✏️ 確認問題（第4-1章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 社内PCのIP 192.168.1.10 がインターネットに出る際に使用されるパブリックIP 203.0.113.50
+                    は、NATの用語でどれに該当するか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Inside Local</button></li>
+                    <li><button class="quiz-option">B. Outside Global</button></li>
+                    <li><button class="quiz-option">C. Inside Global</button></li>
+                    <li><button class="quiz-option">D. Outside Local</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（Inside Global）</strong><br>Inside = 内部ホスト、Global =
+                    変換後。つまりInside Globalは「内部ホストがインターネット上で使うパブリックIP」です。元のプライベートIP 192.168.1.10 は Inside Local です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q2. PAT（NAT overload）が1つのパブリックIPで多数の内部ホストを同時にインターネット接続できる仕組みとして正しいのはどれか？
+                </div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 各ホストに異なるMACアドレスを割り当てて区別する</button></li>
+                    <li><button class="quiz-option">B. 各ホストに異なるVLANを割り当てて区別する</button></li>
+                    <li><button class="quiz-option">C. 宛先IPアドレスを書き換えて区別する</button></li>
+                    <li><button class="quiz-option">D. L4のポート番号を変換して各セッションを区別する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D</strong><br>PATは送信元ポート番号を書き換えてセッションごとに一意のポート番号を割り当てます。応答時はそのポート番号を見て元のホストに転送します。1つのIPで約65000セッション区別可能です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q3.【シナリオ問題】以下のNAT設定をルータに投入したが、インターネットに接続できない。原因として最も可能性が高いのはどれか？<br>
+                    <code>access-list 1 permit 192.168.1.0 0.0.0.255</code><br>
+                    <code>ip nat inside source list 1 interface Gi0/1</code>
+                </div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ACLのワイルドカードマスクが間違っている</button></li>
+                    <li><button class="quiz-option">B.
+                            overloadキーワードが不足しており、パブリックIPプールも指定されていないためダイナミックNATとしても機能しない</button></li>
+                    <li><button class="quiz-option">C. Gi0/1にIPアドレスが設定されていない</button></li>
+                    <li><button class="quiz-option">D. ACL番号が間違っている</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B</strong><br>interfaceキーワードで出力IFのIPをNATソースに使う場合、<strong>overload</strong>がないとPATにならず、かつプールも指定されていないためダイナミックNATとしても成立しません。正しくは「ip
+                    nat inside source list 1 interface Gi0/1 <strong>overload</strong>」です。また、ip nat
+                    inside/outsideがインタフェースに設定されているかも確認必要です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q4. show ip nat translations の出力で「Inside local」が 192.168.1.10、「Inside
+                    global」が 203.0.113.50:1024 と表示されている。この変換方式はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. PAT（NAT Overload）</button></li>
+                    <li><button class="quiz-option">B. スタティックNAT</button></li>
+                    <li><button class="quiz-option">C. ダイナミックNAT</button></li>
+                    <li><button class="quiz-option">D. ポリシーNAT</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（PAT）</strong><br>Inside
+                    Globalにポート番号（:1024）が付いているのはPATの特徴です。スタティックNATやダイナミックNATは1対1変換のためポート番号を変換しません。PATは複数ホストを区別するためにポート番号を使います。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q5.【実務シナリオ】社内にWebサーバー(192.168.1.100)があり、インターネットからのアクセスを許可したい。どのNAT方式を使うべきか？
+                </div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. PAT（NAT Overload）</button></li>
+                    <li><button class="quiz-option">B. ダイナミックNAT</button></li>
+                    <li><button class="quiz-option">C. スタティックNAT</button></li>
+                    <li><button class="quiz-option">D. NAT64</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（スタティックNAT）</strong><br>外部からアクセスされるサーバーは<strong>常に同じパブリックIPで到達可能</strong>でなければなりません。スタティックNATで固定の1対1マッピングを作ることで、外部クライアントは常に同じIPでサーバーにアクセスできます。PATやダイナミックNATは動的にマッピングが変わるため外部からの着信接続には不向きです。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-4-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-2 DHCP・DNS</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            IPアドレスの自動配布と名前解決の仕組みを深く理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">📋</span>DHCP（Dynamic Host Configuration Protocol）</h2>
+
+        <h3 class="subsection-title">DHCPが解決する問題</h3>
+        <p>100台のPCに手動でIPアドレス・サブネットマスク・デフォルトゲートウェイ・DNSサーバーを設定するのは非現実的です。DHCPは<strong>ネットワーク設定を自動で配布する</strong>仕組みです。</p>
+
+        <h3 class="subsection-title">DORA ── DHCPの4ステップを完全に理解する</h3>
+        <div class="card">
+            <pre style="line-height:2.2; font-size:0.85em;">
+クライアント                        DHCPサーバー
+(IPなし:0.0.0.0)                   (例:192.168.1.1)
+    |                                    |
+    |─── ① Discover(ブロードキャスト) →|   「誰かIPアドレスをください！」
+    |    送信元:0.0.0.0  宛先:255.255.255.255（L2ブロードキャスト）
+    |                                    |
+    |←─ ② Offer(ユニキャスト) ─────|   「192.168.1.50を使いませんか？」
+    |    DHCPサーバーが使えるIPを提案     |
+    |                                    |
+    |─── ③ Request(ブロードキャスト) →|   「はい、192.168.1.50をください！」
+    |    ブロードキャストで送信（他のDHCPサーバーにも断りを入れるため）
+    |                                    |
+    |←─ ④ Ack(ユニキャスト) ──────|   「承認！リース時間は24時間です」
+    |    IP, サブネットマスク, GW, DNS     |
+    |    の情報をすべて配布               |
+    |                                    |
+    | ≪通信開始！≫                       |
+
+重要ポイント:
+・Discover と Request は「ブロードキャスト」（クライアントはまだIPを持たない）
+・Offer と Ack は通常「ユニキャスト」
+・覚え方: DORA = Discover → Offer → Request → Ack
+</pre>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 なぜRequestもブロードキャストなのか？</div>
+            ネットワーク上に複数のDHCPサーバーがある場合、Discoverに対して複数のOfferが返ってくることがあります。Requestをブロードキャストで送ることで「このサーバーのOfferを選びました」と全DHCPサーバーに通知し、選ばれなかったサーバーはIPを解放します。
+        </div>
+
+        <h3 class="subsection-title">DHCPリレーエージェント ── 別サブネットの問題</h3>
+        <div class="card">
+            <h4 class="topic-title">なぜリレーエージェントが必要か</h4>
+            <p>DHCPのDiscoverは<strong>ブロードキャスト</strong>です。ルータはブロードキャストを転送しません。つまり、DHCPサーバーとクライアントが別サブネットにいると、Discoverが届きません。
+            </p>
+            <pre style="font-size:0.88em; line-height:1.8;">
+[PC] ─── Discover(ブロードキャスト) ─→ [ルータ] ✗ ブロードキャストは通さない ──→ [DHCPサーバー]
+                                         ↓
+                              ip helper-address 設定！
+                                         ↓
+[PC] ─── Discover ─→ [ルータがユニキャストに変換] → [DHCPサーバー]
+</pre>
+        </div>
+
+        <pre><span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 【CiscoルータをDHCPサーバーにする設定】</span>
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip dhcp pool</span> <span class="cmd-value">LAN-POOL</span>             <span class="cmd-comment"># DHCPプール作成</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">network</span> <span class="cmd-value">192.168.1.0 255.255.255.0</span>  <span class="cmd-comment"># 配布するサブネット</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">default-router</span> <span class="cmd-value">192.168.1.1</span>     <span class="cmd-comment"># デフォルトゲートウェイ</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">dns-server</span> <span class="cmd-value">8.8.8.8 8.8.4.4</span>  <span class="cmd-comment"># DNSサーバー</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">lease</span> <span class="cmd-value">7</span>                        <span class="cmd-comment"># リース期間7日</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">domain-name</span> <span class="cmd-value">example.com</span>      <span class="cmd-comment"># ドメイン名</span>
+
+<span class="cmd-comment"># 除外アドレス（ゲートウェイやサーバーに静的IPを使う場合）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip dhcp excluded-address</span> <span class="cmd-value">192.168.1.1 192.168.1.10</span>
+
+<span class="cmd-comment"># DHCPリレーエージェント（別サブネットのDHCPサーバーを使う場合）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/0</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip helper-address</span> <span class="cmd-value">10.0.0.100</span>  <span class="cmd-comment"># DHCPサーバーのIP</span>
+
+<span class="cmd-comment"># DHCP確認コマンド</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip dhcp binding</span>            <span class="cmd-comment"># リース中のIP一覧</span>
+IP address       Client-ID       Lease expiration      Type
+192.168.1.50     0100.1234.5678  Mar 10 2026 10:00 AM  Automatic
+192.168.1.51     0100.abcd.ef01  Mar 10 2026 10:05 AM  Automatic
+
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip dhcp pool</span>               <span class="cmd-comment"># DHCPプールの概要</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip dhcp conflict</span>           <span class="cmd-comment"># IPアドレスの競合を確認</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>DNS（Domain Name System）</h2>
+
+        <h3 class="subsection-title">DNSが解決する問題</h3>
+        <p>人間は「google.com」と覚えますが、コンピュータは「142.250.80.46」のようなIPアドレスでしか通信できません。DNSは<strong>ドメイン名をIPアドレスに変換</strong>します（名前解決）。
+        </p>
+
+        <div class="card">
+            <h4 class="topic-title">DNS名前解決の流れ（再帰問い合わせ）</h4>
+            <pre style="line-height:2.0; font-size:0.85em;">
+ユーザーが「www.example.com」にアクセス:
+
+① PC → ローカルDNSキャッシュを確認（過去の問い合わせ結果がなければ②へ）
+② PC → 設定されたDNSサーバー（再帰リゾルバ）に問い合わせ
+③ 再帰リゾルバ → ルートDNSサーバーに問い合わせ「.comは？」
+   → 「.comの権威サーバーはa.gtld-servers.net」（Referral）
+④ 再帰リゾルバ → .com権威サーバーに「example.comは？」
+   → 「example.comの権威サーバーはns1.example.com」（Referral）
+⑤ 再帰リゾルバ → example.com権威サーバーに「www.example.comは？」
+   → 「93.184.216.34」（A レコード）
+⑥ 再帰リゾルバ → PC に「93.184.216.34」を返す + キャッシュ保存
+</pre>
+        </div>
+
+        <h3 class="subsection-title">DNSレコードの種類</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>レコード</th>
+                        <th>正式名</th>
+                        <th>用途</th>
+                        <th>例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>A</strong></td>
+                        <td>Address</td>
+                        <td>ドメイン → IPv4アドレス</td>
+                        <td>www.example.com → 93.184.216.34</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AAAA</strong></td>
+                        <td>IPv6 Address</td>
+                        <td>ドメイン → IPv6アドレス</td>
+                        <td>www.example.com → 2606:2800:...</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CNAME</strong></td>
+                        <td>Canonical Name</td>
+                        <td>ドメインのエイリアス（別名）</td>
+                        <td>mail.example.com → exchange.example.com</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MX</strong></td>
+                        <td>Mail Exchanger</td>
+                        <td>メールサーバーの指定</td>
+                        <td>example.com → mail.example.com (priority 10)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PTR</strong></td>
+                        <td>Pointer</td>
+                        <td>IPアドレス → ドメイン（逆引き）</td>
+                        <td>93.184.216.34 → www.example.com</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NS</strong></td>
+                        <td>Name Server</td>
+                        <td>ゾーンの権威DNSサーバー</td>
+                        <td>example.com → ns1.example.com</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SOA</strong></td>
+                        <td>Start of Authority</td>
+                        <td>ゾーンの管理情報（シリアル番号等）</td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <pre><span class="cmd-comment"># CiscoルータでのDNS設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip domain-name</span> <span class="cmd-value">example.com</span>      <span class="cmd-comment"># ドメイン名設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip name-server</span> <span class="cmd-value">8.8.8.8</span>          <span class="cmd-comment"># DNSサーバー指定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip domain-lookup</span>                <span class="cmd-comment"># DNS問い合わせ有効（デフォルト有効）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">no ip domain-lookup</span>             <span class="cmd-comment"># DNS無効（タイプミスで遅延するのを防ぐ作業用）</span></pre>
+
+        <div class="info-box note">
+            <div class="label">💡 実務Tips: no ip domain-lookup</div>
+            CiscoデSLIで「show ip rout」のようなタイプミスをすると、ルータがDNS名前解決を試みて長時間待たされることがあります。作業中は「no ip domain-lookup」で
+            DNS問い合わせを無効にしておくと快適です。
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q4-2">
+            <h3>✏️ 確認問題（第4-2章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. DHCPのDORAプロセスで、クライアントが最初に送信するメッセージはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. DHCP Offer</button></li>
+                    <li><button class="quiz-option">B. DHCP Discover</button></li>
+                    <li><button class="quiz-option">C. DHCP Request</button></li>
+                    <li><button class="quiz-option">D. DHCP Ack</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（Discover）</strong><br>DORA =
+                    Discover→Offer→Request→Ack。クライアントはまだIPアドレスを持たないため、送信元0.0.0.0、宛先255.255.255.255のブロードキャストでDiscoverを送信します。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2.【シナリオ】DHCPサーバーとクライアントが異なるサブネットにいる。クライアントがIPを取得できない。解決策はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. クライアント側のルータインタフェースにip helper-addressを設定する</button></li>
+                    <li><button class="quiz-option">B. DHCPサーバーをクライアントと同じVLANに移動する</button></li>
+                    <li><button class="quiz-option">C. デフォルトゲートウェイを変更する</button></li>
+                    <li><button class="quiz-option">D. DHCPプールのサブネットを変更する</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A</strong><br>ip
+                    helper-addressを設定するとルータがDHCPブロードキャストをユニキャストに変換してDHCPサーバーに転送します。設定場所は<strong>クライアント側のインタフェース</strong>（inside
+                    IF）です。Bも動作はしますが物理的な移動が必要であり最善策ではありません。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. ドメイン名からIPv4アドレスへの正引きに使われるDNSレコードの種類はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. PTRレコード</button></li>
+                    <li><button class="quiz-option">B. MXレコード</button></li>
+                    <li><button class="quiz-option">C. CNAMEレコード</button></li>
+                    <li><button class="quiz-option">D. Aレコード</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D（Aレコード）</strong><br>Aレコードはドメイン名→IPv4アドレスの正引き。AAAAはIPv6の正引き。PTRはIPアドレス→ドメイン名の逆引き。MXはメールサーバーの指定です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q4. ip dhcp excluded-address コマンドの目的として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 特定のクライアントにIPアドレスを配布しない</button></li>
+                    <li><button class="quiz-option">B. DHCPサーバーを無効にする</button></li>
+                    <li><button class="quiz-option">C. プール内の特定のIPアドレスをDHCPで配布しないようにする（静的IP用に予約）</button></li>
+                    <li><button class="quiz-option">D. DNSサーバーのIPアドレスを除外する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C</strong><br>excluded-addressはプール範囲内でDHCPが配布しないIPを指定します。ゲートウェイのIP（例:192.168.1.1）やサーバーの固定IPをDHCPが配布してしまうのを防ぐために使います。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

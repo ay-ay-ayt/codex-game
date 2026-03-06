@@ -1,0 +1,656 @@
+<div class="page" id="page-5-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-1 ACL（アクセス制御リスト）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">超頻出</span><span class="tag tag-config">設定</span>
+            ACLはCCNA試験の最重要トピックの一つ。設定・適用場所・処理順序を完全理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🛡️</span>ACLとは？ ── ルータのファイアウォール機能</h2>
+        <p>ACLは「このパケットを通すか（permit）、拒否するか（deny）」を決めるルールリストです。ルータのインタフェースに適用し、トラフィックをフィルタリングします。</p>
+
+        <div class="card">
+            <h4 class="topic-title">ACLの処理フロー（必ず理解すべき）</h4>
+            <pre style="line-height:2.0; font-size:0.85em;">
+パケットがACL適用インタフェースに到着
+    ↓
+① 最初のACLステートメント（エントリ）と比較
+    ↓ マッチしない
+② 2番目のステートメントと比較
+    ↓ マッチしない
+③ 3番目のステートメントと比較
+    ↓ マッチした！ → permit なら通過 / deny なら破棄
+    ↓ （以降のステートメントは評価しない = 上から順に最初にマッチしたもので決定）
+...
+全ステートメントにマッチしない場合
+    ↓
+暗黙のdeny any（最後に自動的に存在）→ パケット破棄！
+
+【重要ポイント】
+・ACLは上から順（シーケンス番号順）に評価される
+・最初にマッチしたエントリで処理決定（以降は無視）
+・末尾に「暗黙のdeny any」が自動で存在 → 明示的にpermitしないと全部拒否される
+・ACLは適用しないと効果がない（access-groupコマンドでIFに適用）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📋</span>標準ACLと拡張ACLの違い</h2>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>標準ACL</th>
+                        <th>拡張ACL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>番号範囲</strong></td>
+                        <td>1〜99, 1300〜1999</td>
+                        <td>100〜199, 2000〜2699</td>
+                    </tr>
+                    <tr>
+                        <td><strong>フィルタ条件</strong></td>
+                        <td>送信元IPアドレスのみ</td>
+                        <td>送信元IP、宛先IP、プロトコル、ポート番号</td>
+                    </tr>
+                    <tr>
+                        <td><strong>適用場所</strong></td>
+                        <td>できるだけ<strong>宛先に近い</strong>インタフェース</td>
+                        <td>できるだけ<strong>送信元に近い</strong>インタフェース</td>
+                    </tr>
+                    <tr>
+                        <td><strong>精度</strong></td>
+                        <td>低い（送信元のみで判定）</td>
+                        <td>高い（5タプルで細かく制御）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 ACL適用場所 ── なぜ場所が重要なのか？</div>
+            <strong>標準ACLを送信元近くに置くと問題になる例：</strong><br>
+            「192.168.1.0/24 からWebサーバー(10.0.0.100)への通信を拒否」したいが、標準ACLは送信元IPしか見ない →
+            192.168.1.0/24からの全通信（メール、ファイルサーバー含む）がブロックされてしまう！<br>
+            → だから標準ACLは<strong>宛先近くに置いて</strong>影響範囲を最小化する<br>
+            → 拡張ACLなら宛先IP＋ポートを指定できるので<strong>送信元近くに置いて</strong>無駄なトラフィックを早期に遮断する
+        </div>
+
+        <h3 class="subsection-title">ワイルドカードマスク ── サブネットマスクとの違い</h3>
+        <div class="card">
+            <h4 class="topic-title">ワイルドカードマスクは「サブネットマスクの逆」</h4>
+            <pre style="line-height:1.8; font-size:0.88em;">
+サブネットマスク:   255.255.255.0   → ネットワーク部のビットが1
+ワイルドカードマスク: 0.0.0.255      → チェック<strong>しない</strong>ビットが1
+
+変換方法: 255.255.255.255 - サブネットマスク = ワイルドカードマスク
+
+実例:
+  /24(255.255.255.0)   → WC: 0.0.0.255     （最後の8ビットは任意）
+  /25(255.255.255.128) → WC: 0.0.0.127     （最後の7ビットは任意）
+  /32(255.255.255.255) → WC: 0.0.0.0       （完全一致 = hostキーワード）
+  /0 (0.0.0.0)         → WC: 255.255.255.255（全IP = anyキーワード）
+
+特殊なキーワード:
+  host 192.168.1.10  = 192.168.1.10 0.0.0.0    （1台だけ）
+  any                = 0.0.0.0 255.255.255.255  （全IP）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>ACL設定 ── 実践的な設定例</h2>
+
+        <pre><span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 【標準ACL ── シンプルだが送信元のみで判定】</span>
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 192.168.1.0/24 からのアクセスを許可し、それ以外を拒否</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">access-list</span> <span class="cmd-value">10</span> <span class="cmd-keyword">permit</span> <span class="cmd-value">192.168.1.0 0.0.0.255</span>
+<span class="cmd-comment"># ↑ 暗黙のdeny anyにより、192.168.1.0/24以外は全て拒否</span>
+
+<span class="cmd-comment"># インタフェースに適用（in = 受信方向、out = 送信方向）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/1</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip access-group</span> <span class="cmd-value">10</span> <span class="cmd-keyword">out</span>
+
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 【名前付き拡張ACL ── 実務で最も使われる形式】</span>
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip access-list extended</span> <span class="cmd-value">WEB-FILTER</span>
+
+<span class="cmd-comment"># エントリ1: 192.168.1.0/24 → 10.0.0.100 のHTTP(80)を許可</span>
+<span class="cmd-prompt">Router(config-ext-nacl)#</span> <span class="cmd-keyword">permit tcp</span> <span class="cmd-value">192.168.1.0 0.0.0.255</span> <span class="cmd-keyword">host</span> <span class="cmd-value">10.0.0.100</span> <span class="cmd-keyword">eq</span> <span class="cmd-value">80</span>
+
+<span class="cmd-comment"># エントリ2: 192.168.1.0/24 → 10.0.0.100 のHTTPS(443)を許可</span>
+<span class="cmd-prompt">Router(config-ext-nacl)#</span> <span class="cmd-keyword">permit tcp</span> <span class="cmd-value">192.168.1.0 0.0.0.255</span> <span class="cmd-keyword">host</span> <span class="cmd-value">10.0.0.100</span> <span class="cmd-keyword">eq</span> <span class="cmd-value">443</span>
+
+<span class="cmd-comment"># エントリ3: 全ICMPを許可（ping用）</span>
+<span class="cmd-prompt">Router(config-ext-nacl)#</span> <span class="cmd-keyword">permit icmp any any</span>
+
+<span class="cmd-comment"># 暗黙のdeny anyにより上記以外は全拒否</span>
+
+<span class="cmd-comment"># 送信元に近いインタフェースのin方向に適用</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/0</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip access-group WEB-FILTER in</span>
+
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 【ACL確認・トラブルシューティング】</span>
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show access-lists</span>
+Extended IP access list WEB-FILTER
+    10 permit tcp 192.168.1.0 0.0.0.255 host 10.0.0.100 eq www (253 matches)
+    20 permit tcp 192.168.1.0 0.0.0.255 host 10.0.0.100 eq 443 (102 matches)
+    30 permit icmp any any (45 matches)
+<span class="cmd-comment"># ↑ matchesでどのエントリにどれだけヒットしたか確認できる</span>
+
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip interface GigabitEthernet0/0</span> <span class="cmd-comment"># ACLが適用されているか確認</span>
+  Inbound access list is WEB-FILTER
+  Outgoing access list is not set</pre>
+
+        <h3 class="subsection-title">🔧 ACLトラブルシューティングチェックリスト</h3>
+        <div class="card">
+            <ol>
+                <li><strong>ACLの適用方向（in/out）は正しいか？</strong> → inはインタフェースに入ってくるトラフィック、outは出ていくトラフィック</li>
+                <li><strong>ワイルドカードマスクが正しいか？</strong> → サブネットマスクと間違えていないか</li>
+                <li><strong>暗黙のdeny anyを忘れていないか？</strong> → permit文だけ書くと、これ以外は全部拒否される</li>
+                <li><strong>エントリの順番は正しいか？</strong> → より具体的なルールを先に、一般的なルールを後に</li>
+                <li><strong>ACLがIFに適用されているか？</strong> → show ip interface で確認</li>
+            </ol>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q5-1">
+            <h3>✏️ 確認問題（第5-1章）</h3>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q1. 拡張ACLを適用する推奨場所はどこか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 宛先に最も近いルータのインタフェース</button></li>
+                    <li><button class="quiz-option">B. コアルータのインタフェース</button></li>
+                    <li><button class="quiz-option">C. デフォルトゲートウェイのインタフェース</button></li>
+                    <li><button class="quiz-option">D. 送信元に最も近いルータのインタフェース</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D</strong><br>拡張ACLは送信元IP・宛先IP・プロトコル・ポート番号で細かくフィルタリングできるため、不要なトラフィックを<strong>できるだけ早い段階で遮断</strong>するために送信元に近い場所に適用します。標準ACLは送信元のみで判定するため、宛先近くに置きます。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">
+                    Q2.【シナリオ】以下のACLを設定したが、192.168.1.0/24のユーザーがインターネットに一切アクセスできなくなった。最も可能性の高い原因はどれか？<br>
+                    <code>access-list 100 deny tcp 192.168.1.0 0.0.0.255 any eq 80</code>
+                </div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ワイルドカードマスクが間違っている</button></li>
+                    <li><button class="quiz-option">B. 暗黙のdeny anyにより、HTTP以外の全トラフィック（DNS, HTTPS等）もブロックされている</button>
+                    </li>
+                    <li><button class="quiz-option">C. ACLの番号が間違っている</button></li>
+                    <li><button class="quiz-option">D. tcp キーワードが間違っている</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B</strong><br>このACLは「HTTP(80)を拒否」だけで、他にpermit文がありません。末尾の暗黙のdeny
+                    anyにより、DNS(53)、HTTPS(443)、その他すべてのトラフィックがブロックされます。正しくは、deny文の後に「permit ip any any」等を追加する必要があります。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q3. ワイルドカードマスク 0.0.0.31 は何ホスト分の範囲に一致するか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 16ホスト</button></li>
+                    <li><button class="quiz-option">B. 31ホスト</button></li>
+                    <li><button class="quiz-option">C. 32ホスト</button></li>
+                    <li><button class="quiz-option">D. 64ホスト</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（32ホスト）</strong><br>ワイルドカードマスク0.0.0.31は2進数で00011111。チェックしないビット（1のビット）が5つ = 2^5 =
+                    32ホスト分に一致します。対応するサブネットマスクは255.255.255.224（/27）です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q4. ACLで「host 10.0.0.1」と記述することと同等なのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 10.0.0.1 0.0.0.0</button></li>
+                    <li><button class="quiz-option">B. 10.0.0.1 255.255.255.255</button></li>
+                    <li><button class="quiz-option">C. 10.0.0.0 0.0.0.1</button></li>
+                    <li><button class="quiz-option">D. 10.0.0.1 255.255.255.0</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（10.0.0.1
+                        0.0.0.0）</strong><br>hostキーワードはワイルドカードマスク0.0.0.0の省略形です。0.0.0.0は「すべてのビットが一致する必要がある」=
+                    完全一致を意味します。Bの255.255.255.255は「any」と同じ意味になるため間違いです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q5. 名前付き拡張ACLの利点として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 標準ACLよりも処理速度が速い</button></li>
+                    <li><button class="quiz-option">B. ACLの途中のエントリを個別に削除・追加できる</button></li>
+                    <li><button class="quiz-option">C. ACLを2つ同時に同じインタフェースの同じ方向に適用できる</button></li>
+                    <li><button class="quiz-option">D. VLANごとにACLを自動適用できる</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B</strong><br>番号付きACLはエントリの個別削除ができません（ACL全体を削除して再作成が必要）。名前付きACLはシーケンス番号で個別エントリの追加・削除が可能で、運用管理が容易です。1つのIFの1つの方向にACLは1つだけ適用可能です。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-5-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-2 ポートセキュリティ・DHCP Snooping・DAI</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            L2レベルでの攻撃を防ぐスイッチのセキュリティ機能</p>
+
+        <h2 class="chapter-title"><span class="icon">🔒</span>ポートセキュリティ</h2>
+        <h3 class="subsection-title">何を防ぐのか？</h3>
+        <p>不正なデバイスの接続を防ぎます。スイッチのポートに接続できるMACアドレスの数や、特定のMACアドレスを制限できます。</p>
+
+        <div class="card">
+            <h4 class="topic-title">攻撃シナリオ: MACフラッディング攻撃</h4>
+            <pre style="line-height:1.8; font-size:0.88em;">
+攻撃者が大量の偽MACアドレスを送信
+    ↓
+スイッチのMACアドレステーブル（CAMテーブル）が溢れる
+    ↓
+スイッチが全ポートにフレームをフラッディング（ハブのように動作）
+    ↓
+攻撃者は本来受け取れないはずのトラフィックを傍受できる！
+
+→ ポートセキュリティで学習できるMACアドレス数を制限して防御
+</pre>
+        </div>
+
+        <pre><span class="cmd-comment"># ポートセキュリティ設定</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/1</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode access</span>             <span class="cmd-comment"># アクセスモード必須！</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security</span>            <span class="cmd-comment"># ポートセキュリティ有効化</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security maximum</span> <span class="cmd-value">2</span>  <span class="cmd-comment"># 最大2MACアドレスまで許可</span>
+
+<span class="cmd-comment"># 違反時の動作（3モード）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security violation</span> <span class="cmd-value">shutdown</span>   <span class="cmd-comment"># err-disable（デフォルト）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security violation</span> <span class="cmd-value">restrict</span>   <span class="cmd-comment"># 不正フレーム破棄 + ログ</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security violation</span> <span class="cmd-value">protect</span>    <span class="cmd-comment"># 不正フレーム破棄のみ（ログなし）</span>
+
+<span class="cmd-comment"># MACアドレスの指定方法</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security mac-address</span> <span class="cmd-value">0011.2233.4455</span>  <span class="cmd-comment"># 手動指定</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security mac-address sticky</span>          <span class="cmd-comment"># 自動学習して保存</span>
+<span class="cmd-comment"># stickyは最初に学習したMACアドレスをrunning-configに保存する</span></pre>
+
+        <h3 class="subsection-title">違反モードの比較（超頻出！）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>モード</th>
+                        <th>違反フレーム</th>
+                        <th>ポート状態</th>
+                        <th>Syslogメッセージ</th>
+                        <th>違反カウンタ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>shutdown</strong>（デフォルト）</td>
+                        <td>破棄</td>
+                        <td><strong>err-disabled</strong>（完全停止）</td>
+                        <td>あり</td>
+                        <td>あり</td>
+                    </tr>
+                    <tr>
+                        <td><strong>restrict</strong></td>
+                        <td>破棄</td>
+                        <td>稼働継続</td>
+                        <td>あり</td>
+                        <td>あり</td>
+                    </tr>
+                    <tr>
+                        <td><strong>protect</strong></td>
+                        <td>破棄</td>
+                        <td>稼働継続</td>
+                        <td><strong>なし</strong></td>
+                        <td><strong>なし</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 err-disabledポートの復旧方法</div>
+            <pre style="font-size:0.88em;">
+手動復旧:  shutdown → no shutdown
+自動復旧:  errdisable recovery cause psecure-violation
+           errdisable recovery interval 300   (300秒後に自動復旧)
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🛡️</span>DHCP Snooping</h2>
+        <h3 class="subsection-title">何を防ぐのか？ ── DHCPスプーフィング攻撃</h3>
+        <div class="card">
+            <pre style="line-height:1.8; font-size:0.88em;">
+【攻撃シナリオ】
+攻撃者が偽のDHCPサーバーを設置
+    ↓
+クライアントが偽のDHCPサーバーからIPアドレスを受け取る
+    ↓
+偽のデフォルトゲートウェイ（攻撃者のPC）が設定される
+    ↓
+すべてのトラフィックが攻撃者を経由する（中間者攻撃！）
+    ↓
+パスワードや機密情報が盗まれる
+
+【DHCP Snoopingの防御】
+・Trustedポート（正規DHCPサーバー接続）: DHCP応答を許可
+・Untrustedポート（クライアント接続）: DHCP応答をブロック
+→ 偽DHCPサーバーからの応答はuntrustedポートで拒否される！
+</pre>
+        </div>
+
+        <pre><span class="cmd-comment"># DHCP Snooping設定</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">ip dhcp snooping</span>                              <span class="cmd-comment"># グローバルで有効化</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">ip dhcp snooping vlan</span> <span class="cmd-value">10,20</span>                   <span class="cmd-comment"># 対象VLAN指定</span>
+
+<span class="cmd-comment"># 正規DHCPサーバーに接続されたポートをTrustedに</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/24</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">ip dhcp snooping trust</span>                   <span class="cmd-comment"># trusted設定</span>
+
+<span class="cmd-comment"># クライアント側のポートは自動的にuntrusted（デフォルト）</span>
+<span class="cmd-comment"># DHCPレート制限（DoS攻撃防止）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">ip dhcp snooping limit rate</span> <span class="cmd-value">15</span>           <span class="cmd-comment"># 毎秒15パケットまで</span>
+
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show ip dhcp snooping</span>                            <span class="cmd-comment"># 設定確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show ip dhcp snooping binding</span>                    <span class="cmd-comment"># バインディングテーブル確認</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">🔍</span>DAI（Dynamic ARP Inspection）</h2>
+        <p>DAIはARPスプーフィング（ARP偽装）攻撃を防ぎます。DHCP Snoopingバインディングテーブルを参照して、正しいIP-MAC対応かどうかを検証します。</p>
+
+        <div class="card">
+            <h4 class="topic-title">ARPスプーフィングとは</h4>
+            <p>攻撃者が「192.168.1.1(ゲートウェイ)のMACは<strong>私のMACアドレスです</strong>」と偽のARP応答を送信。被害者のARPテーブルが書き換えられ、トラフィックが攻撃者経由になる中間者攻撃です。
+            </p>
+        </div>
+
+        <pre><span class="cmd-comment"># DAI設定（DHCP Snoopingが前提条件！）</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">ip arp inspection vlan</span> <span class="cmd-value">10,20</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/24</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">ip arp inspection trust</span>    <span class="cmd-comment"># アップリンクをtrustedに</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">🔑</span>AAA と IEEE 802.1X</h2>
+        <h3 class="subsection-title">AAA（Authentication, Authorization, Accounting）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>要素</th>
+                        <th>意味</th>
+                        <th>具体例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Authentication（認証）</strong></td>
+                        <td>「あなたは誰？」（本人確認）</td>
+                        <td>ユーザー名+パスワードで確認</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Authorization（認可）</strong></td>
+                        <td>「何をして良い？」（権限確認）</td>
+                        <td>管理者はshow running-config可、一般ユーザーは不可</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Accounting（アカウンティング）</strong></td>
+                        <td>「何をした？」（操作記録）</td>
+                        <td>いつ誰がログインしてどのコマンドを実行したか記録</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">RADIUS vs TACACS+ 比較</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>RADIUS</th>
+                        <th>TACACS+</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>規格</td>
+                        <td>IETF標準（RFC 2865）</td>
+                        <td>Cisco独自（業界普及済）</td>
+                    </tr>
+                    <tr>
+                        <td>プロトコル</td>
+                        <td>UDP/1812（認証）,1813（アカウンティング）</td>
+                        <td>TCP/49</td>
+                    </tr>
+                    <tr>
+                        <td>暗号化</td>
+                        <td>パスワードのみ暗号化</td>
+                        <td><strong>パケット全体を暗号化</strong></td>
+                    </tr>
+                    <tr>
+                        <td>AAAの分離</td>
+                        <td>認証と認可を統合</td>
+                        <td><strong>認証・認可・アカウンティングを個別に制御可</strong></td>
+                    </tr>
+                    <tr>
+                        <td>主な用途</td>
+                        <td>ネットワークアクセス認証（802.1X）</td>
+                        <td>ネットワーク機器の管理アクセス認証</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">IEEE 802.1X ── ポートベース認証</h3>
+        <div class="card">
+            <pre style="line-height:1.8; font-size:0.88em;">
+【802.1Xの構成要素】
+① Supplicant（サプリカント）: 認証を要求するクライアント（PC）
+② Authenticator（オーセンティケータ）: クライアントの接続を制御するスイッチ
+③ Authentication Server（認証サーバー）: 認証を実行（通常RADIUSサーバー）
+
+【認証フロー】
+PC ──→ [スイッチ] ──→ [RADIUSサーバー]
+  EAPメッセージ    RADIUS      認証判定
+
+ポートの状態:
+  認証前: 「unauthorized」（DHCP/DNSも通さない ← 802.1X通信のみ）
+  認証後: 「authorized」（全通信を許可）
+</pre>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q5-2">
+            <h3>✏️ 確認問題（第5-2章）</h3>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. ポートセキュリティ違反時、デフォルトの動作はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. shutdownモード（err-disabled状態になる）</button></li>
+                    <li><button class="quiz-option">B. restrictモード（不正フレームを破棄しログ記録）</button></li>
+                    <li><button class="quiz-option">C. protectモード（不正フレームを静かに破棄）</button></li>
+                    <li><button class="quiz-option">D. 違反を無視して通信を継続する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（shutdown）</strong><br>デフォルトのviolationモードはshutdownです。ポートがerr-disabled状態になり全トラフィックが停止します。復旧にはshutdown→no
+                    shutdownが必要です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. DHCP Snoopingで偽のDHCPサーバーからの応答をブロックする仕組みはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ACLでDHCPポートをブロックする</button></li>
+                    <li><button class="quiz-option">B. ポートセキュリティでMACアドレスを制限する</button></li>
+                    <li><button class="quiz-option">C. DHCP応答はtrustedポートからのみ許可し、untrustedポートからの応答はブロックする</button></li>
+                    <li><button class="quiz-option">D. DHCPサーバーのIPアドレスをホワイトリストに登録する</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C</strong><br>DHCP SnoopingはDHCP
+                    Offer/Ack（サーバー応答）をtrustedポートからのみ許可します。クライアント接続のuntrustedポートからDHCP応答が来たらブロックします。これにより不正DHCPサーバーの動作を防ぎます。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. 802.1Xの3つの構成要素で「認証を実際に実行するサーバー」はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Supplicant</button></li>
+                    <li><button class="quiz-option">B. Authenticator</button></li>
+                    <li><button class="quiz-option">C. DHCP Server</button></li>
+                    <li><button class="quiz-option">D. Authentication Server（RADIUSサーバー）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D</strong><br>Supplicant=認証を要求するクライアント(PC)。Authenticator=接続を制御するスイッチ（中間役）。Authentication
+                    Server=実際の認証判定を行うRADIUSサーバーです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q4. TACACS+がRADIUSより優れている点はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. IETF標準プロトコルである</button></li>
+                    <li><button class="quiz-option">B. パケット全体を暗号化し、認証・認可・アカウンティングを個別に制御できる</button></li>
+                    <li><button class="quiz-option">C. UDPを使用するため高速</button></li>
+                    <li><button class="quiz-option">D. 802.1Xの標準認証プロトコルである</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B</strong><br>TACACS+はパケット全体を暗号化し（RADIUSはパスワードのみ）、AAA3要素を独立して制御できます。TCP/49でより信頼性の高い通信を行います。ただしCisco独自プロトコルです。RADIUSはIETF標準で802.1Xの標準バックエンドです。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-5-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-3 セキュリティの脅威と対策</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> CCNAで問われるセキュリティの脅威タイプと基本的な対策を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">⚠️</span>ネットワークセキュリティの脅威一覧</h2>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>攻撃カテゴリ</th>
+                        <th>攻撃名</th>
+                        <th>仕組み</th>
+                        <th>対策</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="2"><strong>偵察（Reconnaissance）</strong></td>
+                        <td>ポートスキャン</td>
+                        <td>サーバーの開いているポートを調査</td>
+                        <td>IPS/IDS、アクセスリスト</td>
+                    </tr>
+                    <tr>
+                        <td>パケットキャプチャ</td>
+                        <td>ネットワーク上のパケットを傍受</td>
+                        <td>暗号化（SSH, HTTPS, VPN）</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="3"><strong>アクセス攻撃</strong></td>
+                        <td>パスワード攻撃（ブルートフォース）</td>
+                        <td>総当たりでパスワードを推測</td>
+                        <td>パスワードポリシー、アカウントロック、MFA</td>
+                    </tr>
+                    <tr>
+                        <td>フィッシング</td>
+                        <td>偽のメール/サイトで認証情報を窃取</td>
+                        <td>ユーザー教育、メールフィルタ</td>
+                    </tr>
+                    <tr>
+                        <td>中間者攻撃（MITM）</td>
+                        <td>通信を傍受・改ざん</td>
+                        <td>暗号化、証明書検証、DAI</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="2"><strong>DoS/DDoS攻撃</strong></td>
+                        <td>TCP SYNフラッド</td>
+                        <td>大量のTCP SYNパケットでサーバーリソースを枯渇</td>
+                        <td>SYN Cookie、レート制限</td>
+                    </tr>
+                    <tr>
+                        <td>DDoS（分散DoS）</td>
+                        <td>多数のマシンから一斉に攻撃</td>
+                        <td>DDoS防御サービス、ISP連携</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="2"><strong>L2攻撃</strong></td>
+                        <td>MACフラッディング</td>
+                        <td>CAMテーブル溢れによる盗聴</td>
+                        <td><strong>ポートセキュリティ</strong></td>
+                    </tr>
+                    <tr>
+                        <td>VLANホッピング</td>
+                        <td>DTP悪用でトランク確立、他VLANへアクセス</td>
+                        <td><strong>switchport mode access, switchport nonegotiate</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 VLANホッピング攻撃の防止策（頻出！）</div>
+            <ul>
+                <li>使用しないポートは<strong>shutdown</strong>して未使用VLANに割り当て</li>
+                <li>アクセスポートは明示的に<strong>switchport mode access</strong>を設定（DTPによる自動トランク化を防止）</li>
+                <li>トランクポートでは<strong>switchport nonegotiate</strong>でDTPを無効化</li>
+                <li><strong>ネイティブVLANをVLAN 1以外に変更</strong>し、使用しないVLANにする</li>
+            </ul>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔑</span>パスワード管理のベストプラクティス</h2>
+        <pre><span class="cmd-comment"># パスワードの暗号化</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">service password-encryption</span>           <span class="cmd-comment"># type 7暗号化（弱い・容易に復号可能）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">enable secret</span> <span class="cmd-value">MyStr0ngP@ss</span>           <span class="cmd-comment"># type 5/8/9暗号化（MD5以上・推奨）</span>
+<span class="cmd-comment"># enable password vs enable secret: secretの方が強い暗号化。両方設定時はsecretが優先</span>
+
+<span class="cmd-comment"># パスワードの最小文字数設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">security passwords min-length</span> <span class="cmd-value">10</span>
+
+<span class="cmd-comment"># ログインバナー（法的警告）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">banner motd #</span>
+<span class="cmd-value">Unauthorized access is prohibited. All activities are monitored.</span>
+<span class="cmd-keyword">#</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q5-3">
+            <h3>✏️ 確認問題（第5-3章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. VLANホッピング攻撃を防ぐための対策として正しくないのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 使用しないポートをshutdownする</button></li>
+                    <li><button class="quiz-option">B. アクセスポートでswitchport mode accessを明示設定する</button></li>
+                    <li><button class="quiz-option">C. ネイティブVLANをデフォルトのVLAN 1のままにする</button></li>
+                    <li><button class="quiz-option">D. トランクポートでswitchport nonegotiateを設定する</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（正しくない対策）</strong><br>ネイティブVLANをVLAN
+                    1のままにすると、VLANホッピング攻撃の一種（ダブルタギング攻撃）で悪用されやすくなります。<strong>ネイティブVLANはVLAN
+                        1以外の使用していないVLANに変更</strong>すべきです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. enable secretとenable passwordの両方が設定されている場合、どちらが使用されるか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. enable secret（より強い暗号化）が優先される</button></li>
+                    <li><button class="quiz-option">B. enable passwordが優先される</button></li>
+                    <li><button class="quiz-option">C. 両方の入力が必要になる</button></li>
+                    <li><button class="quiz-option">D. エラーが発生する</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A</strong><br>enable secretはMD5以上のハッシュで保存され、enable
+                    password（type 7、容易に復号可能）より安全です。両方設定されている場合、IOSはenable secretを優先的に使用します。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

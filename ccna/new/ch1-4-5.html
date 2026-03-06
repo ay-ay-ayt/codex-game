@@ -1,0 +1,640 @@
+<div class="page" id="page-1-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-4 IPv6アドレス</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> IPv6のアドレス種別・省略ルール・EUI-64をマスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>なぜIPv6が必要か</h2>
+        <p>IPv4のアドレスは32ビット（約43億個）しかなく、インターネットの爆発的な普及により2011年にIANAのIPv4アドレスプールが枯渇しました。IPv6は128ビット（約340澗=3.4×10³⁸個）のアドレス空間を持ち、NATなしで全デバイスにグローバルIPを割り当てられます。
+        </p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>IPv4</th>
+                        <th>IPv6</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>アドレス長</td>
+                        <td>32ビット</td>
+                        <td>128ビット</td>
+                    </tr>
+                    <tr>
+                        <td>表記</td>
+                        <td>10進ドット区切り 192.168.1.1</td>
+                        <td>16進コロン区切り 2001:db8::1</td>
+                    </tr>
+                    <tr>
+                        <td>アドレス空間</td>
+                        <td>約43億</td>
+                        <td>約3.4×10³⁸</td>
+                    </tr>
+                    <tr>
+                        <td>ブロードキャスト</td>
+                        <td>あり</td>
+                        <td>なし（マルチキャストで代替）</td>
+                    </tr>
+                    <tr>
+                        <td>ARP</td>
+                        <td>ARP（ブロードキャスト）</td>
+                        <td>NDP/ICMPv6 Neighbor Solicitation</td>
+                    </tr>
+                    <tr>
+                        <td>ヘッダ</td>
+                        <td>可変長（20〜60B）</td>
+                        <td>固定40B（シンプル化）</td>
+                    </tr>
+                    <tr>
+                        <td>設定</td>
+                        <td>手動またはDHCP</td>
+                        <td>SLAAC（ステートレス自動設定）可</td>
+                    </tr>
+                    <tr>
+                        <td>フラグメント</td>
+                        <td>中間ルータも可能</td>
+                        <td>送信元ホストのみ</td>
+                    </tr>
+                    <tr>
+                        <td>QoS</td>
+                        <td>ToSフィールド</td>
+                        <td>フローラベル（20bit）で改善</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">✍️</span>IPv6アドレスの表記ルール</h2>
+        <p>128ビットを16ビット（4桁16進数）ごとにコロンで区切り、8グループで表します。</p>
+
+        <div class="card">
+            <h4 class="topic-title">2つの省略ルール</h4>
+            <pre style="line-height:2.0; font-size:0.9em;">
+【完全形】
+2001:0db8:0000:0000:0000:0000:0000:0001
+
+【ルール1】各グループの先頭0を省略
+2001:db8:0:0:0:0:0:1
+
+【ルール2】連続する全0グループを「::」で一か所だけ省略
+2001:db8::1
+
+⚠️ 「::」は1か所だけ使用可能（2か所以上使うとどこが0かわからなくなる）
+
+よくある例:
+::1             ← ループバックアドレス（127.0.0.1 相当）を省略
+::              ← 全ゼロ（0:0:0:0:0:0:0:0）を省略
+fe80::1         ← リンクローカル（FE80:0:0:0:0:0:0:1 を省略）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🏷️</span>IPv6アドレスの種別（試験必須）</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種別</th>
+                        <th>プレフィックス</th>
+                        <th>特徴・用途</th>
+                        <th>IPv4の相当</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>グローバルユニキャスト</strong></td>
+                        <td>2000::/3（2xxx〜3xxx）</td>
+                        <td>インターネット上でグローバルに一意</td>
+                        <td>パブリックIPアドレス</td>
+                    </tr>
+                    <tr>
+                        <td><strong>リンクローカル</strong></td>
+                        <td>FE80::/10</td>
+                        <td>同一リンク内のみ有効。自動生成される。<strong>OSPFv3等のL3プロトコルに必須</strong></td>
+                        <td>169.254.0.0/16（APIPA）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ユニークローカル</strong></td>
+                        <td>FC00::/7（FC〜FD）</td>
+                        <td>組織内プライベートアドレス。外部へルーティング不可</td>
+                        <td>プライベートIPアドレス</td>
+                    </tr>
+                    <tr>
+                        <td><strong>マルチキャスト</strong></td>
+                        <td>FF00::/8</td>
+                        <td>複数宛先へ同時配信。ブロードキャストの代替</td>
+                        <td>224.0.0.0/4（クラスD）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>エニーキャスト</strong></td>
+                        <td>ユニキャストと同じ範囲</td>
+                        <td>最も近いノードへ1対1転送。DNSルートサーバー等で使用</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ループバック</strong></td>
+                        <td>::1/128</td>
+                        <td>自分自身（テスト用）</td>
+                        <td>127.0.0.1</td>
+                    </tr>
+                    <tr>
+                        <td><strong>不特定（全ゼロ）</strong></td>
+                        <td>::/128</td>
+                        <td>未設定状態やソースアドレス不明を示す</td>
+                        <td>0.0.0.0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">重要なマルチキャストアドレス暗記リスト</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>マルチキャストアドレス</th>
+                        <th>対象</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>FF02::1</strong></td>
+                        <td>リンク上のすべてのノード（全IPv6ホスト）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FF02::2</strong></td>
+                        <td>リンク上のすべてのルータ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FF02::5</strong></td>
+                        <td>全OSPFv3ルータ（224.0.0.5の相当）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FF02::6</strong></td>
+                        <td>OSPFv3 DR/BDR（224.0.0.6の相当）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔧</span>EUI-64によるインタフェースID自動生成</h2>
+        <div class="card">
+            <h4 class="topic-title">EUI-64の計算手順（3ステップ）</h4>
+            <pre style="line-height:2.0; font-size:0.88em;">
+MACアドレス: AA:BB:CC:DD:EE:FF（48ビット）
+
+【ステップ1】中央に FFFE を挿入して64ビット化
+  AA:BB:CC : FF:FE : DD:EE:FF
+
+【ステップ2】先頭バイト（AA）の第7ビット（U/Lビット）を反転
+  AA  = 1010 1010
+  第7ビット（左から7番目）を反転  →  1010 1000 = A8
+  ※ AA（偶数MACなら0→1に反転）
+
+【ステップ3】結合してインタフェースIDとする
+  A8BB:CCFF:FEDD:EEFF
+
+リンクローカルの完成形（FE80:: + EUI-64）:
+  FE80::A8BB:CCFF:FEDD:EEFF/64
+</pre>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">📌 U/Lビット反転の意味</div>
+            EUI-64でMACの第7ビット（Universal/Localビット）を反転するのは、IEEEのMACアドレス管理上の"ユニバーサル管理"を示すビットを"ローカル管理"ビットとして使うIETFの慣習です。試験では「第7ビットを反転する」という事実を覚えれば十分です。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>IPv6アドレスの割り当て方式</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>方式</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>手動設定（静的）</strong></td>
+                        <td>管理者がコマンドでIPv6アドレスを設定</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SLAAC</strong></td>
+                        <td>ステートレスアドレス自動設定。ルータのRAメッセージからプレフィックスを取得し、EUI-64でアドレスを自動生成。DHCPv6サーバー不要</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DHCPv6（ステートフル）</strong></td>
+                        <td>DHCPv6サーバーからアドレス・DNSサーバー等を取得。アドレス管理が一元化できる</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DHCPv6（ステートレス）</strong></td>
+                        <td>アドレスはSLAACで生成、DNS等の情報はDHCPv6から取得</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">Cisco ルータでのIPv6設定</h3>
+        <pre><span class="cmd-comment"># IPv6ルーティングを有効化（必須！デフォルトは無効）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ipv6 unicast-routing</span>
+
+<span class="cmd-comment"># インタフェースにIPv6アドレスを設定</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ipv6 address</span> <span class="cmd-value">2001:db8:1::1/64</span>
+
+<span class="cmd-comment"># EUI-64で自動生成（末尾に eui-64 を付ける）</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ipv6 address</span> <span class="cmd-value">2001:db8:1::/64</span> <span class="cmd-keyword">eui-64</span>
+
+<span class="cmd-comment"># リンクローカルを手動設定（推奨）</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ipv6 address</span> <span class="cmd-value">fe80::1</span> <span class="cmd-keyword">link-local</span>
+
+<span class="cmd-comment"># 確認コマンド</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ipv6 interface brief</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ipv6 route</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q1-4">
+            <h3>✏️ 確認問題（第1-4章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. IPv6のリンクローカルアドレスのプレフィックスはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 2000::/3</button></li>
+                    <li><button class="quiz-option">B. FF00::/8</button></li>
+                    <li><button class="quiz-option">C. FE80::/10</button></li>
+                    <li><button class="quiz-option">D. FC00::/7</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（FE80::/10）</strong><br>リンクローカルアドレスはFE80::/10のプレフィックスを持ち、同一リンク内のみ有効です。OSPFv3のネイバー確立など、L3プロトコルの動作に必須です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. EUI-64でインタフェースIDを生成する際、MACアドレスに挿入する値はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 0000</button></li>
+                    <li><button class="quiz-option">B. FFFE</button></li>
+                    <li><button class="quiz-option">C. FFFF</button></li>
+                    <li><button class="quiz-option">D. 0001</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（FFFE）</strong><br>EUI-64は48ビットのMACアドレスの中央（24ビット目と25ビット目の間）に「FFFE」を挿入して64ビットのインタフェースIDを生成します。さらに第7ビット（U/Lビット）を反転します。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q3. IPv6でブロードキャストが廃止された代替として使用されるものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. マルチキャスト</button></li>
+                    <li><button class="quiz-option">B. エニーキャスト</button></li>
+                    <li><button class="quiz-option">C. ユニキャスト</button></li>
+                    <li><button class="quiz-option">D. ユニークローカル</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（マルチキャスト）</strong><br>IPv6ではブロードキャストが廃止され、マルチキャストで代替されます。例えば全ホスト宛=FF02::1、全ルータ宛=FF02::2です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q4. CiscoルータでIPv6ルーティングを有効にするコマンドはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ip routing ipv6</button></li>
+                    <li><button class="quiz-option">B. ipv6 routing enable</button></li>
+                    <li><button class="quiz-option">C. ip ipv6 unicast-routing</button></li>
+                    <li><button class="quiz-option">D. ipv6 unicast-routing</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D（ipv6 unicast-routing）</strong><br>Ciscoルータはデフォルトでは「ipv6
+                    unicast-routing」が無効です。このコマンドをグローバルコンフィグモードで入力しないとIPv6パケットのルーティングが行われません。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q5. SLAAC（ステートレスアドレス自動設定）の説明として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. DHCPv6サーバーからIPv6アドレスを取得する方式</button></li>
+                    <li><button class="quiz-option">B. 管理者が手動でIPv6アドレスを設定する方式</button></li>
+                    <li><button class="quiz-option">C. ルータのRAメッセージからプレフィックスを取得しEUI-64でアドレスを自動生成する方式</button></li>
+                    <li><button class="quiz-option">D. DHCPv6からDNS情報のみを取得する方式</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C</strong><br>SLAACはDHCPv6サーバー不要でIPv6アドレスを自動設定します。ルータのRouter
+                    Advertisement（RA）メッセージからプレフィックスを取得し、それにEUI-64で生成したインタフェースIDを組み合わせてアドレスを生成します。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-1-5">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-5 TCP・UDP・ポート番号</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> L4プロトコルの違いと主要ポート番号は完全暗記必須</p>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>TCP（Transmission Control Protocol）</h2>
+        <p>TCPはL4の<strong>コネクション型</strong>プロトコルで、信頼性の高いデータ転送を提供します。</p>
+
+        <div class="card">
+            <h4 class="topic-title">TCPの主要機能</h4>
+            <ul>
+                <li><strong>コネクション確立（3ウェイハンドシェイク）：</strong> データ転送前に接続を確立</li>
+                <li><strong>シーケンス番号：</strong>データに番号を付けて順序を保証</li>
+                <li><strong>確認応答（ACK）：</strong>受信側が受け取りを確認。未受信分は再送</li>
+                <li><strong>フロー制御：</strong>ウィンドウサイズで受信バッファの溢れを防ぐ</li>
+                <li><strong>輻輳制御：</strong>ネットワークの混雑を検知して送信レートを調整</li>
+                <li><strong>コネクション終了（4ウェイFIN）：</strong>接続を正常に終了</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">TCPの3ウェイハンドシェイク</h4>
+            <pre style="line-height:2.0; font-size:0.9em;">
+クライアント                    サーバー
+    |                              |
+    |─── SYN (SEQ=100) ──────────→|  ① 接続要求（SYN）
+    |                              |
+    |←── SYN-ACK (SEQ=200,ACK=101)|  ② 受入+確認（SYN+ACK）
+    |                              |
+    |─── ACK (ACK=201) ──────────→|  ③ 確認応答（ACK）
+    |                              |
+    |       ≪接続確立≫             |
+    |─── データ ─────────────────→|
+</pre>
+            <p>SYN=Synchronize（同期）、ACK=Acknowledgment（確認応答）</p>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚡</span>UDP（User Datagram Protocol）</h2>
+        <p>UDPはL4の<strong>コネクションレス型</strong>プロトコルで、確認応答や再送がない代わりに低遅延でシンプルな転送を行います。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>TCP</th>
+                        <th>UDP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>接続方式</td>
+                        <td>コネクション型（3ウェイHS）</td>
+                        <td>コネクションレス型</td>
+                    </tr>
+                    <tr>
+                        <td>信頼性</td>
+                        <td>高い（再送・順序保証）</td>
+                        <td>低い（再送なし・順序保証なし）</td>
+                    </tr>
+                    <tr>
+                        <td>速度</td>
+                        <td>遅い（ヘッダ・制御処理あり）</td>
+                        <td>速い（オーバーヘッド少ない）</td>
+                    </tr>
+                    <tr>
+                        <td>ヘッダサイズ</td>
+                        <td>20〜60バイト</td>
+                        <td>8バイト（固定）</td>
+                    </tr>
+                    <tr>
+                        <td>フロー制御</td>
+                        <td>あり（ウィンドウサイズ）</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td>輻輳制御</td>
+                        <td>あり</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td>主な用途</td>
+                        <td>HTTP/S、FTP、SSH、SMTP、Telnet</td>
+                        <td>DNS、DHCP、SNMP、VoIP、動画配信、TFTP</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔢</span>ポート番号（完全暗記必須）</h2>
+        <div class="info-box important">
+            <div class="label">🚨 試験に出るポート番号は全部覚える</div>
+            ポート番号は拡張ACLの設定や、プロトコルの特定で必ず問われます。
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ポート番号</th>
+                        <th>プロトコル</th>
+                        <th>用途</th>
+                        <th>TCP/UDP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>20</strong></td>
+                        <td>FTP-data</td>
+                        <td>FTPデータ転送</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>21</strong></td>
+                        <td>FTP-control</td>
+                        <td>FTP制御（コマンド）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>22</strong></td>
+                        <td>SSH</td>
+                        <td>暗号化リモートアクセス</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>23</strong></td>
+                        <td>Telnet</td>
+                        <td>平文リモートアクセス（非推奨）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>25</strong></td>
+                        <td>SMTP</td>
+                        <td>メール送信</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>53</strong></td>
+                        <td>DNS</td>
+                        <td>名前解決（通常はUDP、大きなデータはTCP）</td>
+                        <td>UDP/TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>67</strong></td>
+                        <td>DHCP（Server）</td>
+                        <td>DHCPサーバー受信ポート</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>68</strong></td>
+                        <td>DHCP（Client）</td>
+                        <td>DHCPクライアント受信ポート</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>69</strong></td>
+                        <td>TFTP</td>
+                        <td>簡易ファイル転送（認証なし）</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>80</strong></td>
+                        <td>HTTP</td>
+                        <td>Web通信（平文）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>110</strong></td>
+                        <td>POP3</td>
+                        <td>メール受信</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>123</strong></td>
+                        <td>NTP</td>
+                        <td>時刻同期</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>143</strong></td>
+                        <td>IMAP</td>
+                        <td>メール受信（フォルダ管理可能）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>161</strong></td>
+                        <td>SNMP</td>
+                        <td>機器情報取得（Get/Set）</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>162</strong></td>
+                        <td>SNMP Trap</td>
+                        <td>エージェント→マネージャへの通知</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>443</strong></td>
+                        <td>HTTPS</td>
+                        <td>Web通信（SSL/TLS暗号化）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>514</strong></td>
+                        <td>Syslog</td>
+                        <td>ログ転送</td>
+                        <td>UDP</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">ポート番号の分類</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>分類</th>
+                        <th>範囲</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ウェルノウンポート</strong></td>
+                        <td>0〜1023</td>
+                        <td>IANAが割り当てた標準サービス用ポート</td>
+                    </tr>
+                    <tr>
+                        <td><strong>登録済みポート</strong></td>
+                        <td>1024〜49151</td>
+                        <td>特定のアプリが使うポート（RADIUS:1812等）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ダイナミックポート（エフェメラル）</strong></td>
+                        <td>49152〜65535</td>
+                        <td>クライアント側が一時的に使用するポート</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-5">
+            <h3>✏️ 確認問題（第1-5章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. TCPの3ウェイハンドシェイクの順序として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. SYN-ACK → SYN → ACK</button></li>
+                    <li><button class="quiz-option">B. SYN → SYN-ACK → ACK</button></li>
+                    <li><button class="quiz-option">C. ACK → SYN → SYN-ACK</button></li>
+                    <li><button class="quiz-option">D. SYN → ACK → SYN-ACK</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（SYN → SYN-ACK →
+                        ACK）</strong><br>クライアントがSYNを送り→サーバーがSYN-ACKで応答→クライアントがACKを送って接続確立。「Synchronize →
+                    Synchronize-Acknowledge → Acknowledge」の頭文字SSA-SSA-ACKで覚えましょう。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. リアルタイム音声通話（VoIP）に適したL4プロトコルはどれか？その理由も含めて正しい選択肢を選べ。</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. UDP（低遅延で再送よりリアルタイム性を優先するため）</button></li>
+                    <li><button class="quiz-option">B. TCP（信頼性があるため）</button></li>
+                    <li><button class="quiz-option">C. ICMP（制御メッセージ用のため）</button></li>
+                    <li><button class="quiz-option">D. UDP（パケット損失を自動修復するため）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（UDP）</strong><br>VoIPでは1パケット欠落しても再送を待つよりそのまま再生した方が通話品質が高い（遅延なし）ため、UDPが使われます。Dは誤り（UDPにパケット損失を自動修復する機能はない）。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q3. DHCPサーバーが使用するポート番号として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. TCP 67</button></li>
+                    <li><button class="quiz-option">B. UDP 68</button></li>
+                    <li><button class="quiz-option">C. UDP 67</button></li>
+                    <li><button class="quiz-option">D. TCP 68</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（UDP
+                        67）</strong><br>DHCPサーバーはUDPポート67で待機します。クライアントはUDPポート68から送信します（67=サーバー、68=クライアント）。DHCPはコネクションなしのブロードキャストを使うためUDPです。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q4. SSHのポート番号はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 23</button></li>
+                    <li><button class="quiz-option">B. 80</button></li>
+                    <li><button class="quiz-option">C. 21</button></li>
+                    <li><button class="quiz-option">D. 22</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D（22）</strong><br>SSH=22（暗号化リモートアクセス）、Telnet=23（平文）、FTP-control=21、HTTP=80。CCNAではSSH（22）とTelnet（23）の違いは特に重要です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q5. SNMPポーリング（Get/Set）で使用されるポート番号はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. UDP 162</button></li>
+                    <li><button class="quiz-option">B. UDP 161</button></li>
+                    <li><button class="quiz-option">C. TCP 161</button></li>
+                    <li><button class="quiz-option">D. TCP 162</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（UDP 161）</strong><br>SNMP Get/Set=UDP
+                    161（マネージャー→エージェントへの要求）、SNMP Trap=UDP 162（エージェント→マネージャーへの自発的通知）。どちらもUDPです。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

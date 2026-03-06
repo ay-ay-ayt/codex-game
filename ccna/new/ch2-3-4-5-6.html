@@ -1,0 +1,695 @@
+<div class="page" id="page-2-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-3 EtherChannel（ポートチャネル）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            複数リンクを束ねて帯域拡大と冗長化を実現する技術</p>
+
+        <h2 class="chapter-title"><span class="icon">🔗</span>EtherChannelとは</h2>
+        <p>EtherChannelは複数の物理リンクを1本の論理リンクにまとめる技術です。<strong>帯域幅の拡大（最大8本のリンクを束ねる）</strong>と<strong>冗長性（1本障害でも通信継続）</strong>を同時に実現します。
+        </p>
+
+        <div class="card">
+            <h4 class="topic-title">EtherChannelの効果</h4>
+            <pre style="line-height:1.8;">
+【EtherChannelなし】         【EtherChannelあり】
+スイッチA ─ 1Gbps ─ スイッチB   スイッチA ═══ 4Gbps ═══ スイッチB
+           ─ 1Gbps ─            ← 4本の1Gbpsリンクを論理的に束ねる
+           ─ 1Gbps ─             → 見かけ上は1本の4Gbpsリンク
+           ─ 1Gbps ─            STPは1本の論理リンクとして認識
+                                 → ブロックされない！
+</pre>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 STPとEtherChannelの関係</div>
+            EtherChannelなしで複数リンクをスイッチ間に接続するとSTPがループを防ぐためほとんどのポートをブロックします。EtherChannelを使うとSTPは<strong>論理的に1本のリンクとして認識</strong>するためブロックされず全帯域を使えます。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>EtherChannelの交渉プロトコル</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プロトコル</th>
+                        <th>規格</th>
+                        <th>アクティブ側</th>
+                        <th>パッシブ側</th>
+                        <th>特徴</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>LACP</strong></td>
+                        <td>IEEE 802.3ad（標準）</td>
+                        <td>active</td>
+                        <td>passive</td>
+                        <td>マルチベンダー対応。activeとpassiveの組み合わせでEtherChannel形成</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PAgP</strong></td>
+                        <td>Cisco専用</td>
+                        <td>desirable</td>
+                        <td>auto</td>
+                        <td>Cisco機器同士のみ。desirableとautoの組み合わせでEtherChannel形成</td>
+                    </tr>
+                    <tr>
+                        <td><strong>静的（on）</strong></td>
+                        <td>交渉なし</td>
+                        <td>on</td>
+                        <td>on</td>
+                        <td>プロトコルなし。両端をonにする。片方がonで片方が違うと障害になるため非推奨</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 passive + passive = NG！</div>
+            LACP: active+active ○ active+passive ○ passive+passive ✗（両方が受動的なので形成されない）<br>
+            PAgP: desirable+desirable ○ desirable+auto ○ auto+auto ✗（同上）
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>EtherChannel設定コマンド</h2>
+        <pre><span class="cmd-comment"># LACP（IEEE 802.3ad）で EtherChannel を設定（推奨）</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface range GigabitEthernet0/1 - 4</span>
+<span class="cmd-prompt">Switch(config-if-range)#</span> <span class="cmd-keyword">channel-group</span> <span class="cmd-value">1</span> <span class="cmd-keyword">mode active</span>      <span class="cmd-comment"># LACP アクティブ</span>
+<span class="cmd-prompt">Switch(config-if-range)#</span> <span class="cmd-keyword">channel-protocol lacp</span>                <span class="cmd-comment"># 明示的に指定（任意）</span>
+
+<span class="cmd-comment"># PAgP で EtherChannel を設定（Ciscoのみ）</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface range GigabitEthernet0/1 - 4</span>
+<span class="cmd-prompt">Switch(config-if-range)#</span> <span class="cmd-keyword">channel-group</span> <span class="cmd-value">1</span> <span class="cmd-keyword">mode desirable</span>
+
+<span class="cmd-comment"># ポートチャネルインタフェースの設定（VLAN・Speed等）</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface port-channel 1</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode trunk</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk native vlan</span> <span class="cmd-value">999</span>
+
+<span class="cmd-comment"># EtherChannel確認コマンド</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show etherchannel summary</span>
+Flags:  D - down        P - bundled in port-channel
+        I - stand-alone S - suspended
+        H - Hot-standby U - in use
+Group  Port-channel  Protocol    Ports
+------+-------------+-----------+----------+
+1       Po1(SU)         LACP       Gi0/1(P) Gi0/2(P) Gi0/3(P) Gi0/4(P)
+
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show etherchannel detail</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show etherchannel 1 port-channel</span></pre>
+
+        <h3 class="subsection-title">EtherChannelを設定する際の注意点</h3>
+        <div class="card">
+            <ul>
+                <li>束ねるポートは<strong>速度・duplex・VLANモード（アクセス/トランク）・ネイティブVLAN</strong>がすべて一致していること</li>
+                <li>設定はポートチャネルインタフェースに行う（個別の物理ポートに設定しない）</li>
+                <li>最大8本のアクティブポート（LACPは最大8本アクティブ+8本スタンバイ）</li>
+            </ul>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q2-3">
+            <h3>✏️ 確認問題（第2-3章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. EtherChannelをLACPプロトコルで構成する際、両端のポートを「active」に設定した場合はどうなるか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. EtherChannelが形成されず障害になる</button></li>
+                    <li><button class="quiz-option">B. EtherChannelが正常に形成される</button></li>
+                    <li><button class="quiz-option">C. PAgPで形成される</button></li>
+                    <li><button class="quiz-option">D. 片方がpassiveに切り替わって形成される</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B</strong><br>LACPはactive+active、またはactive+passiveでEtherChannelが形成されます。passive+passiveだけがNG（両方が相手を待っている状態）です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. EtherChannelを使うメリットとして正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 帯域幅の拡大と冗長性を同時に実現する</button></li>
+                    <li><button class="quiz-option">B. ルーティングテーブルを最適化する</button></li>
+                    <li><button class="quiz-option">C. ブロードキャストドメインを分割する</button></li>
+                    <li><button class="quiz-option">D. IPアドレスを節約する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>EtherChannelは複数リンクを論理的に1本にまとめることで帯域幅を拡大（最大8本）し、1本のリンク障害でも自動的に残りのリンクで通信を継続します。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q3. PAgPのCiscoモードで積極的にEtherChannel交渉を行うモードはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. active</button></li>
+                    <li><button class="quiz-option">B. passive</button></li>
+                    <li><button class="quiz-option">C. desirable</button></li>
+                    <li><button class="quiz-option">D. on</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（desirable）</strong><br>PAgP:
+                    desirable（積極的）とauto（受動的）。LACPはactive（積極的）とpassive（受動的）。「on」は交渉プロトコルなし（静的）。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-2-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-4 スパニングツリープロトコル（STP）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> ループを防止するSTPの動作・ポート状態・Rapid STPを完全理解</p>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>なぜSTPが必要か（ブロードキャストストームの問題）</h2>
+        <div class="card">
+            <h4 class="topic-title">スイッチのL2ループの問題</h4>
+            <pre style="line-height:1.8; font-size:0.9em;">
+スイッチA ─── スイッチB
+    │                │
+   スイッチC ──────┘
+
+のような構成でループがあると：
+① PC-Aがブロードキャストを送信
+② スイッチA → スイッチB・スイッチCにフラッド
+③ スイッチBが受信 → スイッチC・スイッチAにフラッド
+④ スイッチCが受信 → スイッチA・スイッチBにフラッド
+⑤ これが無限に繰り返される = ブロードキャストストーム！
+→ CPUが100%になりネットワーク全体が停止
+STPはループを防ぐためにポートを「ブロック状態」にする！
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🌳</span>STPの動作（IEEE 802.1D）</h2>
+
+        <h3 class="subsection-title">STPの動作ステップ</h3>
+        <div class="card">
+            <pre style="line-height:2.0; font-size:0.88em;">
+【ステップ1】ルートブリッジの選出
+  最も小さいBridge ID（Priority＋MACアドレス）のスイッチが選ばれる
+  デフォルト Priority = 32768（16進数: 8000）
+
+【ステップ2】ルートポートの選択（ルートブリッジ以外のスイッチ）
+  各スイッチでルートブリッジへの最小コストのポート1本 = ルートポート（Root Port）
+  コスト: 1Gbps=4, 100Mbps=19, 10Mbps=100（802.1D）
+
+【ステップ3】指定ポートの選択（各セグメント）
+  各セグメント（リンク）でルートブリッジに最も近いポート = 指定ポート（Designated Port）
+
+【ステップ4】非指定ポートのブロック
+  ルートポートでも指定ポートでもないポートはブロック（Block）状態になる
+</pre>
+        </div>
+
+        <h3 class="subsection-title">Bridge IDの構成</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>フィールド</th>
+                        <th>ビット数</th>
+                        <th>デフォルト値</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Bridge Priority</strong></td>
+                        <td>4ビット</td>
+                        <td>32768</td>
+                        <td>4096単位で設定可能（0〜61440）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Extended System ID（VLAN ID）</strong></td>
+                        <td>12ビット</td>
+                        <td>VLAN ID</td>
+                        <td>PVST+ではVLAN IDが自動的に加算される</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MACアドレス</strong></td>
+                        <td>48ビット</td>
+                        <td>各スイッチのMAC</td>
+                        <td>PriorityとVLAN IDが同じ場合のタイブレーカー</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">STPポート状態遷移（802.1D）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>状態</th>
+                        <th>期間</th>
+                        <th>BPDUの送受信</th>
+                        <th>MAC学習</th>
+                        <th>フレーム転送</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Blocking</strong></td>
+                        <td>20秒（Max Age）</td>
+                        <td>受信のみ</td>
+                        <td>なし</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Listening</strong></td>
+                        <td>15秒（Forward Delay）</td>
+                        <td>送受信</td>
+                        <td>なし</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Learning</strong></td>
+                        <td>15秒（Forward Delay）</td>
+                        <td>送受信</td>
+                        <td>あり</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Forwarding</strong></td>
+                        <td>—</td>
+                        <td>送受信</td>
+                        <td>あり</td>
+                        <td>あり</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Disabled</strong></td>
+                        <td>—</td>
+                        <td>なし</td>
+                        <td>なし</td>
+                        <td>なし</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 STPの収束時間（802.1D）： 約30〜50秒</div>
+            ポートがリンクアップしてからForwarding状態になるまで約30〜50秒かかります（Blocking→Listening→Learning→Forwarding）。この遅延がPCの起動直後に通信できない原因となります。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚡</span>Rapid Spanning Tree（RSTP / 802.1w）</h2>
+        <p>RSTpは802.1Dを改善し、収束時間を<strong>数秒以内</strong>に短縮したプロトコルです。現代のネットワークではRSTP（またはPVST+）が標準です。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>STP（802.1D）</th>
+                        <th>RSTP（802.1w）</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>収束時間</td>
+                        <td>30〜50秒</td>
+                        <td>1〜2秒</td>
+                    </tr>
+                    <tr>
+                        <td>ポート状態</td>
+                        <td>5状態（Block/Listen/Learn/Forward/Disable）</td>
+                        <td>3状態（Discarding/Learning/Forwarding）</td>
+                    </tr>
+                    <tr>
+                        <td>ポートロール</td>
+                        <td>Root/Designated/Non-designated</td>
+                        <td>Root/Designated/Alternate/Backup</td>
+                    </tr>
+                    <tr>
+                        <td>BPDU</td>
+                        <td>ルートブリッジのみ送信</td>
+                        <td>全スイッチが2秒ごとに送信</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">CiscoのSTP改善機能</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>機能</th>
+                        <th>コマンド</th>
+                        <th>効果</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>PortFast</strong></td>
+                        <td>spanning-tree portfast</td>
+                        <td>アクセスポート（PC接続）をListening/Learning状態をスキップしてForwardingへ。起動直後から通信可能</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BPDU Guard</strong></td>
+                        <td>spanning-tree bpduguard enable</td>
+                        <td>PortFastポートでBPDU受信時にerr-disableにする。不正スイッチ接続を防ぐ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BPDU Filter</strong></td>
+                        <td>spanning-tree bpdufilter enable</td>
+                        <td>BPDUを送受信しない。PortFastとの組み合わせで使用</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Root Guard</strong></td>
+                        <td>spanning-tree guard root</td>
+                        <td>指定のポートがルートポートにならないように保護</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">ルートブリッジの手動指定</h3>
+        <pre><span class="cmd-comment"># Priorityを変更してルートブリッジに指定する（小さい値が優先）</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">spanning-tree vlan</span> <span class="cmd-value">10</span> <span class="cmd-keyword">priority</span> <span class="cmd-value">4096</span>
+
+<span class="cmd-comment"># マクロコマンドで自動的に optimal priority を設定</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">spanning-tree vlan</span> <span class="cmd-value">10</span> <span class="cmd-keyword">root primary</span>    <span class="cmd-comment"># 最優先（24576）</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">spanning-tree vlan</span> <span class="cmd-value">10</span> <span class="cmd-keyword">root secondary</span>  <span class="cmd-comment"># 次点（28672）</span>
+
+<span class="cmd-comment"># STP確認コマンド</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show spanning-tree</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show spanning-tree vlan 10</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show spanning-tree summary</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-4">
+            <h3>✏️ 確認問題（第2-4章）</h3>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. STPでルートブリッジに選出されるのはどのスイッチか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Bridge IDが最も小さいスイッチ</button></li>
+                    <li><button class="quiz-option">B. Bridge IDが最も大きいスイッチ</button></li>
+                    <li><button class="quiz-option">C. MACアドレスが最も大きいスイッチ</button></li>
+                    <li><button class="quiz-option">D. ポート数が最も多いスイッチ</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（Bridge IDが最小）</strong><br>Bridge IDは「Priority（デフォルト32768）+
+                    VLAN ID + MACアドレス」で構成され、最も小さい値のスイッチがルートブリッジに選ばれます。管理者は意図的にPriorityを小さく設定してルートブリッジを決定します。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. STP（802.1D）でポートがBlocking状態からForwarding状態になるまでの時間（デフォルト）はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 約5秒</button></li>
+                    <li><button class="quiz-option">B. 約15秒</button></li>
+                    <li><button class="quiz-option">C. 約30〜50秒</button></li>
+                    <li><button class="quiz-option">D. 約60秒</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（30〜50秒）</strong><br>802.1D
+                    STRはBlocking(20秒)→Listening(15秒)→Learning(15秒)→Forwardingで合計50秒かかります。この問題を解決するためRSTP（802.1w）は数秒以内に収束します。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. Cisco PortFast機能の説明として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. STPを完全に無効化し、ループ検出もしない</button></li>
+                    <li><button class="quiz-option">B. ルートブリッジを最速で選出する機能</button></li>
+                    <li><button class="quiz-option">C. BPDUを受信したらポートをerr-disableにする機能</button></li>
+                    <li><button class="quiz-option">D. Listening/Learning状態をスキップしてすぐにForwardingにする機能</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D</strong><br>PortFastはPC等を接続するアクセスポートで、STPのListening/Learning待機時間（30秒）をスキップしてすぐにForwarding状態にします。スイッチが接続されているポートに設定するとループの危険があります。<br>BPDU
+                    Guard（C）はPortFastポートでBPDUを受信した時にerr-disableにする別の機能です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q4. RSTPのポート状態として正しい組み合わせはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Blocking / Listening / Learning / Forwarding</button></li>
+                    <li><button class="quiz-option">B. Discarding / Learning / Forwarding</button></li>
+                    <li><button class="quiz-option">C. Blocking / Forwarding</button></li>
+                    <li><button class="quiz-option">D. Disabled / Blocking / Forwarding</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（Discarding/Learning/Forwarding）</strong><br>RSTPは802.1DのBlockingとListeningをDiscardingに統合し3状態になりました。また全スイッチが積極的にBPDUを交換することで1〜2秒で収束します。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-2-5">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-5 CDP・LLDP（リンク検出プロトコル）</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span> 隣接機器の自動検出プロトコルを理解し活用する</p>
+
+        <h2 class="chapter-title"><span class="icon">🔍</span>CDP（Cisco Discovery Protocol）</h2>
+        <p>CDPはCisco独自のL2プロトコルで、物理的に接続されている<strong>隣接のCisco機器の情報を自動的に収集</strong>します。MACレベルで動作するためIPアドレスがなくても使えます。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>収集できる情報</th>
+                        <th>内容</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>デバイス識別子</td>
+                        <td>隣接機器のホスト名</td>
+                    </tr>
+                    <tr>
+                        <td>アドレス情報</td>
+                        <td>隣接機器のIPアドレス</td>
+                    </tr>
+                    <tr>
+                        <td>ポートID</td>
+                        <td>隣接機器のインタフェース名（Gi0/1等）</td>
+                    </tr>
+                    <tr>
+                        <td>プラットフォーム</td>
+                        <td>機器の機種名（Cisco Catalyst 3750等）</td>
+                    </tr>
+                    <tr>
+                        <td>機能</td>
+                        <td>ルータ、スイッチ、APなどの役割</td>
+                    </tr>
+                    <tr>
+                        <td>ソフトウェアバージョン</td>
+                        <td>IOSバージョン</td>
+                    </tr>
+                    <tr>
+                        <td>ネイティブVLAN</td>
+                        <td>トランクポートのネイティブVLAN</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <pre><span class="cmd-comment"># CDPの確認コマンド</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show cdp neighbors</span>                    <span class="cmd-comment"># 隣接機器一覧（簡略）</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show cdp neighbors detail</span>               <span class="cmd-comment"># 隣接機器情報（詳細・IPアドレス含む）</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show cdp interface GigabitEthernet0/1</span>   <span class="cmd-comment"># 特定IFのCDP情報</span>
+
+<span class="cmd-comment"># CDPの有効・無効化</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">no cdp run</span>                     <span class="cmd-comment"># グローバルで無効化</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">no cdp enable</span>              <span class="cmd-comment"># 特定IFで無効化（セキュリティ向上）</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">🔍</span>LLDP（Link Layer Discovery Protocol）</h2>
+        <p>LLDPはIEEE 802.1ABで標準化されたマルチベンダー対応の隣接機器検出プロトコルです。CDPと同等の情報を収集できます。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>CDP</th>
+                        <th>LLDP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>規格</td>
+                        <td>Cisco独自</td>
+                        <td>IEEE 802.1AB（国際標準）</td>
+                    </tr>
+                    <tr>
+                        <td>対応機器</td>
+                        <td>Cisco機器のみ</td>
+                        <td>マルチベンダー対応</td>
+                    </tr>
+                    <tr>
+                        <td>デフォルト状態</td>
+                        <td>有効（Cisco）</td>
+                        <td>無効（Cisco）→ 有効化が必要</td>
+                    </tr>
+                    <tr>
+                        <td>送信間隔</td>
+                        <td>60秒</td>
+                        <td>30秒</td>
+                    </tr>
+                    <tr>
+                        <td>送信方向</td>
+                        <td>双方向（送受信同一）</td>
+                        <td>送信（tx）と受信（rx）を個別に制御可能</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <pre><span class="cmd-comment"># LLDPの有効化（グローバル）</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">lldp run</span>
+
+<span class="cmd-comment"># 送信・受信を個別に設定（インタフェース）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">lldp transmit</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">lldp receive</span>
+
+<span class="cmd-comment"># LLDPの確認コマンド</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show lldp neighbors</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show lldp neighbors detail</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-5">
+            <h3>✏️ 確認問題（第2-5章）</h3>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. CDPで収集できる情報として正しくないのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 隣接機器のユーザーアカウント情報</button></li>
+                    <li><button class="quiz-option">B. 隣接機器のIPアドレス</button></li>
+                    <li><button class="quiz-option">C. 隣接機器のホスト名</button></li>
+                    <li><button class="quiz-option">D. 隣接機器のIOSバージョン</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（ユーザーアカウント情報は収集しない）</strong><br>CDPはネットワーク機器の情報（ホスト名、IP、ポート名、機種、IOSバージョン等）を収集しますが、ユーザーアカウントやパスワード情報は収集しません。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. LLDPとCDPの違いとして正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. LLDPはCisco独自、CDPはマルチベンダー対応</button></li>
+                    <li><button class="quiz-option">B. LLDPはデフォルトで有効、CDPはデフォルトで無効</button></li>
+                    <li><button class="quiz-option">C. LLDPはIEEE標準でマルチベンダー対応、CDPはCisco独自</button></li>
+                    <li><button class="quiz-option">D. どちらもCisco機器のみで動作する</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C</strong><br>LLDPはIEEE
+                    802.1ABで定義されたマルチベンダー対応の標準プロトコルです。Ciscoスイッチではデフォルトでは無効のため「lldp run」で有効化が必要です。CDPはCisco独自でデフォルト有効です。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-2-6">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-6 無線LAN WLC・Lightweight AP</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> コントローラベース無線LANの仕組みと管理方式を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">📡</span>Autonomous AP vs Lightweight AP</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>Autonomous AP（自律型）</th>
+                        <th>Lightweight AP（LWAP）</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>管理方式</td>
+                        <td>各APを個別に設定・管理</td>
+                        <td>WLCで一元管理</td>
+                    </tr>
+                    <tr>
+                        <td>設定の変更</td>
+                        <td>各APに個別にアクセス</td>
+                        <td>WLC1台で全AP設定変更</td>
+                    </tr>
+                    <tr>
+                        <td>スケーラビリティ</td>
+                        <td>低い（AP増加で管理が複雑）</td>
+                        <td>高い（大規模展開に最適）</td>
+                    </tr>
+                    <tr>
+                        <td>データの処理</td>
+                        <td>AP自身で処理（ローカルスイッチング）</td>
+                        <td>WLCへトンネリング（CAPWAP）</td>
+                    </tr>
+                    <tr>
+                        <td>費用</td>
+                        <td>安い（WLC不要）</td>
+                        <td>高い（WLCが必要）</td>
+                    </tr>
+                    <tr>
+                        <td>用途</td>
+                        <td>小規模（家庭・小型オフィス）</td>
+                        <td>中〜大規模企業ネットワーク</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔗</span>CAPWAP（Control and Provisioning of Wireless APs）</h2>
+        <p>CAPWAPはLightweight APとWLC間の通信プロトコルです（RFC 5415）。</p>
+
+        <div class="card">
+            <h4 class="topic-title">CAPWAP トンネルの2チャネル</h4>
+            <ul>
+                <li><strong>制御チャネル（UDP 5246）：</strong>AP管理・設定・統計情報。DTLS暗号化</li>
+                <li><strong>データチャネル（UDP 5247）：</strong>クライアントのデータトラフィック。オプションでDTLS暗号化</li>
+            </ul>
+            <pre style="font-size:0.9em; line-height:1.8;">
+クライアント ─ [Lightweight AP] ─ CAPWAP ─ [WLC] ─ [ネットワーク]
+               ↑ 設定はWLCから     ↑ トンネル ↑ 一元管理
+               CLIはWLCで           データもWLC経由
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🖥️</span>WLC（Wireless LAN Controller）</h2>
+        <div class="card">
+            <h4 class="topic-title">WLCの主な機能</h4>
+            <ul>
+                <li>複数APの一元設定管理（SSID・チャネル・出力電力等）</li>
+                <li>クライアントの認証（802.1X / PSK / Open）</li>
+                <li>RF管理（RRM: Radio Resource Management）：チャネルと出力を自動最適化</li>
+                <li>クライアントのローミング管理（シームレスローミング）</li>
+                <li>ゲスト向けポータル認証</li>
+                <li>セキュリティポリシーの一元管理</li>
+            </ul>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>FlexConnect（ローカルスイッチング）</h2>
+        <p>WLCへのWANが切断された場合でも、APがローカルで認証・データ転送を継続できるモードです。ブランチオフィス向け。</p>
+
+        <div class="quiz-section" data-quiz-id="q2-6">
+            <h3>✏️ 確認問題（第2-6章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. Lightweight APとWLC間の通信に使用されるプロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. LWAPP（RFC 4118）</button></li>
+                    <li><button class="quiz-option">B. CAPWAP（RFC 5415）</button></li>
+                    <li><button class="quiz-option">C. CDP</button></li>
+                    <li><button class="quiz-option">D. 802.11i</button></tr>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（CAPWAP）</strong><br>CAPWAPはUDP
+                    5246（制御）と5247（データ）の2チャネルでLightweight APとWLC間を接続します。旧プロトコルLWAPP（A）は現在はCAPWAPに置き換えられています。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. WLC（Wireless LAN Controller）の説明として正しいものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 複数のLightweight APを一元管理する機器</button></li>
+                    <li><button class="quiz-option">B. 各APに個別に設定するための接続先</button></li>
+                    <li><button class="quiz-option">C. Autonomous APの管理のみに使用される</button></li>
+                    <li><button class="quiz-option">D. 無線クライアントの通信を中継するだけの機器</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A</strong><br>WLCは複数のLightweight
+                    APをCAPWAPプロトコルで一元管理します。SSID・セキュリティポリシー・チャネル・RFパワーを一括設定できます。Autonomous APはWLCを使わず個別管理です。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

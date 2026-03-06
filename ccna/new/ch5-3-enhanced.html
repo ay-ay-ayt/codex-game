@@ -1,0 +1,307 @@
+<div class="page" id="page-5-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-3 セキュリティの脅威と対策・VPN基礎</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-concept">概念</span>
+            ネットワーク攻撃の分類・防御策・VPNの基礎を完全理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">⚠️</span>ネットワークセキュリティの脅威一覧</h2>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>攻撃カテゴリ</th>
+                        <th>攻撃名</th>
+                        <th>仕組み</th>
+                        <th>対策</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="2"><strong>偵察（Reconnaissance）</strong></td>
+                        <td>ポートスキャン</td>
+                        <td>サーバーの開いているポートを調査（nmap等）</td>
+                        <td>IPS/IDS、不要サービスの無効化、ACL</td>
+                    </tr>
+                    <tr>
+                        <td>パケットキャプチャ</td>
+                        <td>ネットワーク上のパケットを傍受（Wireshark等）</td>
+                        <td>暗号化（SSH, HTTPS, VPN, WPA2/3）</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="4"><strong>アクセス攻撃</strong></td>
+                        <td>パスワード攻撃（ブルートフォース）</td>
+                        <td>総当たりでパスワードを推測</td>
+                        <td>パスワードポリシー、アカウントロック、MFA</td>
+                    </tr>
+                    <tr>
+                        <td>辞書攻撃</td>
+                        <td>よく使われるパスワードのリストで推測</td>
+                        <td>複雑なパスワード、MFA</td>
+                    </tr>
+                    <tr>
+                        <td>フィッシング</td>
+                        <td>偽のメール/サイトで認証情報を窃取</td>
+                        <td>ユーザー教育、メールフィルタ、MFA</td>
+                    </tr>
+                    <tr>
+                        <td>中間者攻撃（MITM）</td>
+                        <td>通信を傍受・改ざん（ARPスプーフィング等）</td>
+                        <td>暗号化、証明書検証、DAI</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="2"><strong>DoS/DDoS攻撃</strong></td>
+                        <td>TCP SYNフラッド</td>
+                        <td>大量のTCP SYNパケットでサーバーリソースを枯渇</td>
+                        <td>SYN Cookie、レート制限、IPS</td>
+                    </tr>
+                    <tr>
+                        <td>DDoS（分散型DoS）</td>
+                        <td>ボットネットから一斉に攻撃</td>
+                        <td>DDoS防御サービス、ISP連携</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="3"><strong>L2攻撃</strong></td>
+                        <td>MACフラッディング</td>
+                        <td>大量の偽MACアドレスでCAMテーブル溢れ</td>
+                        <td><strong>ポートセキュリティ</strong></td>
+                    </tr>
+                    <tr>
+                        <td>VLANホッピング（ダブルタギング）</td>
+                        <td>802.1Qタグを二重に付与して他VLANへ不正アクセス</td>
+                        <td><strong>ネイティブVLANをVLAN 1以外に変更</strong></td>
+                    </tr>
+                    <tr>
+                        <td>VLANホッピング（DTP悪用）</td>
+                        <td>DTPでトランク確立して全VLANトラフィック取得</td>
+                        <td><strong>switchport mode access, switchport nonegotiate</strong></td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="2"><strong>ソーシャルエンジニアリング</strong></td>
+                        <td>プリテキスティング</td>
+                        <td>偽の身分を名乗って情報を聞き出す</td>
+                        <td>セキュリティ教育、認証プロセス</td>
+                    </tr>
+                    <tr>
+                        <td>ショルダーサーフィン</td>
+                        <td>後ろから画面を覗き見る</td>
+                        <td>プライバシースクリーン、環境対策</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="2"><strong>マルウェア</strong></td>
+                        <td>ランサムウェア</td>
+                        <td>データを暗号化して身代金を要求</td>
+                        <td>バックアップ、アンチマルウェア、パッチ適用</td>
+                    </tr>
+                    <tr>
+                        <td>トロイの木馬</td>
+                        <td>正常なソフトに偽装してバックドアを設置</td>
+                        <td>アンチマルウェア、信頼できるソースのみ使用</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 VLANホッピング攻撃の防止策（頻出！）</div>
+            <ol>
+                <li>使用しないポートは<strong>shutdown</strong>して未使用VLANに割り当て</li>
+                <li>アクセスポートは明示的に<strong>switchport mode access</strong>を設定</li>
+                <li>トランクポートでは<strong>switchport nonegotiate</strong>でDTPを無効化</li>
+                <li><strong>ネイティブVLANをVLAN 1以外に変更</strong>（ダブルタギング対策）</li>
+                <li>トランクで許可するVLANを<strong>switchport trunk allowed vlan</strong>で限定</li>
+            </ol>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔑</span>パスワード管理のベストプラクティス</h2>
+        <pre><span class="cmd-comment"># パスワードの暗号化</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">service password-encryption</span>           <span class="cmd-comment"># type 7暗号化（弱い・容易に復号可能）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">enable secret</span> <span class="cmd-value">MyStr0ngP@ss</span>           <span class="cmd-comment"># type 5/8/9暗号化（MD5以上・推奨）</span>
+<span class="cmd-comment"># enable secret は enable password より強い暗号化。両方設定時はsecretが優先</span>
+
+<span class="cmd-comment"># パスワードの最小文字数設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">security passwords min-length</span> <span class="cmd-value">10</span>
+
+<span class="cmd-comment"># ログイン試行回数制限（ブルートフォース対策）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">login block-for</span> <span class="cmd-value">120</span> <span class="cmd-keyword">attempts</span> <span class="cmd-value">3</span> <span class="cmd-keyword">within</span> <span class="cmd-value">60</span>
+<span class="cmd-comment"># 60秒以内に3回失敗したら120秒間ブロック</span>
+
+<span class="cmd-comment"># ログインバナー（法的警告）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">banner motd #</span>
+<span class="cmd-value">Unauthorized access is prohibited. All activities are monitored and logged.</span>
+<span class="cmd-keyword">#</span>
+
+<span class="cmd-comment"># VTYアクセス制限（ACLでSSH接続元を限定）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">access-list</span> <span class="cmd-value">99</span> <span class="cmd-keyword">permit</span> <span class="cmd-value">10.0.0.0 0.0.0.255</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">line vty 0 4</span>
+<span class="cmd-prompt">Router(config-line)#</span> <span class="cmd-keyword">access-class</span> <span class="cmd-value">99</span> <span class="cmd-keyword">in</span>
+<span class="cmd-prompt">Router(config-line)#</span> <span class="cmd-keyword">exec-timeout</span> <span class="cmd-value">5 0</span>              <span class="cmd-comment"># 5分無操作でセッション切断</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">🔐</span>VPN基礎 ── 安全なリモートアクセス</h2>
+        <p>VPN（Virtual Private Network）は、インターネットなどの<strong>公共ネットワーク上に暗号化されたトンネルを作成</strong>して安全に通信する技術です。</p>
+
+        <h3 class="subsection-title">VPNの2つの主要タイプ</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>Site-to-Site VPN</th>
+                        <th>Remote Access VPN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>接続パターン</strong></td>
+                        <td>拠点間（ルータ対ルータ）</td>
+                        <td>個人端末からネットワークへ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>利用者</strong></td>
+                        <td>拠点全体（自動・透過的）</td>
+                        <td>個人ユーザー（VPNクライアント起動）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>用途</strong></td>
+                        <td>本社⇄支店の常時接続</td>
+                        <td>在宅勤務・出張先からの社内アクセス</td>
+                    </tr>
+                    <tr>
+                        <td><strong>プロトコル</strong></td>
+                        <td>IPsec, GRE over IPsec</td>
+                        <td>SSL VPN, IPsec (Cisco AnyConnect)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>設定場所</strong></td>
+                        <td>両端のルータ/ファイアウォール</td>
+                        <td>サーバー側 + クライアントソフト</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">IPsec ── VPNの暗号化フレームワーク</h3>
+        <div class="card">
+            <h4 class="topic-title">IPsecの主要プロトコル</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>プロトコル</th>
+                            <th>機能</th>
+                            <th>IPプロトコル番号</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ESP（Encapsulating Security Payload）</strong></td>
+                            <td>暗号化 + 認証 + 完全性</td>
+                            <td>50</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AH（Authentication Header）</strong></td>
+                            <td>認証 + 完全性のみ（暗号化なし）</td>
+                            <td>51</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IKE（Internet Key Exchange）</strong></td>
+                            <td>鍵交換の自動化（フェーズ1+2）</td>
+                            <td>UDP/500</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>実務では ESP がほぼ常に使用されます</strong>（暗号化が含まれるため）。AHは暗号化がないのでNAT環境で使えない等の制限があります。</p>
+        </div>
+
+        <h3 class="subsection-title">GRE over IPsec</h3>
+        <div class="card">
+            <pre style="line-height:1.8; font-size:0.88em;">
+GRE（Generic Routing Encapsulation）:
+  ・トンネリングプロトコル（パケットをカプセル化）
+  ・マルチキャストやルーティングプロトコルを通せる
+  ・暗号化機能がない → IPsecと組み合わせて使用
+
+GRE over IPsec:
+  ・GREでカプセル化（マルチキャスト対応）
+  ・IPsecで暗号化（セキュリティ確保）
+  ・Site-to-SiteでOSPF等のルーティングプロトコルを暗号化して運ぶのに最適
+
+  [元のパケット] → [GREヘッダ追加] → [IPsecで暗号化] → 送信
+</pre>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q5-3">
+            <h3>✏️ 確認問題（第5-3章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. VLANホッピング攻撃を防ぐための対策として正しくないのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 使用しないポートをshutdownする</button></li>
+                    <li><button class="quiz-option">B. アクセスポートでswitchport mode accessを明示設定する</button></li>
+                    <li><button class="quiz-option">C. ネイティブVLANをデフォルトのVLAN 1のままにする</button></li>
+                    <li><button class="quiz-option">D. トランクポートでswitchport nonegotiateを設定する</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（正しくない対策）</strong><br>VLAN
+                    1はダブルタギング攻撃で悪用されやすいため、<strong>ネイティブVLANはVLAN 1以外に変更</strong>すべきです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. enable secretとenable passwordの両方が設定されている場合、どちらが使用されるか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. enable secret（より強い暗号化）が優先される</button></li>
+                    <li><button class="quiz-option">B. enable passwordが優先される</button></li>
+                    <li><button class="quiz-option">C. 両方の入力が必要になる</button></li>
+                    <li><button class="quiz-option">D. エラーが発生する</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A</strong><br>enable secretはMD5以上のハッシュで保存され、enable
+                    password（type 7、容易に復号可能）より安全です。IOSはenable secretを優先します。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. Site-to-Site VPNの説明として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 個人のPCからVPNクライアントで社内に接続する</button></li>
+                    <li><button class="quiz-option">B. SSL/TLSのみで暗号化される</button></li>
+                    <li><button class="quiz-option">C. クライアントソフトが必要</button></li>
+                    <li><button class="quiz-option">D. 拠点間のルータ/FW同士でIPsecトンネルを常時接続する形式</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D</strong><br>Site-to-Site
+                    VPNは拠点間のゲートウェイ装置同士で暗号化トンネルを張ります。ユーザーは意識せず透過的に通信できます。A/Cの個人端末からの接続はRemote Access VPNです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q4. IPsecでデータの暗号化と認証の両方を提供するプロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. AH（Authentication Header）</button></li>
+                    <li><button class="quiz-option">B. ESP（Encapsulating Security Payload）</button></li>
+                    <li><button class="quiz-option">C. IKE（Internet Key Exchange）</button></li>
+                    <li><button class="quiz-option">D. GRE（Generic Routing Encapsulation）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（ESP）</strong><br>ESPは暗号化+認証+完全性を提供します。AHは認証+完全性のみ（暗号化なし）。IKEは鍵交換プロトコル。GREはカプセル化のみ（暗号化なし）。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q5.【シナリオ】在宅勤務の従業員が自宅のPCから安全に社内ネットワークにアクセスする必要がある。最適なVPNタイプはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Site-to-Site IPsec VPN</button></li>
+                    <li><button class="quiz-option">B. GRE over IPsec</button></li>
+                    <li><button class="quiz-option">C. Remote Access VPN（SSL VPN / Cisco AnyConnect）</button></li>
+                    <li><button class="quiz-option">D. MPLS VPN</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C</strong><br>Remote Access VPNは個人端末からの接続に最適です。Cisco
+                    AnyConnect等のVPNクライアントをインストールし、SSL/IPsecで暗号化接続します。Site-to-Siteは拠点間の常時接続用です。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

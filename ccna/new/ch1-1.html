@@ -1,0 +1,409 @@
+<div class="page" id="page-1-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-1 ネットワーク概要・機器の役割</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> ネットワーク機器の違いと役割を完全に理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>ネットワークとは</h2>
+        <p>ネットワークとは、複数のコンピューターや機器をケーブルや無線で接続し、データを送受信できるようにした仕組みです。インターネット、企業のオフィスLAN、家庭のWi-Fiなどがすべてネットワークです。</p>
+
+        <h3 class="subsection-title">ネットワークの分類</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>正式名称</th>
+                        <th>範囲</th>
+                        <th>例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>PAN</strong></td>
+                        <td>Personal Area Network</td>
+                        <td>数m（個人周辺）</td>
+                        <td>Bluetooth、USB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LAN</strong></td>
+                        <td>Local Area Network</td>
+                        <td>建物・フロア内</td>
+                        <td>オフィスのEthernet、Wi-Fi</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MAN</strong></td>
+                        <td>Metropolitan Area Network</td>
+                        <td>都市圏</td>
+                        <td>市内の光ファイバー網</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WAN</strong></td>
+                        <td>Wide Area Network</td>
+                        <td>国・大陸をまたぐ</td>
+                        <td>インターネット、MPLS専用線</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🏗️</span>ネットワークトポロジ</h2>
+        <p>トポロジとは、ネットワーク機器の接続形態です。物理トポロジ（実際のケーブル接続）と論理トポロジ（データの流れ）があります。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>トポロジ</th>
+                        <th>構成イメージ</th>
+                        <th>特徴・用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>バス型</strong></td>
+                        <td>全機器が1本のケーブルに接続</td>
+                        <td>古いEthernet（10BASE-5）。障害に弱い</td>
+                    </tr>
+                    <tr>
+                        <td><strong>スター型</strong></td>
+                        <td>中央のスイッチに全機器が接続</td>
+                        <td>現代のLANの標準。管理が容易。最も一般的</td>
+                    </tr>
+                    <tr>
+                        <td><strong>リング型</strong></td>
+                        <td>機器が環状に接続</td>
+                        <td>Token Ring（現在はほぼ使用なし）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>メッシュ型</strong></td>
+                        <td>機器間が多数の経路で接続</td>
+                        <td>冗長性が高い。WANやコアネットワークで使用</td>
+                    </tr>
+                    <tr>
+                        <td><strong>スパイン・リーフ型</strong></td>
+                        <td>スパイン（コア）とリーフ（アクセス）の2層</td>
+                        <td>データセンターの標準トポロジ。全リーフが全スパインに接続</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">スター型トポロジの図（現代LAN）</h4>
+            <pre style="text-align:center; font-size:0.9em; line-height:1.6;">
+        [PC-A]   [PC-B]   [PC-C]
+           \       |       /
+            \      |      /
+         [スイッチ（L2）]
+                  |
+             [ルータ]
+                  |
+            [インターネット]
+</pre>
+            <p>全てのPCはスイッチに直接接続。スイッチはルータを通じてインターネットへ接続する構成が最も一般的です。</p>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🖥️</span>主要ネットワーク機器とOSI参照モデル層</h2>
+
+        <h3 class="subsection-title">ハブ（Hub）— L1（物理層）</h3>
+        <div class="card">
+            <ul>
+                <li>受信した信号を<strong>全ポートへ無条件に送信</strong>（ブロードキャスト的な動作）</li>
+                <li>コリジョンドメインを分割しない → 同時送信で衝突（コリジョン）が発生</li>
+                <li>半二重通信のみ対応（送信と受信を同時にできない）</li>
+                <li>現在はほぼ使用されていない（スイッチに置き換わった）</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">スイッチ（Switch）— L2（データリンク層）</h3>
+        <div class="card">
+            <ul>
+                <li><strong>MACアドレス</strong>を基にフレームを転送する</li>
+                <li>MACアドレステーブル（CAMテーブル）で学習・転送を行う</li>
+                <li><strong>コリジョンドメインを各ポートで分割</strong>する（ハブとの最大の違い）</li>
+                <li>全二重通信に対応（送受信を同時に行える）</li>
+                <li>ブロードキャストドメインは分割しない（VLANで分割が可能）</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">ルータ（Router）— L3（ネットワーク層）</h3>
+        <div class="card">
+            <ul>
+                <li><strong>IPアドレス</strong>を基にパケットを転送（ルーティング）する</li>
+                <li>異なるネットワーク（サブネット）間を接続する</li>
+                <li><strong>ブロードキャストドメインを分割</strong>する（スイッチとの最大の違い）</li>
+                <li>ルーティングテーブルを使って最適な経路を選択する</li>
+                <li>WAN接続・インターネット接続の境界点となる</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">L3スイッチ（Layer 3 Switch）</h3>
+        <div class="card">
+            <ul>
+                <li>スイッチにルーティング機能を追加した機器</li>
+                <li>VLAN間のルーティングをハードウェアで高速に処理する</li>
+                <li>企業の<strong>コア・ディストリビューション層</strong>に使用される</li>
+                <li>スタティックルートおよびOSPF等の動的ルーティングが可能</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">その他の主要機器</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>機器</th>
+                        <th>L層</th>
+                        <th>役割・特徴</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ファイアウォール</strong></td>
+                        <td>L3〜L7</td>
+                        <td>セキュリティポリシーに基づきトラフィックを許可/拒否。ACLより高度なステートフル検査</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IDS（侵入検知）</strong></td>
+                        <td>L3〜L7</td>
+                        <td>不正な通信を検知してアラートを送信。通信は止めない（受動的）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IPS（侵入防止）</strong></td>
+                        <td>L3〜L7</td>
+                        <td>不正な通信を検知してリアルタイムでブロック（能動的）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AP（アクセスポイント）</strong></td>
+                        <td>L2</td>
+                        <td>無線クライアントを有線LANに接続する。802.11規格</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WLC（無線LANコントローラ）</strong></td>
+                        <td>L3</td>
+                        <td>複数のAP（Lightweight AP）を一元管理する</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DNS サーバー</strong></td>
+                        <td>L7</td>
+                        <td>ドメイン名をIPアドレスに解決する</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DHCP サーバー</strong></td>
+                        <td>L7</td>
+                        <td>クライアントにIPアドレスを自動割り当てする</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚖️</span>スイッチ vs ルータ — 重要比較</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>スイッチ（L2）</th>
+                        <th>ルータ（L3）</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>動作層</td>
+                        <td>L2（データリンク層）</td>
+                        <td>L3（ネットワーク層）</td>
+                    </tr>
+                    <tr>
+                        <td>識別子</td>
+                        <td>MACアドレス</td>
+                        <td>IPアドレス</td>
+                    </tr>
+                    <tr>
+                        <td>PDU</td>
+                        <td>フレーム（Frame）</td>
+                        <td>パケット（Packet）</td>
+                    </tr>
+                    <tr>
+                        <td>コリジョンドメイン</td>
+                        <td>各ポートで分割 ○</td>
+                        <td>各インタフェースで分割 ○</td>
+                    </tr>
+                    <tr>
+                        <td>ブロードキャストドメイン</td>
+                        <td>分割しない ✗（VLANで可能）</td>
+                        <td>各インタフェースで分割 ○</td>
+                    </tr>
+                    <tr>
+                        <td>異なるネットワーク間通信</td>
+                        <td>不可（同一L2ネットワークのみ）</td>
+                        <td>可能（経路選択）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 試験最頻出ポイント</div>
+            <ul>
+                <li><strong>ブロードキャストドメインを分割するのはルータ</strong>（またはL3スイッチのVLAN間ルーティング）</li>
+                <li><strong>コリジョンドメインを分割するのはスイッチ</strong>（ハブは分割しない）</li>
+                <li>スイッチはMACアドレスで転送、ルータはIPアドレスで転送</li>
+            </ul>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🏢</span>3層ネットワーク設計（シスコ階層モデル）</h2>
+        <div class="card">
+            <h4 class="topic-title">3層モデルの構成</h4>
+            <pre style="line-height:1.8; font-size:0.9em;">
+┌─────────────────────────────────────────┐
+│  コア層（Core Layer）                    │
+│  ・高速なバックボーン（転送に特化）       │
+│  ・L3スイッチ/ルータ使用                 │
+│  ・セキュリティチェック等は行わない       │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  ディストリビューション層（Distribution） │
+│  ・ルーティング・QoS・セキュリティポリシー │
+│  ・部門別集約、VLAN間ルーティング          │
+│  ・L3スイッチ使用                         │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  アクセス層（Access Layer）              │
+│  ・エンドデバイス（PC・IP電話・AP）接続  │
+│  ・VLAN割り当て・PoE・ポートセキュリティ │
+│  ・L2スイッチ使用                        │
+└─────────────────────────────────────────┘
+</pre>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">📌 2層モデル（Collapsed Core）</div>
+            小〜中規模ネットワークでは、コア層とディストリビューション層を<strong>1つのL3スイッチに統合</strong>（コラプスドコア方式）することが多い。コストを抑えられる反面、スケーラビリティは低下する。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📊</span>コリジョンドメインとブロードキャストドメインの整理</h2>
+        <div class="card">
+            <h4 class="topic-title">各機器のドメイン分割まとめ</h4>
+            <pre style="line-height:2.0;">
+機器         コリジョンドメイン  ブロードキャストドメイン
+─────────────────────────────────────────────
+ハブ         分割しない ✗         分割しない ✗
+スイッチ     ポートごとに分割 ○   分割しない ✗ (VLANで○)
+ルータ       IFごとに分割 ○       IFごとに分割 ○
+</pre>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-1">
+            <h3>✏️ 確認問題（第1-1章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. ブロードキャストドメインを分割できる機器はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ハブ</button></li>
+                    <li><button class="quiz-option">B. L2スイッチ</button></li>
+                    <li><button class="quiz-option">C. ルータ</button></li>
+                    <li><button class="quiz-option">D. リピータ</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（ルータ）</strong><br>ルータのみがブロードキャストドメインを分割できます。ハブとリピータはL1で動作しコリジョンドメインすら分割しません。L2スイッチはコリジョンドメインは分割しますが、ブロードキャストドメインは分割しません（VLANを使えば分割できます）。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. L2スイッチが使用する識別子（アドレス）として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. MACアドレス</button></li>
+                    <li><button class="quiz-option">B. IPアドレス</button></li>
+                    <li><button class="quiz-option">C. ポート番号</button></li>
+                    <li><button class="quiz-option">D. VLAN ID</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（MACアドレス）</strong><br>L2スイッチはMACアドレス（48ビット、16進数）を使ってフレームを転送します。IPアドレスを使うのはL3（ルータ・L3スイッチ）です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q3. 現代のデータセンターで最も一般的に採用されるトポロジはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. バス型</button></li>
+                    <li><button class="quiz-option">B. リング型</button></li>
+                    <li><button class="quiz-option">C. スパイン・リーフ型</button></li>
+                    <li><button class="quiz-option">D. スター型</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（スパイン・リーフ型）</strong><br>スパイン・リーフ型はすべてのリーフスイッチがすべてのスパインスイッチに接続される2層構成です。等コスト経路が多数存在し、データセンターでのトラフィック増加にも対応しやすい設計です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q4. シスコの3層ネットワーク設計モデルで、VLANポリシーやQoSを適用する層はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. アクセス層</button></li>
+                    <li><button class="quiz-option">B. ディストリビューション層</button></li>
+                    <li><button class="quiz-option">C. コア層</button></li>
+                    <li><button class="quiz-option">D. DMZ層</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（ディストリビューション層）</strong><br>ディストリビューション層はルーティング・QoS・セキュリティポリシーを担います。コア層は高速転送に専念し、アクセス層はエンドデバイスの接続を担います。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q5. ハブを使用したネットワークの問題点として最も適切なものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 全ポートが同一コリジョンドメインになり、コリジョン（衝突）が発生する</button></li>
+                    <li><button class="quiz-option">B. MACアドレステーブルのオーバーフローが起きる</button></li>
+                    <li><button class="quiz-option">C. ルーティングloop が発生する</button></li>
+                    <li><button class="quiz-option">D. ブロードキャストストームが発生する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（コリジョンの発生）</strong><br>ハブはL1機器で、受信したビット信号を全ポートに中継するだけです。全機器が同一コリジョンドメインに属するため、複数機器が同時に送信するとコリジョン（データ衝突）が発生します。<br>ブロードキャストストーム（D）はL2ループで発生する問題であり、ハブの主な問題ではありません。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q6. IPSとIDSの違いとして正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. IPSは検知のみ、IDSはブロックもする</button></li>
+                    <li><button class="quiz-option">B. どちらも通信をブロックする</button></li>
+                    <li><button class="quiz-option">C. どちらも通信をブロックしない</button></li>
+                    <li><button class="quiz-option">D. IDSは検知のみ、IPSはブロックもする</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D</strong><br>IDS（Intrusion Detection
+                    System）は不正を<strong>検知してアラートを送る</strong>だけで通信は止めません（受動的）。IPS（Intrusion Prevention
+                    System）は不正を検知し<strong>リアルタイムでブロック</strong>します（能動的）。試験では「防止」（Prevention）= ブロックと覚えましょう。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q7. 次のうち、LANの範囲として正しいものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 国・大陸をまたぐ広域ネットワーク</button></li>
+                    <li><button class="quiz-option">B. 建物・フロア内などの局所ネットワーク</button></li>
+                    <li><button class="quiz-option">C. 都市内の広域ネットワーク</button></li>
+                    <li><button class="quiz-option">D. 個人の周辺数メートル以内のネットワーク</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B</strong><br>LAN=Local Area
+                    Networkで企業オフィスや家庭内など「局所的な」ネットワーク。WAN=Wide Area Network（広域）、MAN=Metropolitan（都市圏）、PAN=Personal（個人周辺）。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q8. コラプスドコア（Collapsed Core）設計の説明として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. コア層とアクセス層を1台のスイッチで統合した設計</button></li>
+                    <li><button class="quiz-option">B. 3層すべてを1台の機器で統合した設計</button></li>
+                    <li><button class="quiz-option">C. コア層とディストリビューション層を1台で統合した設計</button></li>
+                    <li><button class="quiz-option">D. ディストリビューション層とアクセス層を統合した設計</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C</strong><br>コラプスドコアはコア層とディストリビューション層を1台のL3スイッチに統合します。小〜中規模のネットワークでコストを抑えるために使われます。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

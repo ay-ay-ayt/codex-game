@@ -1,0 +1,308 @@
+<div class="page" id="page-1-7">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-7 無線LAN基礎</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-concept">概念</span>
+            CCNA試験で確実に出題される無線LAN規格・セキュリティ・アーキテクチャを完全理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">📶</span>Wi-Fi規格（IEEE 802.11）── 世代と特徴を比較</h2>
+        <p>CCNAでは各Wi-Fi規格の<strong>周波数帯・最大速度・世代名</strong>を正確に覚える必要があります。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>IEEE規格</th>
+                        <th>Wi-Fi世代名</th>
+                        <th>周波数帯</th>
+                        <th>最大速度</th>
+                        <th>特徴</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>802.11a</td>
+                        <td>—</td>
+                        <td><strong>5 GHz</strong></td>
+                        <td>54 Mbps</td>
+                        <td>5GHz帯で干渉少ないが到達距離短い</td>
+                    </tr>
+                    <tr>
+                        <td>802.11b</td>
+                        <td>—</td>
+                        <td><strong>2.4 GHz</strong></td>
+                        <td>11 Mbps</td>
+                        <td>低速。電子レンジ等と干渉しやすい</td>
+                    </tr>
+                    <tr>
+                        <td>802.11g</td>
+                        <td>—</td>
+                        <td><strong>2.4 GHz</strong></td>
+                        <td>54 Mbps</td>
+                        <td>802.11bと後方互換</td>
+                    </tr>
+                    <tr>
+                        <td><strong>802.11n</strong></td>
+                        <td><strong>Wi-Fi 4</strong></td>
+                        <td><strong>2.4 / 5 GHz</strong></td>
+                        <td>600 Mbps</td>
+                        <td>MIMO導入。デュアルバンド初対応</td>
+                    </tr>
+                    <tr>
+                        <td><strong>802.11ac</strong></td>
+                        <td><strong>Wi-Fi 5</strong></td>
+                        <td><strong>5 GHz</strong></td>
+                        <td>6.9 Gbps</td>
+                        <td>MU-MIMO、ビームフォーミング。5GHzのみ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>802.11ax</strong></td>
+                        <td><strong>Wi-Fi 6/6E</strong></td>
+                        <td><strong>2.4 / 5 / 6 GHz</strong></td>
+                        <td>9.6 Gbps</td>
+                        <td>OFDMA、高密度環境に最適化</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 試験で必ず覚える3つのポイント</div>
+            <ol>
+                <li><strong>2.4 GHzのみ</strong>: 802.11b, 802.11g</li>
+                <li><strong>5 GHzのみ</strong>: 802.11a, 802.11ac(Wi-Fi 5)</li>
+                <li><strong>デュアルバンド(2.4+5)</strong>: 802.11n(Wi-Fi 4), 802.11ax(Wi-Fi 6)</li>
+            </ol>
+            2.4 GHz = 到達距離が長いが干渉しやすい（チャネル重複: 1,6,11のみ推奨）<br>
+            5 GHz = 到達距離が短いが高速で干渉少ない（利用可能チャネルが多い）
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔐</span>無線LANセキュリティ（超頻出！）</h2>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>規格</th>
+                        <th>暗号化</th>
+                        <th>認証</th>
+                        <th>セキュリティ</th>
+                        <th>CCNAポイント</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="color:#ff6666">
+                        <td>WEP</td>
+                        <td>RC4（静的キー）</td>
+                        <td>共有キー</td>
+                        <td><strong>✗ 脆弱！使用禁止</strong></td>
+                        <td>数分で破られる。絶対に使わない</td>
+                    </tr>
+                    <tr style="color:#ffcc44">
+                        <td>WPA</td>
+                        <td>TKIP（RC4改良）</td>
+                        <td>PSK / 802.1X</td>
+                        <td><strong>△ 非推奨</strong></td>
+                        <td>WEPよりマシだが現在は不十分</td>
+                    </tr>
+                    <tr style="color:#44cc88">
+                        <td><strong>WPA2</strong></td>
+                        <td><strong>AES-CCMP</strong></td>
+                        <td>PSK / 802.1X</td>
+                        <td><strong>◎ 推奨（現在主流）</strong></td>
+                        <td>AES暗号化で堅牢。CCNAで必須知識</td>
+                    </tr>
+                    <tr style="color:#44aaff">
+                        <td><strong>WPA3</strong></td>
+                        <td><strong>AES-GCMP</strong></td>
+                        <td>SAE / 802.1X</td>
+                        <td><strong>◎◎ 最新・最強</strong></td>
+                        <td>SAE（パスワード推測攻撃対策）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">Personal vs Enterprise モード</h4>
+            <pre style="line-height:1.8; font-size:0.88em;">
+WPA2/WPA3-Personal（PSK）:
+  ・事前共有キー（パスワード）で認証
+  ・個人/小規模オフィス向け
+  ・全ユーザーが同じパスワードを共有
+
+WPA2/WPA3-Enterprise（802.1X）:
+  ・RADIUSサーバーで個別ユーザー認証
+  ・企業向け ── 各ユーザーが個別のID/パスワードで認証
+  ・ユーザーごとにアクセス制御可能
+  ・退職者のアカウントは個別に無効化できる（PSKでは全員のパスワード変更が必要）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🏗️</span>無線LANアーキテクチャ</h2>
+
+        <h3 class="subsection-title">自律型AP vs 集中管理型（WLC）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>自律型AP（Autonomous）</th>
+                        <th>集中管理型AP（Lightweight + WLC）</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>管理方法</td>
+                        <td>各APを個別に設定</td>
+                        <td><strong>WLCで一括管理</strong></td>
+                    </tr>
+                    <tr>
+                        <td>設定変更</td>
+                        <td>AP1台ずつSSHで接続して変更</td>
+                        <td>WLCで変更→全APに自動反映</td>
+                    </tr>
+                    <tr>
+                        <td>スケーラビリティ</td>
+                        <td>AP数が増えると管理困難</td>
+                        <td>数千台のAPでも効率的に管理</td>
+                    </tr>
+                    <tr>
+                        <td>プロトコル</td>
+                        <td>—</td>
+                        <td><strong>CAPWAP</strong>（Control And Provisioning of Wireless AP）</td>
+                    </tr>
+                    <tr>
+                        <td>推奨環境</td>
+                        <td>小規模（数台のAP）</td>
+                        <td><strong>中〜大規模（推奨）</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">CAPWAP（Control And Provisioning of Wireless Access Points）</h4>
+            <pre style="line-height:1.8; font-size:0.88em;">
+WLC(コントローラ) ←── CAPWAPトンネル ──→ Lightweight AP
+
+CAPWAPの2つのトンネル:
+① 制御トンネル（UDP/5246, DTLS暗号化）
+   - AP設定、ファームウェア管理、RFパラメータ等
+② データトンネル（UDP/5247, 暗号化オプション）
+   - クライアントのデータを転送
+
+APの動作モード:
+  ・Localモード: 通常動作（データはWLC経由で転送）
+  ・FlexConnectモード: WANリンク障害時でもローカルで通信継続
+  ・Monitorモード: 不正AP検出専用
+  ・Snifferモード: パケットキャプチャ用
+</pre>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 FlexConnect（旧H-REAP）</div>
+            リモート拠点のAPに使用。通常時はWLC経由でデータ転送し、WAN障害時はローカルで直接スイッチングできるモード。支店やリモートオフィスで重要です。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📻</span>無線LANのチャネル</h2>
+        <div class="card">
+            <pre style="line-height:1.8; font-size:0.88em;">
+【2.4 GHz帯】14チャネル（日本）
+  チャネルの幅は22MHz、重複が発生する
+  非重複チャネル: 1, 6, 11 のみ ← 試験で頻出！
+  隣接APは1, 6, 11を使い分けてCo-Channel Interferenceを回避
+
+  CH1───CH6───CH11
+  ├──────┤  （間隔が十分 = 干渉なし）
+
+【5 GHz帯】多数のチャネル
+  チャネル幅: 20/40/80/160 MHz
+  非重複チャネルが多い → 干渉が少ない → 高速通信に有利
+</pre>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-7">
+            <h3>✏️ 確認問題（第1-7章）</h3>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q1. Wi-Fi 5（802.11ac）が使用する周波数帯はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 2.4 GHzのみ</button></li>
+                    <li><button class="quiz-option">B. 2.4 GHz と 5 GHz</button></li>
+                    <li><button class="quiz-option">C. 6 GHzのみ</button></li>
+                    <li><button class="quiz-option">D. 5 GHzのみ</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D（5 GHzのみ）</strong><br>802.11ac(Wi-Fi 5)は5
+                    GHzのみ。デュアルバンド(2.4+5)は802.11n(Wi-Fi 4)と802.11ax(Wi-Fi 6)。2.4 GHzのみは802.11b/g。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. WPA2-Enterpriseの認証方式として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 事前共有キー（PSK）で全員が同じパスワードを使用</button></li>
+                    <li><button class="quiz-option">B. 802.1X認証でRADIUSサーバーによる個別ユーザー認証</button></li>
+                    <li><button class="quiz-option">C. MACアドレスフィルタリング</button></li>
+                    <li><button class="quiz-option">D. WEPキーによる認証</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B</strong><br>Enterprise=802.1X+RADIUSで個別認証。Personal=PSKで共有パスワード。Enterpriseは退職者のアカウントを個別に無効化でき、ユーザーごとのアクセス制御が可能です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q3. 2.4 GHz帯で干渉を避けるために使用すべき非重複チャネルの組み合わせはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 1, 2, 3</button></li>
+                    <li><button class="quiz-option">B. 1, 5, 10</button></li>
+                    <li><button class="quiz-option">C. 1, 6, 11</button></li>
+                    <li><button class="quiz-option">D. 1, 4, 8</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（1, 6, 11）</strong><br>2.4
+                    GHz帯は各チャネルが22MHz幅で隣のチャネルと重複します。チャネル1, 6, 11は十分な間隔（25MHz）があるため互いに干渉しません。これはCCNA試験で頻出です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q4. CAPWAPプロトコルの説明として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. WLCとLightweight AP間の制御・データトンネリングプロトコル</button></li>
+                    <li><button class="quiz-option">B. アクセスポイント間のメッシュ通信プロトコル</button></li>
+                    <li><button class="quiz-option">C. 無線クライアントの認証プロトコル</button></li>
+                    <li><button class="quiz-option">D. VoIP音声の優先制御プロトコル</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A</strong><br>CAPWAP(Control And Provisioning of Wireless
+                    APs)はWLCとLightweight AP間のトンネリングプロトコルです。制御トンネル(UDP/5246, DTLS暗号化)とデータトンネル(UDP/5247)の2つを使用します。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q5.【シナリオ】リモート拠点のAPが、WANリンクの障害時にもローカルLAN内でクライアント通信を継続できるようにしたい。どのAPモードを使用すべきか？
+                </div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Localモード</button></li>
+                    <li><button class="quiz-option">B. Monitorモード</button></li>
+                    <li><button class="quiz-option">C. Snifferモード</button></li>
+                    <li><button class="quiz-option">D. FlexConnectモード</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D（FlexConnect）</strong><br>FlexConnectはWAN障害時にAPがローカルでスイッチングを行い、クライアント間通信を維持できるモードです。Localモードは全データをWLC経由のため、WAN障害時に通信不能になります。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q6. WPA3の新機能として正しいのはどれか？（2つ選べ）</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. TKIP暗号化の採用</button></li>
+                    <li><button class="quiz-option">B. WEPとの後方互換性</button></li>
+                    <li><button class="quiz-option">C. SAE（Simultaneous Authentication of Equals）によるオフライン辞書攻撃対策</button>
+                    </li>
+                    <li><button class="quiz-option">D. RC4暗号化の強化</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C</strong><br>WPA3はSAE（PSKの代替）でオフライン辞書攻撃を防ぎ、GCMP暗号化を使用します。TKIPはWPA、RC4はWEPの暗号化です。WPA3はWEPとの互換性はありません。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

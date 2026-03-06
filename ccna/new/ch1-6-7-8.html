@@ -1,0 +1,655 @@
+<div class="page" id="page-1-6">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-6 ケーブル・物理インタフェース</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> ケーブル種類・コネクタ・PoE・光ファイバーの基礎知識</p>
+
+        <h2 class="chapter-title"><span class="icon">🔌</span>銅線ツイストペアケーブル（UTP）</h2>
+        <p>現代のLANで最も多く使われるケーブルです。4対（8本）の銅線を2本ずつより合わせたUTP（Unshielded Twisted Pair）が標準です。STP（Shielded）はノイズの多い環境向けです。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>カテゴリ</th>
+                        <th>最大速度</th>
+                        <th>帯域幅</th>
+                        <th>最大距離</th>
+                        <th>主な规格</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cat5e</strong></td>
+                        <td>1Gbps</td>
+                        <td>100MHz</td>
+                        <td>100m</td>
+                        <td>1000BASE-T（ギガビットイーサネット）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cat6</strong></td>
+                        <td>10Gbps</td>
+                        <td>250MHz</td>
+                        <td>55m（10G時）/100m（1G時）</td>
+                        <td>10GBASE-T</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cat6a</strong></td>
+                        <td>10Gbps</td>
+                        <td>500MHz</td>
+                        <td>100m</td>
+                        <td>10GBASE-T（100mフル対応）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cat7</strong></td>
+                        <td>10Gbps以上</td>
+                        <td>600MHz</td>
+                        <td>100m</td>
+                        <td>STPシールド必須</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">ストレートケーブル vs クロスケーブル</h4>
+            <pre style="line-height:1.8;">
+ストレートケーブル: 両端のピン配置が同じ
+  用途: 異種機器間の接続（PC↔スイッチ、ルータ↔スイッチ）
+
+クロスケーブル: 片端の1・2番と3・6番が交差
+  用途: 同種機器間の接続（スイッチ↔スイッチ、PC↔PC）
+
+【重要】現代のスイッチはAuto-MDIX（自動判別）を搭載しているため、
+      実際にはどちらのケーブルでも動作する。
+      試験では「本来の用途」で問われることがある。
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">💡</span>光ファイバーケーブル</h2>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種別</th>
+                        <th>コア径</th>
+                        <th>光源</th>
+                        <th>最大距離</th>
+                        <th>主な用途</th>
+                        <th>コネクタ色</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>シングルモード (SMF)</strong></td>
+                        <td>9μm</td>
+                        <td>レーザー</td>
+                        <td>数十km〜100km以上</td>
+                        <td>長距離WAN・MAN</td>
+                        <td>黄色</td>
+                    </tr>
+                    <tr>
+                        <td><strong>マルチモード (MMF)</strong></td>
+                        <td>50/62.5μm</td>
+                        <td>LED</td>
+                        <td>最大2km程度</td>
+                        <td>LAN・建物内・データセンター</td>
+                        <td>オレンジ/水色</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">シングルモード vs マルチモードの違い</h4>
+            <pre style="line-height:1.8;">
+シングルモード: 光がコアを直進（1本の経路）
+  → 分散（信号の広がり）が少なく長距離伝送が可能
+  → コスト高（レーザー光源）
+  → 細いコア（9μm）
+
+マルチモード: 光がコアを複数の角度で反射しながら進む
+  → 分散が多いため長距離に不向き（モード分散）
+  → コスト安（LEDでOK）
+  → 太いコア（50/62.5μm）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚡</span>PoE（Power over Ethernet）</h2>
+        <p>UTPケーブルを通じてデータと電力を同時に伝送する技術。IPカメラ・IP電話・APへの電源供給に使われます。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>規格</th>
+                        <th>IEEE標準</th>
+                        <th>最大供給電力</th>
+                        <th>主な用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>PoE</strong></td>
+                        <td>802.3af</td>
+                        <td>15.4W（受電側13W）</td>
+                        <td>小型AP、IP電話、IPカメラ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PoE+</strong></td>
+                        <td>802.3at</td>
+                        <td>30W（受電側25.5W）</td>
+                        <td>高出力AP、PTZカメラ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PoE++</strong></td>
+                        <td>802.3bt</td>
+                        <td>60W/100W</td>
+                        <td>小型PC、ディスプレイ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">Cisco コマンドでの確認</h3>
+        <pre><span class="cmd-comment"># インタフェース詳細確認（速度・全二重・エラーカウンタ）</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces GigabitEthernet0/1</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces status</span>          <span class="cmd-comment"># 全ポートの状態一覧</span>
+
+<span class="cmd-comment"># PoE状態確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show power inline</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show power inline GigabitEthernet0/1</span>
+
+<span class="cmd-comment"># インタフェースの速度・duplex手動設定（通常はautoを推奨）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">speed</span> <span class="cmd-value">1000</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">duplex</span> <span class="cmd-value">full</span></pre>
+
+        <div class="info-box warning">
+            <div class="label">⚠️ デュプレックスミスマッチに注意</div>
+            一方のポートがauto（結果half-duplex）、他方がfull-duplexに固定されていると、CRCエラーや遅延が多発します。両端を同じ設定（両方ともfull、またはどちらもauto）にします。show
+            interfacesでrunts・CRC・input errorsが増えていたらデュプレックスミスマッチを疑いましょう。
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-6">
+            <h3>✏️ 確認問題（第1-6章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. 建物間を100m超の光ファイバーで接続する場合に適切なファイバーの種類はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. マルチモード光ファイバー（MMF）</button></li>
+                    <li><button class="quiz-option">B. シングルモード光ファイバー（SMF）</button></li>
+                    <li><button class="quiz-option">C. Cat6a UTP</button></li>
+                    <li><button class="quiz-option">D. Cat5e STP</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（シングルモード）</strong><br>UTPケーブルは最大100mまで。100mを超える接続には光ファイバーを使います。さらに長距離（WAN・MAN）にはシングルモードが適しています。マルチモードは建物内LANや短距離（〜2km）向けです。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. PoE（IEEE 802.3af）で供給できる最大電力はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 30W</button></li>
+                    <li><button class="quiz-option">B. 100W</button></li>
+                    <li><button class="quiz-option">C. 15.4W</button></li>
+                    <li><button class="quiz-option">D. 60W</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（15.4W）</strong><br>PoE=802.3af:15.4W、PoE+=802.3at:30W、PoE++=802.3bt:60/100W。PoEとPoE+の差はよく出題されます。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q3. デュプレックスミスマッチが発生している場合に見られる症状として適切なものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. CRCエラーやrunts（小フレーム）エラーが増加する</button></li>
+                    <li><button class="quiz-option">B. リンクが完全にダウンする</button></li>
+                    <li><button class="quiz-option">C. MACアドレステーブルがオーバーフローする</button></li>
+                    <li><button class="quiz-option">D. ルーティングテーブルの経路が消える</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>デュプレックスミスマッチは通信が止まるわけではなく断続的な遅延やCRCエラー・入力エラーが増加します。「show
+                    interfaces」でエラーカウンタが増えているかを確認します。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-1-7">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-7 無線LAN基礎（802.11）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> Wi-Fi規格・チャネル・セキュリティ方式をマスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">📶</span>IEEE 802.11 無線LAN規格</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>世代</th>
+                        <th>IEEE規格</th>
+                        <th>周波数帯</th>
+                        <th>最大速度</th>
+                        <th>変調技術</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Wi-Fi 4</td>
+                        <td>802.11n</td>
+                        <td>2.4GHz / 5GHz</td>
+                        <td>600Mbps</td>
+                        <td>MIMO（最大4ストリーム）</td>
+                    </tr>
+                    <tr>
+                        <td>Wi-Fi 5</td>
+                        <td>802.11ac</td>
+                        <td>5GHz のみ</td>
+                        <td>6.9Gbps</td>
+                        <td>MU-MIMO（マルチユーザー）</td>
+                    </tr>
+                    <tr>
+                        <td>Wi-Fi 6</td>
+                        <td>802.11ax</td>
+                        <td>2.4GHz / 5GHz / 6GHz</td>
+                        <td>9.6Gbps</td>
+                        <td>OFDMA・BSS Coloring</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">2.4GHz帯 vs 5GHz帯</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>2.4GHz帯</th>
+                        <th>5GHz帯</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>チャネル数（日本）</td>
+                        <td>13チャネル（非重複: 1・6・11）</td>
+                        <td>多数（19チャネル以上、非重複多数）</td>
+                    </tr>
+                    <tr>
+                        <td>速度</td>
+                        <td>低い</td>
+                        <td>高い</td>
+                    </tr>
+                    <tr>
+                        <td>障害物への強さ</td>
+                        <td>強い（壁越えやすい）</td>
+                        <td>弱い（減衰しやすい）</td>
+                    </tr>
+                    <tr>
+                        <td>干渉リスク</td>
+                        <td>高い（電子レンジ・Bluetoothと干渉）</td>
+                        <td>低い（干渉少ない）</td>
+                    </tr>
+                    <tr>
+                        <td>到達距離</td>
+                        <td>長い</td>
+                        <td>短い</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 非重複チャネルは頻出！必ず暗記</div>
+            2.4GHz帯は各チャネルが重複するため、<strong>1・6・11の3チャネルのみが非重複</strong>です（日本）。隣接するAPにはこの3チャネルを割り当て干渉を回避します。5GHz帯は多数の非重複チャネルがあり干渉が少ない。
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">2.4GHz帯のチャネル配置</h4>
+            <pre style="font-size:0.85em; line-height:2.0;">
+チャネル:  1  2  3  4  5  6  7  8  9 10 11 12 13
+           ├────────────┤  ← チャネル1の帯域幅（22MHz）
+                 ├────────────┤  ← チャネル6の帯域幅
+                           ├────────────┤  ← チャネル11の帯域幅
+                                              
+ch1, ch6, ch11 のみが重複しない（隣のAPに割り当て安全）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔒</span>無線LANセキュリティ規格</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>規格</th>
+                        <th>暗号化アルゴリズム</th>
+                        <th>鍵長</th>
+                        <th>安全性</th>
+                        <th>備考</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>WEP</strong></td>
+                        <td>RC4</td>
+                        <td>40/104bit</td>
+                        <td>非常に低い ✗</td>
+                        <td>使用禁止。数分で解読可能</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WPA</strong></td>
+                        <td>TKIP（RC4ベース）</td>
+                        <td>128bit</td>
+                        <td>低い ✗</td>
+                        <td>非推奨。WEPの暫定改善版</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WPA2</strong></td>
+                        <td>AES-CCMP</td>
+                        <td>128bit</td>
+                        <td>高い ○</td>
+                        <td>現在の標準。802.11i準拠</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WPA3</strong></td>
+                        <td>AES-GCMP-256 / SAE</td>
+                        <td>128/256bit</td>
+                        <td>非常に高い ◎</td>
+                        <td>最新規格。辞書攻撃に強い</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">WPA2/WPA3の認証方式</h4>
+            <ul>
+                <li><strong>パーソナル（PSK）モード：</strong>全員が同じ事前共有鍵（パスワード）を使う。家庭・小規模向け</li>
+                <li><strong>エンタープライズ（802.1X）モード：</strong>RADIUSサーバーで個別認証（ユーザー名+パスワード等）。企業向け。EAPプロトコルを使用</li>
+            </ul>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📡</span>その他の無線技術（SSID・BSS）</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>用語</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>SSID</strong></td>
+                        <td>無線ネットワークの識別名（Wi-Fi名）。最大32文字</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BSSID</strong></td>
+                        <td>APのMACアドレス。同一SSID内の個別APを識別</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BSS</strong></td>
+                        <td>1台のAPが管理する無線LANセル（Basic Service Set）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ESS</strong></td>
+                        <td>複数APで同一SSIDを共有した拡張サービスセット（Extended Service Set）。シームレスローミングが可能</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DS</strong></td>
+                        <td>Distribution System。APと有線ネットワークを繋ぐバックボーン</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-7">
+            <h3>✏️ 確認問題（第1-7章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 2.4GHz帯における非重複チャネルの組み合わせとして正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 1・2・3</button></li>
+                    <li><button class="quiz-option">B. 1・5・9</button></li>
+                    <li><button class="quiz-option">C. 1・6・11</button></li>
+                    <li><button class="quiz-option">D. 1・7・13</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（1・6・11）</strong><br>日本の2.4GHz帯で干渉しない非重複チャネルは1・6・11です。隣接するAPには必ずこの3チャネルのいずれかを割り当てます。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q2. 現在最も安全性が高い無線LANセキュリティ規格はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. WEP</button></li>
+                    <li><button class="quiz-option">B. WPA</button></li>
+                    <li><button class="quiz-option">C. WPA2</button></li>
+                    <li><button class="quiz-option">D. WPA3</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D（WPA3）</strong><br>WPA3はSAEハンドシェイクで辞書攻撃に強く、個別暗号化（OWE）も使えます。WEPは使用禁止レベルで脆弱です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q3. 企業ネットワークでRADIUSサーバーを使って個別ユーザー認証を行う無線LANの認証方式はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. WPA2-エンタープライズ（802.1X）</button></li>
+                    <li><button class="quiz-option">B. WPA2-パーソナル（PSK）</button></li>
+                    <li><button class="quiz-option">C. WEP-エンタープライズ</button></li>
+                    <li><button class="quiz-option">D. WPA-PSK</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（WPA2-エンタープライズ）</strong><br>エンタープライズモードは802.1X認証とRADIUSサーバーを使い、ユーザーごとに個別認証を行います。PSKは全員が同じパスワードを共有するため、1人でもパスワードが漏れると全体のリスクになります。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q4. Wi-Fi 5（802.11ac）が使用する周波数帯はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 2.4GHz帯のみ</button></li>
+                    <li><button class="quiz-option">B. 5GHz帯のみ</button></li>
+                    <li><button class="quiz-option">C. 2.4GHz帯と5GHz帯の両方</button></li>
+                    <li><button class="quiz-option">D. 6GHz帯のみ</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（5GHz帯のみ）</strong><br>802.11ac（Wi-Fi
+                    5）は5GHz専用です。2.4GHz帯と5GHzの両方に対応するのは802.11n（Wi-Fi 4）と802.11ax（Wi-Fi 6）です。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-1-8">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-8 スイッチング基礎・MACアドレス動作</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> スイッチの転送動作・MACテーブル・フレーム転送方式を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🔀</span>MACアドレスの基礎</h2>
+        <div class="card">
+            <ul>
+                <li><strong>48ビット（6バイト）</strong>の識別子。16進数コロン区切りで表記。例: AA:BB:CC:DD:EE:FF</li>
+                <li>上位24ビット（OUI）= ベンダー識別子。IEEEが割り当て</li>
+                <li>下位24ビット = デバイス固有の番号（製造時に割当）</li>
+                <li>ユニキャストMACは最初のオクテットの最下位ビットが0</li>
+                <li>ブロードキャストMAC: FF:FF:FF:FF:FF:FF</li>
+            </ul>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📚</span>MACアドレステーブル（CAMテーブル）の動作</h2>
+        <div class="card">
+            <h4 class="topic-title">4つの動作（学習・エージング・フィルタリング・転送）</h4>
+            <pre style="line-height:2.0; font-size:0.88em;">
+【1】学習（Learning）
+  受信フレームの「送信元MACアドレス」と「受信ポート」をテーブルに記録
+  例: Gi0/1ポートで送信元MAC=AA:BB:CC:11:22:33のフレーム受信
+  → テーブル: AA:BB:CC:11:22:33 | VLAN 10 | Gi0/1 | 残り時間300秒
+
+【2】エージング（Aging）
+  一定時間（デフォルト300秒）通信がないエントリを自動削除
+  → show mac address-table aging-timeで確認
+
+【3】フィルタリング（Filtering）
+  フレームの「送信元ポート」と「宛先のポート」が同じなら破棄
+  → 同一ポートのデバイス間で直接通信しているとき等
+
+【4-a】フォワーディング（Forwarding）
+  宛先MACがテーブルに存在 → 該当ポートにのみ転送
+
+【4-b】フラッディング（Flooding）
+  宛先MACがテーブルにない（未知のユニキャスト）
+  またはブロードキャスト（FF:FF:FF:FF:FF:FF）
+  またはマルチキャスト
+  → 受信ポート以外の全ポートへ送信
+</pre>
+        </div>
+
+        <h3 class="subsection-title">MACアドレステーブルの確認</h3>
+        <pre><span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show mac address-table</span>
+          Mac Address Table
+-------------------------------------------
+Vlan    Mac Address       Type        Ports
+----    -----------       --------    -----
+  10    aabb.cc11.2233    DYNAMIC     Gi0/1
+  10    aabb.cc44.5566    DYNAMIC     Gi0/2
+  10    ffff.ffff.ffff    STATIC      CPU   (ブロードキャスト)
+  20    aabb.ccaa.bbcc    DYNAMIC     Gi0/3
+
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show mac address-table dynamic</span>        <span class="cmd-comment"># 動的エントリのみ</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show mac address-table count</span>           <span class="cmd-comment"># テーブルの使用状況</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">clear mac address-table dynamic</span>        <span class="cmd-comment"># 動的エントリを全クリア</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">📦</span>フレーム転送方式の比較</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>方式</th>
+                        <th>転送タイミング</th>
+                        <th>FCSエラーチェック</th>
+                        <th>遅延</th>
+                        <th>特徴</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ストアアンドフォワード</strong></td>
+                        <td>フレーム全体受信後</td>
+                        <td>あり（不正フレームを破棄）</td>
+                        <td>最大</td>
+                        <td>信頼性最高。エラーを後続に転送しない</td>
+                    </tr>
+                    <tr>
+                        <td><strong>カットスルー</strong></td>
+                        <td>宛先MAC（先頭6B）受信後</td>
+                        <td>なし</td>
+                        <td>最小</td>
+                        <td>超低遅延。エラーフレームもそのまま転送</td>
+                    </tr>
+                    <tr>
+                        <td><strong>フラグメントフリー</strong></td>
+                        <td>先頭64バイト受信後</td>
+                        <td>一部（コリジョン検出のみ）</td>
+                        <td>中間</td>
+                        <td>衝突による短いフレームを除去</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 64バイトの意味</div>
+            Ethernetのコリジョン検出は最小フレームサイズ(64バイト)以上のフレームでのみ有効です。フラグメントフリーは64バイト受信後に転送することで、コリジョンにより生じた不正な「ランツ（runts）」フレームを転送しません。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>スイッチのインタフェース設定</h2>
+        <pre><span class="cmd-comment"># 速度・duplex設定（通常はautoを推奨）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">speed auto</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">duplex auto</span>
+
+<span class="cmd-comment"># インタフェースの説明文を設定</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">description</span> <span class="cmd-value">Uplink to R1</span>
+
+<span class="cmd-comment"># インタフェースのシャットダウン/起動</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">shutdown</span>       <span class="cmd-comment"># インタフェースを無効化</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">no shutdown</span>    <span class="cmd-comment"># インタフェースを有効化</span>
+
+<span class="cmd-comment"># インタフェース状態確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces GigabitEthernet0/1</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces GigabitEthernet0/1 status</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show ip interface brief</span>    <span class="cmd-comment"># SVI（L3 IF）のIP状態確認</span></pre>
+
+        <div class="card">
+            <h4 class="topic-title">インタフェース状態の読み方</h4>
+            <pre style="font-size:0.88em; line-height:1.8;">
+GigabitEthernet0/1 is up, line protocol is up     ← 正常
+GigabitEthernet0/1 is down, line protocol is down ← 物理障害（ケーブル断・機器電源OFF等）
+GigabitEthernet0/1 is up, line protocol is down   ← L2障害（クロックなし・encapsulationミスマッチ）
+GigabitEthernet0/1 is administratively down       ← shutdownコマンドで無効化中
+GigabitEthernet0/1 is err-disabled                ← セキュリティ違反等でスイッチが自動shut down
+</pre>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-8">
+            <h3>✏️ 確認問題（第1-8章）</h3>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. スイッチが宛先MACアドレスをテーブルで発見できない場合に行う動作はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 受信ポート以外の全ポートへフレームをフラッドする</button></li>
+                    <li><button class="quiz-option">B. フレームを破棄する</button></li>
+                    <li><button class="quiz-option">C. ルータに転送する</button></li>
+                    <li><button class="quiz-option">D. ARPリクエストを送信する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（フラッディング）</strong><br>宛先MACが未知のユニキャスト（テーブルにない）の場合、スイッチは受信ポートを除く全ポートへフレームをフラッドします。これがユニキャストフラッディングです。正しいポートに届いたデバイスが返信すれば、その送信元MACをテーブルに学習します。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. スイッチのMACアドレステーブルのデフォルトのエージングタイムはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 60秒</button></li>
+                    <li><button class="quiz-option">B. 300秒</button></li>
+                    <li><button class="quiz-option">C. 180秒</button></li>
+                    <li><button class="quiz-option">D. 600秒</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（300秒）</strong><br>Ciscoスイッチのデフォルトエージングタイムは300秒（5分）です。この時間内に通信がなければエントリは自動削除されます。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q3. フレーム全体を受信してFCSエラーチェックを行ってから転送するスイッチ方式はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ストアアンドフォワード</button></li>
+                    <li><button class="quiz-option">B. カットスルー</button></li>
+                    <li><button class="quiz-option">C. フラグメントフリー</button></li>
+                    <li><button class="quiz-option">D. ファストフォワード</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（ストアアンドフォワード）</strong><br>ストアアンドフォワードはフレームを完全受信後にFCSでエラーチェックし、問題なければ転送します。信頼性が最も高いが遅延が最大です。Ciscoのほとんどのスイッチはデフォルトでこのモードです。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q4. show interfaces コマンドで「administratively down」と表示された場合の意味はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ケーブルが接続されていない</button></li>
+                    <li><button class="quiz-option">B. L2プロトコルの障害</button></li>
+                    <li><button class="quiz-option">C. shutdownコマンドで管理者が無効化している</button></li>
+                    <li><button class="quiz-option">D. ポートセキュリティ違反</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C</strong><br>「administratively
+                    down」はshutdownコマンドによって管理者が意図的にインタフェースを無効化した状態です。「no
+                    shutdown」で有効化できます。ポートセキュリティ違反による自動シャットダウンは「err-disabled」と表示されます。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

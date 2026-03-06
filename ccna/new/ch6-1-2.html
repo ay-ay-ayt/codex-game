@@ -1,0 +1,503 @@
+<div class="page" id="page-6-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-1 ネットワーク自動化（SDN・コントローラ）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-concept">概念</span>
+            従来型ネットワークとSDNの違い、コントローラの役割を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>従来のネットワーク管理の問題点</h2>
+        <div class="card">
+            <h4 class="topic-title">「CLIで1台ずつ設定」の限界</h4>
+            <pre style="line-height:1.8; font-size:0.88em;">
+【従来型ネットワーク管理】
+管理者がSSHで各機器に1台ずつログインして設定
+    例: 100台のスイッチのVLAN設定を変更
+    → SSHで100回ログイン → 同じコマンドを100回入力
+    → 1台でもタイプミスがあると障害発生
+    → 設定の整合性を確認するのに膨大な時間
+
+問題点:
+① スケーラビリティ: 100台、1000台になると人力で対応不能
+② ヒューマンエラー: 手動作業ではミスが避けられない
+③ 一貫性: 設定のバラつき → 障害、セキュリティホール
+④ 応答速度: ビジネス要求に対する変更が遅い
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🏗️</span>SDN（Software-Defined Networking）</h2>
+        <p>SDNは<strong>ネットワークの制御をソフトウェア（コントローラ）に集中</strong>させるアーキテクチャです。</p>
+
+        <h3 class="subsection-title">従来型 vs SDNの構造比較</h3>
+        <div class="card">
+            <pre style="line-height:1.8; font-size:0.88em;">
+【従来型ネットワーク】
+各機器がそれぞれ制御プレーンとデータプレーンを持つ
+
+  ┌──────────┐  ┌──────────┐  ┌──────────┐
+  │ 制御プレーン│  │ 制御プレーン│  │ 制御プレーン│
+  │(経路計算等) │  │(経路計算等) │  │(経路計算等) │
+  ├──────────┤  ├──────────┤  ├──────────┤
+  │ データプレーン│  │データプレーン│  │データプレーン│
+  │(パケット転送) │  │(パケット転送)│  │(パケット転送)│
+  └──────────┘  └──────────┘  └──────────┘
+     Router A        Router B        Router C
+
+【SDNアーキテクチャ】
+制御プレーンをSDNコントローラに集約
+
+  ┌──────────────────────────────────────┐
+  │         SDNコントローラ（制御プレーン）          │
+  │   経路計算・ポリシー管理・ネットワーク全体把握     │
+  │   ↕ Southbound API（OpenFlow等）                │
+  └──────────────────────────────────────┘
+        ↕                ↕                ↕
+  ┌──────────┐  ┌──────────┐  ┌──────────┐
+  │データプレーン│  │データプレーン│  │データプレーン│
+  │(パケット転送) │  │(パケット転送)│  │(パケット転送)│
+  └──────────┘  └──────────┘  └──────────┘
+     Switch A        Switch B        Switch C
+</pre>
+        </div>
+
+        <h3 class="subsection-title">ネットワークの3つのプレーン</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プレーン</th>
+                        <th>役割</th>
+                        <th>具体例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>データプレーン（転送プレーン）</strong></td>
+                        <td>実際のパケットの転送・フィルタリング</td>
+                        <td>フレーム転送、ACLの適用、NATの変換、QoSのマーキング</td>
+                    </tr>
+                    <tr>
+                        <td><strong>制御プレーン</strong></td>
+                        <td>転送先の決定（ルーティングテーブルの作成）</td>
+                        <td>OSPF、STP、ARP処理</td>
+                    </tr>
+                    <tr>
+                        <td><strong>管理プレーン</strong></td>
+                        <td>機器の設定・監視</td>
+                        <td>SSH、SNMP、Syslog、NTP</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">SDNのAPIインタフェース</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>API種類</th>
+                        <th>方向</th>
+                        <th>用途</th>
+                        <th>例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Northbound API</strong></td>
+                        <td>コントローラ ← アプリケーション</td>
+                        <td>アプリケーションがコントローラに指示を出す</td>
+                        <td>REST API</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Southbound API</strong></td>
+                        <td>コントローラ → ネットワーク機器</td>
+                        <td>コントローラが機器を制御する</td>
+                        <td>OpenFlow, NETCONF, RESTCONF</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 覚え方: North = 上（アプリ側）、South = 下（機器側）</div>
+            「アプリ → [Northbound] → コントローラ → [Southbound] → 機器」の順に指示が流れます。
+        </div>
+
+        <h3 class="subsection-title">Cisco DNA Center</h3>
+        <div class="card">
+            <p>Cisco DNA Centerは企業向けのSDNコントローラです。</p>
+            <ul>
+                <li><strong>Intent-Based Networking（IBN）</strong>:
+                    管理者が「意図」（例:「ゲストユーザーはWebのみアクセス可」）を伝えると、コントローラが自動で設定を生成・適用</li>
+                <li><strong>Assurance</strong>: ネットワーク全体の状態を可視化し、問題を自動検知・推奨対策を提示</li>
+                <li><strong>GUI/APIベース</strong>: CLIではなくWebブラウザやAPIで全て管理</li>
+            </ul>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q6-1">
+            <h3>✏️ 確認問題（第6-1章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. SDNで、アプリケーションがSDNコントローラに指示を出すために使用するAPIはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Southbound API</button></li>
+                    <li><button class="quiz-option">B. Northbound API</button></li>
+                    <li><button class="quiz-option">C. Eastbound API</button></li>
+                    <li><button class="quiz-option">D. SNMP API</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（Northbound API）</strong><br>Northbound
+                    APIはコントローラの「上側」のインタフェースで、アプリケーションやスクリプトからコントローラに指示を出します。通常REST APIで実装されます。Southbound
+                    APIはコントローラから「下側」のネットワーク機器を制御するインタフェースです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. SDNの最大の利点として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ネットワーク全体をコントローラで一元管理でき、自動化・プログラマブルな制御が可能</button></li>
+                    <li><button class="quiz-option">B. データプレーンの転送速度が向上する</button></li>
+                    <li><button class="quiz-option">C. 各機器のCPU使用率が向上する</button></li>
+                    <li><button class="quiz-option">D. IPアドレスの管理が不要になる</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>SDNの本質的な利点は制御プレーンの集中化による一元管理・自動化です。API経由でプログラマブルに制御でき、大規模ネットワークの設定・管理の効率が飛躍的に向上します。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q3. ネットワーク機器のパケット転送処理が行われるプレーンはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 制御プレーン</button></li>
+                    <li><button class="quiz-option">B. 管理プレーン</button></li>
+                    <li><button class="quiz-option">C. データプレーン（転送プレーン）</button></li>
+                    <li><button class="quiz-option">D. アプリケーションプレーン</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（データプレーン）</strong><br>データプレーン=パケットの実際の転送・フィルタリング処理。制御プレーン=OSPF等の経路計算・ルーティングテーブル作成。管理プレーン=SSH/SNMP等の設定・監視です。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-6-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-2 REST API・JSON・自動化ツール</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-concept">概念</span> REST
+            API・データ形式（JSON/YAML/XML）・構成管理ツールを理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>REST API ── ネットワーク機器のプログラマブル制御</h2>
+        <p>REST API（REpresentational State Transfer）は、HTTPメソッドを使ってネットワーク機器やコントローラにリクエストを送り、設定変更やデータ取得を行う方法です。</p>
+
+        <h3 class="subsection-title">HTTPメソッドとCRUD操作の対応（必須暗記！）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>HTTPメソッド</th>
+                        <th>CRUD</th>
+                        <th>説明</th>
+                        <th>REST API例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>GET</strong></td>
+                        <td>Read</td>
+                        <td>データの取得（変更なし）</td>
+                        <td>GET /api/v1/interfaces → インタフェース一覧取得</td>
+                    </tr>
+                    <tr>
+                        <td><strong>POST</strong></td>
+                        <td>Create</td>
+                        <td>新しいリソースの作成</td>
+                        <td>POST /api/v1/vlans → 新しいVLAN作成</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PUT</strong></td>
+                        <td>Update（全体置換）</td>
+                        <td>既存リソースの完全更新</td>
+                        <td>PUT /api/v1/vlans/10 → VLAN 10を全属性更新</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PATCH</strong></td>
+                        <td>Update（部分更新）</td>
+                        <td>既存リソースの一部を更新</td>
+                        <td>PATCH /api/v1/vlans/10 → VLAN 10の名前だけ変更</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DELETE</strong></td>
+                        <td>Delete</td>
+                        <td>リソースの削除</td>
+                        <td>DELETE /api/v1/vlans/10 → VLAN 10を削除</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">HTTPレスポンスコード</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>コード</th>
+                        <th>意味</th>
+                        <th>具体例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>200 OK</strong></td>
+                        <td>成功</td>
+                        <td>GET/PUT/DELETEが正常完了</td>
+                    </tr>
+                    <tr>
+                        <td><strong>201 Created</strong></td>
+                        <td>リソース作成成功</td>
+                        <td>POST成功（新しいVLAN作成等）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>400 Bad Request</strong></td>
+                        <td>リクエスト不正</td>
+                        <td>JSONの構文エラー等</td>
+                    </tr>
+                    <tr>
+                        <td><strong>401 Unauthorized</strong></td>
+                        <td>認証エラー</td>
+                        <td>APIキー/トークンが無効</td>
+                    </tr>
+                    <tr>
+                        <td><strong>403 Forbidden</strong></td>
+                        <td>権限不足</td>
+                        <td>認証成功だが操作権限なし</td>
+                    </tr>
+                    <tr>
+                        <td><strong>404 Not Found</strong></td>
+                        <td>リソースが見つからない</td>
+                        <td>存在しないURLへのリクエスト</td>
+                    </tr>
+                    <tr>
+                        <td><strong>500 Internal Server Error</strong></td>
+                        <td>サーバー側のエラー</td>
+                        <td>サーバーの内部処理でエラー発生</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📄</span>データ形式: JSON・YAML・XML</h2>
+        <p>API通信では構造化されたデータ形式を使います。CCNAでは3つの形式を区別できる必要があります。</p>
+
+        <div class="card">
+            <h4 class="topic-title">JSON（JavaScript Object Notation）── 最も広く使われる</h4>
+            <pre style="font-size:0.88em; line-height:1.6;">
+{
+  "interface": {
+    "name": "GigabitEthernet0/1",
+    "ip_address": "192.168.1.1",
+    "subnet_mask": "255.255.255.0",
+    "status": "up",
+    "vlans": [10, 20, 30]
+  }
+}
+
+特徴:
+・キーと値のペア（"key": "value"）
+・波括弧 { } でオブジェクト、角括弧 [ ] で配列
+・文字列は必ずダブルクォーテーション
+・コメントは使えない
+</pre>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">YAML（YAML Ain't Markup Language）── 人間に読みやすい</h4>
+            <pre style="font-size:0.88em; line-height:1.6;">
+interface:
+  name: GigabitEthernet0/1
+  ip_address: 192.168.1.1
+  subnet_mask: 255.255.255.0
+  status: up
+  vlans:
+    - 10
+    - 20
+    - 30
+
+特徴:
+・インデントで構造を表現（スペース使用、タブ不可！）
+・クォーテーション不要の場合が多い
+・コメント可（# コメント）
+・Ansible等の構成管理ツールで人気
+</pre>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">XML（eXtensible Markup Language）── タグベース</h4>
+            <pre style="font-size:0.88em; line-height:1.6;">
+&lt;interface&gt;
+  &lt;name&gt;GigabitEthernet0/1&lt;/name&gt;
+  &lt;ip_address&gt;192.168.1.1&lt;/ip_address&gt;
+  &lt;subnet_mask&gt;255.255.255.0&lt;/subnet_mask&gt;
+  &lt;status&gt;up&lt;/status&gt;
+  &lt;vlans&gt;
+    &lt;vlan&gt;10&lt;/vlan&gt;
+    &lt;vlan&gt;20&lt;/vlan&gt;
+    &lt;vlan&gt;30&lt;/vlan&gt;
+  &lt;/vlans&gt;
+&lt;/interface&gt;
+
+特徴:
+・開始タグ &lt;tag&gt; と終了タグ &lt;/tag&gt; で囲む
+・冗長だが厳密な構造定義が可能
+・NETCONFプロトコルで使用
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🛠️</span>構成管理ツール</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ツール</th>
+                        <th>方式</th>
+                        <th>エージェント</th>
+                        <th>設定記述</th>
+                        <th>通信</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Ansible</strong></td>
+                        <td>プッシュ型</td>
+                        <td><strong>不要（エージェントレス）</strong></td>
+                        <td>YAML（Playbook）</td>
+                        <td>SSH</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Puppet</strong></td>
+                        <td>プル型</td>
+                        <td>必要</td>
+                        <td>独自DSL（Manifest）</td>
+                        <td>HTTPS/8140</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Chef</strong></td>
+                        <td>プル型</td>
+                        <td>必要</td>
+                        <td>Ruby（Recipe）</td>
+                        <td>HTTPS</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 Ansibleが特に重要（CCNA頻出）</div>
+            <ul>
+                <li><strong>エージェントレス</strong>: 対象機器にソフトウェアのインストールが不要（SSH接続のみ）</li>
+                <li><strong>Playbook</strong>: YAML形式で設定手順を定義</li>
+                <li><strong>冪等性（べきとうせい）</strong>: 同じPlaybookを何度実行しても同じ結果（=安全に繰り返し実行可能）</li>
+                <li><strong>Inventory</strong>: 管理対象のホスト一覧を定義するファイル</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">NETCONF・RESTCONF</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プロトコル</th>
+                        <th>トランスポート</th>
+                        <th>データ形式</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>NETCONF</strong></td>
+                        <td>SSH（TCP/830）</td>
+                        <td>XML</td>
+                        <td>get, get-config, edit-config, copy-config, delete-config, lock/unlock</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RESTCONF</strong></td>
+                        <td>HTTPS</td>
+                        <td>JSON or XML</td>
+                        <td>GET, POST, PUT, PATCH, DELETE（REST風）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q6-2">
+            <h3>✏️ 確認問題（第6-2章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. REST APIで新しいリソースを作成するために使用するHTTPメソッドはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. GET</button></li>
+                    <li><button class="quiz-option">B. PUT</button></li>
+                    <li><button class="quiz-option">C. POST</button></li>
+                    <li><button class="quiz-option">D. DELETE</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（POST）</strong><br>POST=Create（作成）、GET=Read（読取）、PUT=Update全体（更新）、PATCH=Update部分（部分更新）、DELETE=Delete（削除）。CRUD操作とHTTPメソッドの対応は必須知識です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. 以下のデータ形式を見て、これが何形式か特定せよ。<br>
+                    <code>{ "hostname": "R1", "interfaces": [{"name": "Gi0/0", "ip": "10.0.0.1"}] }</code>
+                </div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. JSON</button></li>
+                    <li><button class="quiz-option">B. YAML</button></li>
+                    <li><button class="quiz-option">C. XML</button></li>
+                    <li><button class="quiz-option">D. CSV</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（JSON）</strong><br>波括弧{}
+                    でオブジェクト、角括弧[]で配列、ダブルクォーテーションで囲まれたキーと値のペアはJSON形式の特徴です。YAMLはインデントベース（括弧不使用）、XMLはタグ&lt;&gt;ベースです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. Ansibleの特徴として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 管理対象にエージェントのインストールが必要</button></li>
+                    <li><button class="quiz-option">B. Rubyで設定を記述する（Recipe形式）</button></li>
+                    <li><button class="quiz-option">C. プル型のアーキテクチャで動作する</button></li>
+                    <li><button class="quiz-option">D. エージェントレスで、SSH接続を使いYAMLのPlaybookで設定を記述する</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D</strong><br>Ansibleの3大特徴:
+                    ①エージェントレス（対象機器にソフト不要、SSHのみ）②YAML形式のPlaybook
+                    ③プッシュ型（管理サーバーから対象に設定を送信）。エージェント必要+プル型はPuppet/Chef、RubyはChefです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q4. HTTPレスポンスコード「401」が返ってきた場合、何を意味するか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. リクエストが不正（構文エラー）</button></li>
+                    <li><button class="quiz-option">B. 認証エラー（APIキーやトークンが無効）</button></li>
+                    <li><button class="quiz-option">C. リソースが見つからない</button></li>
+                    <li><button class="quiz-option">D. サーバー内部エラー</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（認証エラー）</strong><br>401
+                    Unauthorized=認証情報が無効。400=リクエスト構文エラー。403=認証成功だが権限不足。404=リソースなし。500=サーバーエラー。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q5. NETCONFプロトコルのトランスポートとデータ形式の正しい組み合わせはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. SSH(TCP/830)とXML</button></li>
+                    <li><button class="quiz-option">B. HTTPS とJSON</button></li>
+                    <li><button class="quiz-option">C. Telnet とYAML</button></li>
+                    <li><button class="quiz-option">D. HTTPとXML</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>NETCONF=SSH(TCP/830)+XML。RESTCONF=HTTPS+JSON/XML。NETCONFはSSHトンネル上でXMLメッセージをやり取りし、edit-config等の操作でネットワーク機器を設定します。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

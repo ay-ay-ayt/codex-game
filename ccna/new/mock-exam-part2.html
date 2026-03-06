@@ -1,0 +1,313 @@
+<h2 class="chapter-title"><span class="icon">📋</span>第4章範囲（IPサービス）Q28-Q36</h2>
+
+<div class="quiz-section" data-quiz-id="mock-4">
+
+    <div class="quiz-item" data-answer="2">
+        <div class="quiz-question">Q28. PATの最大の特徴はどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. 1対1のIPアドレス変換</button></li>
+            <li><button class="quiz-option">B. IPアドレスを変換しない</button></li>
+            <li><button class="quiz-option">C. 1つのグローバルIPで多数の内部ホストがインターネット接続可能（ポート番号で識別）</button></li>
+            <li><button class="quiz-option">D. IPv6からIPv4への変換</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：C</strong><br>PAT(NAT
+            Overload)は送信元ポート番号を使い分けることで、1つのグローバルIPを多数のホストで共有します。Aはスタティック/ダイナミックNAT。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+        <div class="quiz-question">Q29.【show出力問題】以下のshow ip nat translationsの出力から正しく読み取れることはどれか？<br>
+            <code>Pro Inside global   Inside local    Outside local  Outside global</code><br>
+            <code>tcp 203.0.113.1:1024 192.168.1.10:5000 93.184.216.34:80 93.184.216.34:80</code>
+        </div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. 192.168.1.10はインターネット上のサーバーである</button></li>
+            <li><button class="quiz-option">B. 内部ホスト192.168.1.10がPATで203.0.113.1:1024に変換されてWebアクセスしている</button></li>
+            <li><button class="quiz-option">C. 93.184.216.34は内部ネットワークのホストである</button></li>
+            <li><button class="quiz-option">D. この変換はスタティックNATである</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：B</strong><br>Inside local(内部実IP)=192.168.1.10。Inside
+            global(NATで変換後のIP:ポート)=203.0.113.1:1024。Outside(外部サーバー)=93.184.216.34:80(HTTP)。ポート番号変換=PAT。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+        <div class="quiz-question">Q30. DHCPの4ステップ(DORA)の正しい順序はどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. Discover → Offer → Request → Acknowledgment</button></li>
+            <li><button class="quiz-option">B. Discover → Request → Offer → Acknowledgment</button></li>
+            <li><button class="quiz-option">C. Request → Discover → Offer → Acknowledgment</button></li>
+            <li><button class="quiz-option">D. Offer → Discover → Request → Acknowledgment</button></li>
+        </ul>
+        <div class="quiz-explanation">
+            <strong>正解：A（DORA）</strong><br>D=クライアントがブロードキャストで探索→O=サーバーがIP提案→R=クライアントが選択→A=サーバーが確認・割り当て。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+        <div class="quiz-question">Q31. Syslogのセキュリティレベルで「Emergency(0)」より1段階低い(次に重要な)レベルはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. Critical (2)</button></li>
+            <li><button class="quiz-option">B. Warning (4)</button></li>
+            <li><button class="quiz-option">C. Error (3)</button></li>
+            <li><button class="quiz-option">D. Alert (1)</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：D（Alert=1）</strong><br>Syslog: 0=Emergency, 1=Alert, 2=Critical,
+            3=Error, 4=Warning, 5=Notification, 6=Informational, 7=Debugging。数字が小さいほど深刻。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+        <div class="quiz-question">Q32. NTPのStratum値について正しいのはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. Stratum値が高いほど時刻が正確</button></li>
+            <li><button class="quiz-option">B. Stratum 0はNTPサーバー自身</button></li>
+            <li><button class="quiz-option">C. Stratum値が低い(0に近い)ほど時刻ソースとして正確</button></li>
+            <li><button class="quiz-option">D. Stratumの範囲は0〜255</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：C</strong><br>Stratum 0=原子時計等（直接NTP不参加）。Stratum 1=Stratum
+            0に直結したサーバー。Stratum値が大きい=参照元から遠い=精度が落ちる。範囲は0〜15(16は同期不能)。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+        <div class="quiz-question">Q33. SNMPv3の特徴として正しいのはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. コミュニティストリングで認証する</button></li>
+            <li><button class="quiz-option">B. ユーザーベース認証とメッセージの暗号化をサポートする</button></li>
+            <li><button class="quiz-option">C. Trap送信のみに対応する</button></li>
+            <li><button class="quiz-option">D. 設定の変更はできない（読み取り専用）</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：B</strong><br>SNMPv3:
+            authNoPriv(認証あり・暗号化なし)、authPriv(認証+暗号化)のセキュリティレベルをサポート。v1/v2cはコミュニティストリング（平文）で認証するため非推奨。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+        <div class="quiz-question">Q34. QoSのマーキングで、DSCP値「EF」が使用されるトラフィックタイプはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. 音声（VoIP）トラフィック</button></li>
+            <li><button class="quiz-option">B. バックアップトラフィック</button></li>
+            <li><button class="quiz-option">C. Webブラウジング</button></li>
+            <li><button class="quiz-option">D. メールトラフィック</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：A</strong><br>EF(Expedited Forwarding)=DSCP
+            46=音声トラフィック用（低遅延・低ジッター保証）。AF=保証転送。BE(Best Effort)=一般トラフィック。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+        <div class="quiz-question">Q35. DHCPリレーエージェント(ip helper-address)が必要になるのはどのような場合か？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. DHCPサーバーとクライアントが同じサブネットにいる場合</button></li>
+            <li><button class="quiz-option">B. クライアントがスタティックIPを使用する場合</button></li>
+            <li><button class="quiz-option">C. DHCPが無効化されている場合</button></li>
+            <li><button class="quiz-option">D. DHCPサーバーとクライアントが異なるサブネットにいる場合</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：D</strong><br>DHCP Discoverはブロードキャストでルータを越えられません。ip
+            helper-addressでルータがDHCPサーバーにユニキャスト転送します。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+        <div class="quiz-question">Q36. SSHの設定で必要なコマンドのうち、正しくないのはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. ip domain-name [ドメイン名]</button></li>
+            <li><button class="quiz-option">B. crypto key generate rsa</button></li>
+            <li><button class="quiz-option">C. transport input telnet</button></li>
+            <li><button class="quiz-option">D. ip ssh version 2</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：C（正しくない）</strong><br>SSHを使うにはtransport input sshを設定します。transport input
+            telnetだとTelnet(平文)のみを許可してしまい、SSHが使えません。</div>
+    </div>
+
+</div>
+
+<h2 class="chapter-title"><span class="icon">📋</span>第5章範囲（セキュリティ）Q37-Q44</h2>
+
+<div class="quiz-section" data-quiz-id="mock-5">
+
+    <div class="quiz-item" data-answer="1">
+        <div class="quiz-question">Q37. 標準ACLと拡張ACLの違いとして正しいのはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. 標準ACLは送信元と宛先の両方でフィルタリングできる</button></li>
+            <li><button class="quiz-option">B. 標準ACLは送信元IPアドレスのみ、拡張ACLは送信元/宛先IP・ポート番号・プロトコルでフィルタリング</button></li>
+            <li><button class="quiz-option">C. 拡張ACLは送信元IPアドレスのみでフィルタリングする</button></li>
+            <li><button class="quiz-option">D. 標準ACLは番号100〜199を使用する</button></li>
+        </ul>
+        <div class="quiz-explanation">
+            <strong>正解：B</strong><br>標準ACL(1-99,1300-1999)=送信元IPのみ。拡張ACL(100-199,2000-2699)=送信元/宛先IP+プロトコル+ポート番号。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+        <div class="quiz-question">Q38. ACLの適用場所のベストプラクティスとして正しいのはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. 拡張ACLは送信元に近い場所、標準ACLは宛先に近い場所に適用</button></li>
+            <li><button class="quiz-option">B. 両方とも送信元の近くに適用</button></li>
+            <li><button class="quiz-option">C. 両方とも宛先の近くに適用</button></li>
+            <li><button class="quiz-option">D. ルータの数に応じて決める</button></li>
+        </ul>
+        <div class="quiz-explanation">
+            <strong>正解：A</strong><br>拡張ACLは細かく(宛先も)フィルタできるため送信元に近い場所で不要トラフィックを早期にブロック。標準ACLは送信元IPのみなので宛先に近い場所で適用し、意図しないトラフィック遮断を防ぎます。
+        </div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+        <div class="quiz-question">Q39. DHCPスヌーピングで「信頼されないポート」(untrusted)から受信した場合にドロップされるメッセージはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. DHCP Discover</button></li>
+            <li><button class="quiz-option">B. DHCP Request</button></li>
+            <li><button class="quiz-option">C. DHCP Decline</button></li>
+            <li><button class="quiz-option">D. DHCP Offer（不正なサーバーからの応答）</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：D</strong><br>untrustedポートからのDHCP
+            Offer/ACKはドロップされます（不正DHCPサーバー対策）。クライアント側メッセージ(Discover/Request)はuntrustedポートから送信可能です。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+        <div class="quiz-question">Q40. ポートセキュリティのviolationモードで、違反時にポートをerr-disabledにするのはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. protect</button></li>
+            <li><button class="quiz-option">B. restrict</button></li>
+            <li><button class="quiz-option">C. shutdown（デフォルト）</button></li>
+            <li><button class="quiz-option">D. disable</button></li>
+        </ul>
+        <div class="quiz-explanation">
+            <strong>正解：C（shutdown）</strong><br>shutdown=err-disabled(ポート無効化)+syslog+カウンタ増加。restrict=パケット破棄+syslog+カウンタ。protect=パケット破棄のみ。
+        </div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+        <div class="quiz-question">Q41.【シナリオ】MACフラッディング攻撃を受けてスイッチのCAMテーブルが溢れた場合、スイッチはどのような動作をするか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. 全てのフレームを破棄する</button></li>
+            <li><button class="quiz-option">B. フレームを全ポートにフラッディングする（ハブのように動作する）</button></li>
+            <li><button class="quiz-option">C. 自動的にポートをシャットダウンする</button></li>
+            <li><button class="quiz-option">D. ルーティングテーブルを使って転送する</button></li>
+        </ul>
+        <div class="quiz-explanation">
+            <strong>正解：B</strong><br>CAMテーブルが満杯になると新しいMACを学習できず、未知のMACアドレス宛のフレームを全ポートにフラッディングします。攻撃者はこれを利用して他のポートのトラフィックを盗聴できます。
+        </div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+        <div class="quiz-question">Q42. Site-to-Site VPNとRemote Access VPNの違いとして正しいのはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. Site-to-Siteは拠点間の常時接続、Remote Accessは個人端末からの接続</button></li>
+            <li><button class="quiz-option">B. Remote AccessはIPsecを使用できない</button></li>
+            <li><button class="quiz-option">C. Site-to-Siteは暗号化されない</button></li>
+            <li><button class="quiz-option">D. 両方とも同じ設定方法で構成される</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：A</strong><br>Site-to-Site=拠点間のゲートウェイ接続(IPsec)。Remote Access=VPNC(Cisco
+            AnyConnect等)で個人端末から接続(SSL/IPsec)。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+        <div class="quiz-question">Q43. 802.1X認証の3つのコンポーネントで正しい組み合わせはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. クライアント、スイッチ、DHCPサーバー</button></li>
+            <li><button class="quiz-option">B. AP、WLC、DNSサーバー</button></li>
+            <li><button class="quiz-option">C. ルータ、ファイアウォール、IDS</button></li>
+            <li><button class="quiz-option">D. サプリカント（クライアント）、オーセンティケータ（スイッチ/AP）、認証サーバー（RADIUS）</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：D</strong><br>802.1X:
+            サプリカント=認証を要求するクライアント。オーセンティケータ=スイッチやAPで認証を仲介。認証サーバー=RADIUSで実際の認証判定。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+        <div class="quiz-question">Q44. IPsecのESP(Encapsulating Security Payload)が提供する機能はどれか？（2つ選べ）</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. ルーティング最適化のみ</button></li>
+            <li><button class="quiz-option">B. データの暗号化と認証（完全性検証）</button></li>
+            <li><button class="quiz-option">C. NATトラバーサルの自動設定</button></li>
+            <li><button class="quiz-option">D. IPアドレスの自動割り当て</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：B</strong><br>ESP=暗号化+認証+完全性。AH=認証+完全性のみ（暗号化なし）。ESPはIPプロトコル番号50を使用します。
+        </div>
+    </div>
+
+</div>
+
+<h2 class="chapter-title"><span class="icon">📋</span>第6章範囲（自動化と可搬性）Q45-Q50</h2>
+
+<div class="quiz-section" data-quiz-id="mock-6">
+
+    <div class="quiz-item" data-answer="2">
+        <div class="quiz-question">Q45. SDNアーキテクチャでNorthbound APIの役割はどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. コントローラがネットワーク機器を制御する</button></li>
+            <li><button class="quiz-option">B. ネットワーク機器間のデータ転送</button></li>
+            <li><button class="quiz-option">C. アプリケーションがSDNコントローラに指示を出す</button></li>
+            <li><button class="quiz-option">D. 物理ケーブルの接続管理</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：C</strong><br>Northbound API=上(アプリ)→コントローラ。Southbound
+            API=コントローラ→下(機器)。REST APIがNorthboundで多用されます。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+        <div class="quiz-question">Q46. REST APIでリソースを部分的に更新するHTTPメソッドはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. PATCH</button></li>
+            <li><button class="quiz-option">B. PUT</button></li>
+            <li><button class="quiz-option">C. POST</button></li>
+            <li><button class="quiz-option">D. GET</button></li>
+        </ul>
+        <div class="quiz-explanation">
+            <strong>正解：A（PATCH）</strong><br>PATCH=部分更新。PUT=全体更新（置換）。POST=新規作成。GET=読み取り。DELETE=削除。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+        <div class="quiz-question">Q47. 以下のデータ形式を見て正しく識別せよ：<br>
+            <code>hostname:</code><br>
+            <code>&nbsp;&nbsp;name: R1</code><br>
+            <code>&nbsp;&nbsp;interfaces:</code><br>
+            <code>&nbsp;&nbsp;&nbsp;&nbsp;- GigabitEthernet0/0</code><br>
+            <code>&nbsp;&nbsp;&nbsp;&nbsp;- GigabitEthernet0/1</code>
+        </div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. JSON</button></li>
+            <li><button class="quiz-option">B. XML</button></li>
+            <li><button class="quiz-option">C. CSV</button></li>
+            <li><button class="quiz-option">D. YAML</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：D（YAML）</strong><br>インデントで構造を表現、クォーテーション不要、 -
+            でリスト項目を表すのがYAMLの特徴。JSON=波括弧{}と角括弧[]。XML=タグ&lt;&gt;。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+        <div class="quiz-question">Q48. Ansibleの特徴として正しいのはどれか？（2つ選べ）</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. 管理対象にエージェントのインストールが必要（プル型）</button></li>
+            <li><button class="quiz-option">B. エージェントレスでSSH接続を使用し、YAMLのPlaybookで設定定義（プッシュ型）</button></li>
+            <li><button class="quiz-option">C. Rubyで記述するRecipe形式</button></li>
+            <li><button class="quiz-option">D. 独自DSLのManifest形式で記述</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：B</strong><br>Ansible: エージェントレス+SSH+YAML(Playbook)+プッシュ型。Puppet:
+            エージェント必要+プル型+独自DSL(Manifest)。Chef: エージェント必要+プル型+Ruby(Recipe)。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+        <div class="quiz-question">Q49. NETCONFプロトコルが使用するトランスポートとデータ形式の正しい組み合わせはどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. SSH (TCP/830) と XML</button></li>
+            <li><button class="quiz-option">B. HTTPS と JSON</button></li>
+            <li><button class="quiz-option">C. SSH (TCP/22) と YAML</button></li>
+            <li><button class="quiz-option">D. HTTP と JSON</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：A</strong><br>NETCONF=SSH(TCP/830)+XML。RESTCONF=HTTPS+JSON or
+            XML。NETCONFはedit-config等のRPC操作でネットワーク機器を設定します。</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+        <div class="quiz-question">Q50.【シナリオ】企業で1000台のスイッチのVLAN設定を一括変更したい。最も効率的な方法はどれか？</div>
+        <ul class="quiz-options">
+            <li><button class="quiz-option">A. 各スイッチにSSHで1台ずつログインしてCLIで設定</button></li>
+            <li><button class="quiz-option">B. Telnetでスクリプトを流す</button></li>
+            <li><button class="quiz-option">C. Ansible PlaybookまたはSDNコントローラ(DNA Center)で一括設定変更</button></li>
+            <li><button class="quiz-option">D. USBで設定ファイルを各スイッチにコピー</button></li>
+        </ul>
+        <div class="quiz-explanation"><strong>正解：C</strong><br>Ansibleは冪等性を持つPlaybookで1000台に同時にSSH接続して設定変更可能。DNA
+            Centerはitent-based(意図ベース)で設定を自動生成・適用。手動CLIは非現実的です。</div>
+    </div>
+
+</div>
+
+<div class="info-box note" id="exam-result-box" style="margin-top: 30px;">
+    <div class="label">📊 模擬試験 結果</div>
+    <div id="exam-result">全ての問題に回答してから「結果を見る」ボタンを押してください。</div>
+    <div style="text-align:center; margin-top:12px;">
+        <button class="btn btn-outline" id="exam-check-btn" onclick="checkExamResult()">📊 結果を見る</button>
+    </div>
+</div>

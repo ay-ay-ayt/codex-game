@@ -1,0 +1,506 @@
+<div class="page" id="page-4-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-3 NTP・Syslog・SNMP</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            ネットワーク運用管理の三本柱を深く理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🕐</span>NTP（Network Time Protocol）</h2>
+
+        <h3 class="subsection-title">なぜ時刻同期が重要か？</h3>
+        <p>「ログの時刻がバラバラでセキュリティインシデントの発生時刻が特定できない」── 実務でこれが起きると致命的です。NTPは全ネットワーク機器の時刻を統一します。</p>
+
+        <div class="card">
+            <h4 class="topic-title">NTPの階層構造（Stratum）</h4>
+            <pre style="line-height:1.8; font-size:0.88em;">
+Stratum 0: 原子時計・GPS（精密な時刻源）── 直接NTP通信しない
+    ↓
+Stratum 1: Stratum 0に直結したNTPサーバー（最上位の時刻提供サーバー）
+    ↓    例: time.google.com, ntp.nict.jp
+Stratum 2: Stratum 1に同期するNTPサーバー
+    ↓    例: 社内のNTPサーバー
+Stratum 3: Stratum 2に同期するクライアント
+    ↓    例: 社内のルータ・スイッチ
+  ...
+Stratum 15: NTPの最大。Stratum 16は「同期不能」を意味する
+
+ポイント:
+・Stratum値が小さいほど精度が高い（信頼性が高い時刻源に近い）
+・最大15ホップまで（Stratum 16 = 無効）
+・UDP/123で通信
+</pre>
+        </div>
+
+        <pre><span class="cmd-comment"># NTPクライアント設定（外部NTPサーバーに同期）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ntp server</span> <span class="cmd-value">203.0.113.1</span>          <span class="cmd-comment"># NTPサーバーのIP</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ntp server</span> <span class="cmd-value">203.0.113.2</span>          <span class="cmd-comment"># 冗長性のため複数設定可</span>
+
+<span class="cmd-comment"># NTPサーバーとして動作させる（他の機器の時刻源になる）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ntp master</span> <span class="cmd-value">3</span>                    <span class="cmd-comment"># Stratum 3のサーバーとして動作</span>
+
+<span class="cmd-comment"># 認証付きNTP（セキュリティ向上・不正NTPサーバー防止）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ntp authenticate</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ntp authentication-key</span> <span class="cmd-value">1</span> <span class="cmd-keyword">md5</span> <span class="cmd-value">MyNTPkey</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ntp trusted-key</span> <span class="cmd-value">1</span>
+
+<span class="cmd-comment"># NTP確認コマンド</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ntp status</span>
+Clock is synchronized, stratum 3, reference is 203.0.113.1
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ntp associations</span>
+  address         ref clock     st  when  poll  reach delay  offset    disp
+*~203.0.113.1     10.0.0.1      2  45    64    377   1.234  0.567    1.234
+<span class="cmd-comment"># * = 同期中のサーバー、st = Stratum</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show clock</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">📝</span>Syslog ── ログメッセージの集中管理</h2>
+
+        <h3 class="subsection-title">Syslogの仕組みと重要性</h3>
+        <p>ネットワーク機器は常に様々なイベント（リンクダウン・設定変更・認証失敗等）をログとして出力しています。Syslogはこれらのログを<strong>中央のSyslogサーバーに集約</strong>する仕組みです。
+        </p>
+
+        <h3 class="subsection-title">Syslogの重大度レベル（必須暗記！）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>レベル番号</th>
+                        <th>名称</th>
+                        <th>説明</th>
+                        <th>キーワード</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="color:#ff4444">
+                        <td><strong>0</strong></td>
+                        <td>Emergency</td>
+                        <td>システムが使用不能</td>
+                        <td>emergencies</td>
+                    </tr>
+                    <tr style="color:#ff6644">
+                        <td><strong>1</strong></td>
+                        <td>Alert</td>
+                        <td>即座に対応が必要</td>
+                        <td>alerts</td>
+                    </tr>
+                    <tr style="color:#ff8844">
+                        <td><strong>2</strong></td>
+                        <td>Critical</td>
+                        <td>重大な状態</td>
+                        <td>critical</td>
+                    </tr>
+                    <tr style="color:#ffaa44">
+                        <td><strong>3</strong></td>
+                        <td>Error</td>
+                        <td>エラー状態</td>
+                        <td>errors</td>
+                    </tr>
+                    <tr style="color:#ffcc44">
+                        <td><strong>4</strong></td>
+                        <td>Warning</td>
+                        <td>警告（問題が起きる可能性）</td>
+                        <td>warnings</td>
+                    </tr>
+                    <tr style="color:#88cc44">
+                        <td><strong>5</strong></td>
+                        <td>Notification</td>
+                        <td>正常だが重要なイベント</td>
+                        <td>notifications</td>
+                    </tr>
+                    <tr style="color:#44cc88">
+                        <td><strong>6</strong></td>
+                        <td>Informational</td>
+                        <td>情報メッセージ</td>
+                        <td>informational</td>
+                    </tr>
+                    <tr style="color:#4488cc">
+                        <td><strong>7</strong></td>
+                        <td>Debugging</td>
+                        <td>デバッグメッセージ</td>
+                        <td>debugging</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 覚え方: 「Every Awesome Cisco Engineer Will Need Ice-cream Daily」</div>
+            Emergency(0), Alert(1), Critical(2), Error(3), Warning(4), Notification(5), Informational(6),
+            Debugging(7)<br>
+            <strong>レベル番号が小さいほど重大</strong>。「logging trap 4」と設定すると、レベル0〜4（warning以上）のログをSyslogサーバーに送信します。
+        </div>
+
+        <pre><span class="cmd-comment"># Syslogサーバーへのログ転送設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">logging host</span> <span class="cmd-value">10.0.0.200</span>           <span class="cmd-comment"># Syslogサーバーのアドレス</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">logging trap</span> <span class="cmd-value">informational</span>        <span class="cmd-comment"># レベル6以上を送信</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">logging source-interface Loopback0</span>  <span class="cmd-comment"># 安定した送信元IFを指定</span>
+
+<span class="cmd-comment"># タイムスタンプの有効化（NTPと組み合わせて正確な時刻をログに記録）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">service timestamps log datetime msec</span>
+
+<span class="cmd-comment"># Syslog確認</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show logging</span>
+*Mar  4 10:15:32.123: %LINK-3-UPDOWN: Interface GigabitEthernet0/0, changed state to down
+*Mar  4 10:15:33.456: %LINEPROTO-5-UPDOWN: Line protocol on Interface Gi0/0, changed state to down
+<span class="cmd-comment"># ↑ %LINK-3-UPDOWN のフォーマット: %機能-レベル-メッセージ名</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">📊</span>SNMP（Simple Network Management Protocol）</h2>
+        <p>SNMPはネットワーク機器を<strong>リモートで監視・管理</strong>するためのプロトコルです。CPU使用率、メモリ使用量、トラフィック量などをリアルタイムで収集できます。</p>
+
+        <h3 class="subsection-title">SNMPの構成要素</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>構成要素</th>
+                        <th>役割</th>
+                        <th>通信方向</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>NMS（Network Management Station）</strong></td>
+                        <td>管理サーバー。機器の情報を収集・分析</td>
+                        <td>Get/Set → エージェント</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SNMPエージェント</strong></td>
+                        <td>ルータ、スイッチ等の監視対象機器にインストールされたソフトウェア</td>
+                        <td>応答/Trap → NMS</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MIB（Management Information Base）</strong></td>
+                        <td>監視データベース。OID（Object ID）で各パラメータを一意に識別</td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">SNMPバージョン比較</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>SNMPv1</th>
+                        <th>SNMPv2c</th>
+                        <th>SNMPv3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>認証</td>
+                        <td>コミュニティストリング（平文）</td>
+                        <td>コミュニティストリング（平文）</td>
+                        <td>ユーザー名+パスワード</td>
+                    </tr>
+                    <tr>
+                        <td>暗号化</td>
+                        <td>なし</td>
+                        <td>なし</td>
+                        <td>あり（AES/DES）</td>
+                    </tr>
+                    <tr>
+                        <td>セキュリティ</td>
+                        <td>弱い</td>
+                        <td>弱い</td>
+                        <td><strong>強い（推奨）</strong></td>
+                    </tr>
+                    <tr>
+                        <td>GetBulk</td>
+                        <td>なし</td>
+                        <td>あり（効率的な大量取得）</td>
+                        <td>あり</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 セキュリティ上、SNMPv3が推奨</div>
+            SNMPv1/v2cの「コミュニティストリング」は平文で通信されるため傍受されるリスクがあります。特にSNMPv1/v2cのRW（Read-Write）コミュニティが漏洩すると、攻撃者がルータの設定を変更できてしまいます。実務ではSNMPv3のauthPriv（認証+暗号化）を使用すべきです。
+        </div>
+
+        <pre><span class="cmd-comment"># SNMPv2c設定（シンプル）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">snmp-server community</span> <span class="cmd-value">ReadOnly</span> <span class="cmd-keyword">RO</span>     <span class="cmd-comment"># 読み取り専用コミュニティ</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">snmp-server community</span> <span class="cmd-value">ReadWrite</span> <span class="cmd-keyword">RW</span>   <span class="cmd-comment"># 読み書きコミュニティ（危険！）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">snmp-server host</span> <span class="cmd-value">10.0.0.200</span> <span class="cmd-keyword">version 2c</span> <span class="cmd-value">ReadOnly</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">snmp-server enable traps</span>            <span class="cmd-comment"># Trapを有効化</span>
+
+<span class="cmd-comment"># SNMPv3設定（セキュア・推奨）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">snmp-server group</span> <span class="cmd-value">ADMIN</span> <span class="cmd-keyword">v3 priv</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">snmp-server user</span> <span class="cmd-value">admin1</span> <span class="cmd-value">ADMIN</span> <span class="cmd-keyword">v3 auth sha</span> <span class="cmd-value">AuthPass123</span> <span class="cmd-keyword">priv aes 128</span> <span class="cmd-value">PrivPass456</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q4-3">
+            <h3>✏️ 確認問題（第4-3章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. NTPのStratum値について正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Stratumが大きいほど精度が高い</button></li>
+                    <li><button class="quiz-option">B. Stratumが小さいほど精度が高い（Stratum 1が最上位サーバー）</button></li>
+                    <li><button class="quiz-option">C. Stratum 0がNTPサーバー</button></li>
+                    <li><button class="quiz-option">D. Stratumの範囲は0〜255</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B</strong><br>Stratum 0は原子時計等の時刻源そのもの（NTP通信はしない）。Stratum
+                    1がStratum 0に直結した最上位NTPサーバー。数値が増えるほど時刻源から遠くなり精度が下がります。Stratum 15が最大で16は「同期不能」を意味します。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. Syslogで「logging trap 4」と設定した場合に送信されるログレベルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. レベル4（Warning）のみ</button></li>
+                    <li><button class="quiz-option">B. レベル4〜7（Warning以下すべて）</button></li>
+                    <li><button class="quiz-option">C. レベル0〜4（Emergency〜Warning）</button></li>
+                    <li><button class="quiz-option">D. レベル0〜7（すべて）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（レベル0〜4）</strong><br>指定したレベル<strong>以上</strong>（数値が小さい方向）のログが送信されます。logging trap 4 なら
+                    Warning(4), Error(3), Critical(2), Alert(1), Emergency(0)
+                    が対象です。Informational(6)やDebugging(7)は含まれません。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. SNMP v1/v2cとv3の最大の違いは何か？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. v3ではMIBが不要になった</button></li>
+                    <li><button class="quiz-option">B. v3ではTrap送信ができなくなった</button></li>
+                    <li><button class="quiz-option">C. v3ではGetBulkが追加された</button></li>
+                    <li><button class="quiz-option">D. v3ではユーザー認証と暗号化（authPriv）が追加されセキュリティが向上した</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D</strong><br>v1/v2cはコミュニティストリング（平文のパスワード）で認証するため傍受に弱い。v3はユーザーベースの認証（SHA/MD5）と暗号化（AES/DES）を提供し、セキュリティが大幅に向上しています。GetBulkはv2cで追加された機能です。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-4-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-4 QoS・SSH・TFTP/FTP</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> トラフィックの優先制御とファイル転送プロトコルを理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">⚡</span>QoS（Quality of Service）── なぜ必要か？</h2>
+        <p>ネットワーク帯域幅は有限です。Webブラウジング、ファイルダウンロード、音声通話、ビデオ会議がすべて同じ帯域を奪い合うと、音声が途切れたりビデオが乱れたりします。QoSは<strong>重要なトラフィックを優先的に処理</strong>する仕組みです。
+        </p>
+
+        <h3 class="subsection-title">QoSの3つのメカニズム</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>メカニズム</th>
+                        <th>説明</th>
+                        <th>実例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>分類とマーキング</strong></td>
+                        <td>トラフィックを種類ごとに分類し、パケットにラベル（マーキング）を付ける</td>
+                        <td>VoIPパケットにDSCP EF(46)をマーク</td>
+                    </tr>
+                    <tr>
+                        <td><strong>キューイング</strong></td>
+                        <td>マーキングに基づいてキュー（待ち行列）に振り分け、優先度の高いキューから先に送信</td>
+                        <td>音声キューは最優先で処理</td>
+                    </tr>
+                    <tr>
+                        <td><strong>輻輳管理/輻輳回避</strong></td>
+                        <td>ネットワークが混雑した時の対処方法</td>
+                        <td>WRED（重要度の低いパケットから先に破棄）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">マーキングの仕組み ── DSCP値（頻出！）</h3>
+        <div class="card">
+            <h4 class="topic-title">DSCP（Differentiated Services Code Point）</h4>
+            <p>IPヘッダのToS（Type of Service）フィールドの上位6ビットを使ってパケットの優先度を示します。</p>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>DSCP名</th>
+                        <th>DSCP値（10進）</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>EF（Expedited Forwarding）</strong></td>
+                        <td>46</td>
+                        <td>VoIP音声 ── 最優先、低遅延・低ジッター・低損失を保証</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AF41</strong></td>
+                        <td>34</td>
+                        <td>ビデオ会議</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AF31</strong></td>
+                        <td>26</td>
+                        <td>重要データ（業務アプリ等）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AF21</strong></td>
+                        <td>18</td>
+                        <td>一般データ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CS0 / DF（Default）</strong></td>
+                        <td>0</td>
+                        <td>ベストエフォート（通常のWebトラフィック等）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 CCNAで覚えるポイント</div>
+            <ul>
+                <li><strong>EF(46)</strong> = VoIP音声。遅延・ジッター・パケットロスに最も敏感</li>
+                <li><strong>AF</strong>(Assured Forwarding) = クラス(1〜4)×ドロップ優先度(1〜3)で定義</li>
+                <li>マーキングは<strong>できるだけネットワークのエッジ（入口）で行う</strong>のがベストプラクティス</li>
+                <li>L2ではCoS（802.1Qタグの3ビット）、L3ではDSCP（IPヘッダの6ビット）でマーキング</li>
+            </ul>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔐</span>SSH vs Telnet</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>Telnet</th>
+                        <th>SSH</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ポート番号</td>
+                        <td>TCP/23</td>
+                        <td>TCP/22</td>
+                    </tr>
+                    <tr>
+                        <td>暗号化</td>
+                        <td><strong>なし（平文）</strong>→ 盗聴可能！</td>
+                        <td><strong>あり</strong>→ 安全</td>
+                    </tr>
+                    <tr>
+                        <td>推奨</td>
+                        <td>使用禁止</td>
+                        <td><strong>推奨</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <pre><span class="cmd-comment"># SSH設定（Telnetは絶対に使わない！）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">hostname</span> <span class="cmd-value">R1</span>                          <span class="cmd-comment"># ホスト名設定（SSH必須）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">ip domain-name</span> <span class="cmd-value">example.com</span>              <span class="cmd-comment"># ドメイン名（RSAキー生成に必須）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">crypto key generate rsa modulus</span> <span class="cmd-value">2048</span>   <span class="cmd-comment"># RSAキーペア生成（2048ビット推奨）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">ip ssh version 2</span>                        <span class="cmd-comment"># SSHv2に限定（v1は脆弱性あり）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">username</span> <span class="cmd-value">admin</span> <span class="cmd-keyword">secret</span> <span class="cmd-value">StrongP@ss1</span>     <span class="cmd-comment"># ローカルユーザー作成</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">line vty 0 4</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">transport input ssh</span>                <span class="cmd-comment"># SSHのみ許可（Telnet拒否）</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">login local</span>                        <span class="cmd-comment"># ローカルユーザーDBで認証</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">📂</span>TFTP・FTP・SFTP</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プロトコル</th>
+                        <th>ポート</th>
+                        <th>認証</th>
+                        <th>暗号化</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>TFTP</strong></td>
+                        <td>UDP/69</td>
+                        <td>なし</td>
+                        <td>なし</td>
+                        <td>IOSイメージ・設定ファイルの簡易転送</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FTP</strong></td>
+                        <td>TCP/20(データ),21(制御)</td>
+                        <td>あり（平文）</td>
+                        <td>なし</td>
+                        <td>ファイル転送（平文のため非推奨）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SFTP/SCP</strong></td>
+                        <td>TCP/22（SSH上）</td>
+                        <td>あり</td>
+                        <td>あり</td>
+                        <td>セキュアなファイル転送（推奨）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <pre><span class="cmd-comment"># IOSイメージのバックアップ（TFTPサーバーへ）</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">copy running-config tftp</span>
+Address or name of remote host: 10.0.0.200
+Destination filename [running-config]? backup-R1.cfg
+
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">copy flash: tftp:</span>                 <span class="cmd-comment"># IOSイメージのバックアップ</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">copy tftp: flash:</span>                 <span class="cmd-comment"># IOSイメージの復元</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">copy running-config startup-config</span> <span class="cmd-comment"># 略: copy run start / wr</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q4-4">
+            <h3>✏️ 確認問題（第4-4章）</h3>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. VoIP音声トラフィックに割り当てるべきDSCP値はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. EF（46）</button></li>
+                    <li><button class="quiz-option">B. AF41（34）</button></li>
+                    <li><button class="quiz-option">C. CS0（0）</button></li>
+                    <li><button class="quiz-option">D. AF11（10）</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（EF = 46）</strong><br>EF（Expedited
+                    Forwarding）はVoIP音声のために設計されたDSCP値です。低遅延・低ジッター・低パケットロスを保証します。ビデオ会議はAF41、通常のWebはDF(0)です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2.【シナリオ】Telnetでリモート管理しているルータをSSHに移行するために必要な手順として正しくないのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ホスト名とドメイン名を設定する</button></li>
+                    <li><button class="quiz-option">B. RSAキーペアを生成する</button></li>
+                    <li><button class="quiz-option">C. SNMPコミュニティストリングを設定する</button></li>
+                    <li><button class="quiz-option">D. line vtyでtransport input sshを設定する</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（SNMPはSSH設定に無関係）</strong><br>SSH設定に必要なのは: ①ホスト名+ドメイン名 ②RSAキー生成
+                    ③ユーザー作成 ④VTYラインでSSHのみ許可。SNMPはネットワーク監視プロトコルでSSHとは無関係です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q3. FTPの制御チャネルとデータチャネルのポート番号の組み合わせとして正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. TCP/22（制御）とTCP/23（データ）</button></li>
+                    <li><button class="quiz-option">B. TCP/21（制御）とTCP/20（データ）</button></li>
+                    <li><button class="quiz-option">C. UDP/69（制御）とUDP/70（データ）</button></li>
+                    <li><button class="quiz-option">D. TCP/20（制御）とTCP/21（データ）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（制御=21、データ=20）</strong><br>FTPは2つのチャネルを使います。TCP/21は制御（コマンド送受信）、TCP/20はデータ転送用です。紛らわしいですが「制御が21、データが20」の順序で覚えましょう。TFTPはUDP/69で1チャネルのみです。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

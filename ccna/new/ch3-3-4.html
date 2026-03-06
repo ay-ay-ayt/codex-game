@@ -1,0 +1,466 @@
+<div class="page" id="page-3-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-3 OSPFv2（シングルエリア）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            CCNA最重要トピック。OSPFの動作・設定・確認を完全マスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>OSPFの基本概念</h2>
+        <p>OSPF（Open Shortest Path
+            First）はリンクステート型のIGP（内部ゲートウェイプロトコル）です。<strong>Dijkstraアルゴリズム（SPFアルゴリズム）</strong>で最短経路を計算します。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>OSPFの基本パラメータ</th>
+                        <th>値</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>AD値</td>
+                        <td>110</td>
+                        <td>他のIGPより優先度が低い（EIGRP=90より高い数値）</td>
+                    </tr>
+                    <tr>
+                        <td>メトリック</td>
+                        <td>コスト</td>
+                        <td>参照帯域幅÷インタフェース帯域幅（デフォルト参照BW=100Mbps）</td>
+                    </tr>
+                    <tr>
+                        <td>プロトコル番号</td>
+                        <td>89</td>
+                        <td>TCPでもUDPでもなく、IP直接（プロトコル番号89）</td>
+                    </tr>
+                    <tr>
+                        <td>Helloパケット間隔</td>
+                        <td>10秒</td>
+                        <td>P-to-PとBroadcast（デフォルト）</td>
+                    </tr>
+                    <tr>
+                        <td>Helloパケット間隔（NBMA）</td>
+                        <td>30秒</td>
+                        <td>Non-Broadcast Multi-Access（Frame Relay等）</td>
+                    </tr>
+                    <tr>
+                        <td>Dead interval</td>
+                        <td>Hello×4</td>
+                        <td>デフォルト40秒（P-to-P、Broadcast）</td>
+                    </tr>
+                    <tr>
+                        <td>マルチキャストアドレス</td>
+                        <td>224.0.0.5</td>
+                        <td>全OSPFルータ宛</td>
+                    </tr>
+                    <tr>
+                        <td>マルチキャストアドレス</td>
+                        <td>224.0.0.6</td>
+                        <td>DR/BDR宛</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🤝</span>OSPFネイバー確立の流れ</h2>
+        <div class="card">
+            <h4 class="topic-title">ネイバー確立の条件（一致しないとネイバーにならない！）</h4>
+            <ul>
+                <li>同じ<strong>Area ID</strong></li>
+                <li>同じ<strong>HelloおよびDeadインターバル</strong></li>
+                <li>同じ<strong>サブネット（IPアドレスの範囲）</strong></li>
+                <li>同じ<strong>認証情報</strong>（設定している場合）</li>
+                <li>スタブエリア設定の<strong>一致</strong></li>
+                <li>MTUサイズの一致（DBD交換時）</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">OSPFネイバー状態遷移（7ステップ）</h4>
+            <pre style="font-size:0.85em; line-height:2.0;">
+Down → Init → 2-Way → ExStart → Exchange → Loading → Full
+
+① Down:     まだHelloを受信していない
+② Init:     Helloを受信したが、Helloに自分のRouter IDが含まれていない
+③ 2-Way:    双方のHelloに相手のRouter IDが含まれる（DR/BDR選出はここで実施）
+④ ExStart:  DBDを使って主従関係（Master/Slave）を決定
+⑤ Exchange: DBD（Database Description）を交換してLSDBの概要をやりとり
+⑥ Loading:  LSRでLSAを要求し、LSUで受信 → LSAckで確認
+⑦ Full:     LSDBが同期完了（ネイバー関係確立！）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚖️</span>OSPFのコスト計算</h2>
+        <div class="card">
+            <pre style="line-height:2.0; font-size:0.9em;">
+コスト = 参照帯域幅（デフォルト100Mbps）÷ インタフェース帯域幅
+
+例:
+  10Mbps Ethernet: 100,000,000 ÷ 10,000,000 = 10
+  100Mbps FastEthernet: 100,000,000 ÷ 100,000,000 = 1
+  1Gbps GigabitEthernet: 100,000,000 ÷ 1,000,000,000 = 0.1 → 切り上げて 1
+  10Gbps: 100,000,000 ÷ 10,000,000,000 = 0.01 → 切り上げて 1
+
+問題: 1Gbps以上は全て同じコスト（1）になってしまう！
+解決: auto-cost reference-bandwidth で参照帯域幅を変更する
+
+参照帯域幅を10000（10Gbps）に変更:
+  100Mbps: 10,000 ÷ 100 = 100
+  1Gbps:   10,000 ÷ 1000 = 10
+  10Gbps:  10,000 ÷ 10000 = 1
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🏆</span>DR・BDRの選出（ブロードキャストネットワーク）</h2>
+        <p>マルチアクセスネットワーク（Ethernet）では、<strong>全ルータがフルメッシュでLSAを交換するとトラフィックが爆発的に増える</strong>ため、代表ルータ（DR）の選出でこれを解決します。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>役割</th>
+                        <th>説明</th>
+                        <th>フルアジャセンシー対象</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DR（Designated Router）</strong></td>
+                        <td>LSAを収集・配信する代表。224.0.0.6宛に送信</td>
+                        <td>全OSPF ROUTERとフル</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BDR（Backup DR）</strong></td>
+                        <td>DRのバックアップ。DRが障害時に昇格</td>
+                        <td>全OSPF ROUTERとフル</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DROther</strong></td>
+                        <td>DRでもBDRでもないルータ</td>
+                        <td>DR/BDRとのみフル（他のDROtherは2-Way止まり）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">DR/BDR選出の優先順位</h4>
+            <pre style="line-height:1.8;">
+① OSPFプライオリティが最大のルータ（デフォルト1。0を設定するとDR/BDR選出に参加しない）
+② プライオリティが同じ場合 → Router IDが最大のルータ
+   Router IDの決定順: ① loopback IFの最大IP → ② 物理IFの最大IP → ③ router-id コマンドで手動設定
+
+※ DR/BDR選出は一度決まると変わらない（先制なし）。DRが障害でBDRが昇格した後、
+  元のDRが復帰してもDRには戻れない。
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>OSPF設定コマンド（完全版）</h2>
+        <pre><span class="cmd-comment"># OSPFプロセスを有効化（プロセスIDはローカルのみ有効。異なっても問題なし）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">router ospf</span> <span class="cmd-value">1</span>
+
+<span class="cmd-comment"># Router IDを手動設定（ベストプラクティス）</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">router-id</span> <span class="cmd-value">1.1.1.1</span>
+
+<span class="cmd-comment"># networkコマンドでOSPFを有効にするインタフェースを指定</span>
+<span class="cmd-comment"># 書式: network [IPアドレス] [ワイルドカードマスク] area [エリアID]</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">network</span> <span class="cmd-value">192.168.1.0 0.0.0.255</span> <span class="cmd-keyword">area</span> <span class="cmd-value">0</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">network</span> <span class="cmd-value">10.0.0.0 0.255.255.255</span> <span class="cmd-keyword">area</span> <span class="cmd-value">0</span>
+
+<span class="cmd-comment"># インタフェースで直接OSPF有効化（現代の推奨方法）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/0</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip ospf</span> <span class="cmd-value">1</span> <span class="cmd-keyword">area</span> <span class="cmd-value">0</span>
+
+<span class="cmd-comment"># パッシブインタフェース（Hello送出を止める：エンドデバイス側の設定）</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">passive-interface GigabitEthernet0/0</span>
+
+<span class="cmd-comment"># デフォルトルートをOSPFでアドバタイズ（インターネット接続ルータ）</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">default-information originate</span>
+
+<span class="cmd-comment"># 参照帯域幅の変更（全ルータで統一必須）</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">auto-cost reference-bandwidth</span> <span class="cmd-value">10000</span>    <span class="cmd-comment"># 10Gbps基準</span>
+
+<span class="cmd-comment"># インタフェースコストの手動設定</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip ospf cost</span> <span class="cmd-value">10</span>
+
+<span class="cmd-comment"># OSPFインタフェースのHello/Dead間隔変更（両端一致必須）</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip ospf hello-interval</span> <span class="cmd-value">5</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip ospf dead-interval</span> <span class="cmd-value">20</span></pre>
+
+        <h3 class="subsection-title">OSPF確認コマンド</h3>
+        <pre><span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf</span>                        <span class="cmd-comment"># OSPFプロセス情報</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf neighbor</span>               <span class="cmd-comment"># ネイバー一覧と状態</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf neighbor detail</span>        <span class="cmd-comment"># ネイバー詳細情報</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf interface</span>              <span class="cmd-comment"># OSPFが動作しているIF一覧</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf interface GigabitEthernet0/0</span>  <span class="cmd-comment"># 特定IFの詳細</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf database</span>              <span class="cmd-comment"># LSDB（リンクステートDB）</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route ospf</span>                 <span class="cmd-comment"># OSPFで学習した経路のみ</span>
+
+<span class="cmd-comment"># show ip ospf neighbor の出力例</span>
+Neighbor ID     Pri   State           Dead Time   Address    Interface
+2.2.2.2           1   FULL/DR         00:00:39    192.168.1.2  Gi0/0
+3.3.3.3           1   FULL/BDR        00:00:38    192.168.1.3  Gi0/0</pre>
+
+        <div class="info-box important">
+            <div class="label">🚨 試験頻出ポイント：ワイルドカードマスク</div>
+            networkコマンドのワイルドカードマスク = サブネットマスクのビット反転。<br>
+            255.255.255.0 → 0.0.0.255（/24の場合）<br>
+            255.255.255.252 → 0.0.0.3（/30の場合）<br>
+            特定のホストのみ: 0.0.0.0（例: network 192.168.1.1 0.0.0.0 area 0）<br>
+            全インタフェース: 255.255.255.255（例: network 0.0.0.0 255.255.255.255 area 0）
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q3-3">
+            <h3>✏️ 確認問題（第3-3章）</h3>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. OSPFのデフォルトのHelloインターバル（ブロードキャストネットワーク）はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 10秒</button></li>
+                    <li><button class="quiz-option">B. 30秒</button></li>
+                    <li><button class="quiz-option">C. 40秒</button></li>
+                    <li><button class="quiz-option">D. 60秒</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（10秒）</strong><br>ブロードキャストおよびP-to-PネットワークのデフォルトHelloインターバルは10秒、Dead
+                    intervalは40秒（Hello×4）です。NBMA（Frame Relay等）はHello=30秒、Dead=120秒です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. OSPFのネイバーが Full 状態にならず 2-Way 状態で止まっている場合、最も考えられる原因はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. IPアドレスが異なるサブネットにある</button></li>
+                    <li><button class="quiz-option">B. ルーターIDが重複している</button></li>
+                    <li><button class="quiz-option">C. DROther同士の接続（正常な状態）</button></li>
+                    <li><button class="quiz-option">D. OSPFプロセスIDが異なる</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（DROther同士は2-Way止まりが正常）</strong><br>ブロードキャストネットワークでは、DRでもBDRでもないルータ（DROther）同士は2-Way状態が正常です。FullアジャセンシーはDR/BDRとDROther間のみ形成されます。これは正常な動作であり障害ではありません。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q3. OSPFでRouter IDが決定される順序として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 物理インタフェースの最大IP → ループバックの最大IP → router-idコマンド</button></li>
+                    <li><button class="quiz-option">B. router-idコマンド → ループバックの最大IP → 物理インタフェースの最大IP</button></li>
+                    <li><button class="quiz-option">C. ループバックの最大IP → 物理インタフェースの最大IP → router-idコマンド</button></li>
+                    <li><button class="quiz-option">D. MACアドレス → IPアドレス → router-idコマンド</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B</strong><br>Router IDの優先順位: ①router-idコマンドで手動設定（最優先）→
+                    ②loopbackインタフェースの最大IP → ③物理インタフェースの最大IP。router-idコマンドで設定するのがベストプラクティスです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q4. OSPFのコストはどのように計算されるか（デフォルト参照帯域幅の場合）？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. インタフェース帯域幅（bps）÷ 参照帯域幅（デフォルト100Mbps）</button></li>
+                    <li><button class="quiz-option">B. ホップ数</button></li>
+                    <li><button class="quiz-option">C. 帯域幅 × 遅延</button></li>
+                    <li><button class="quiz-option">D. 参照帯域幅（デフォルト100Mbps）÷ インタフェース帯域幅</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D</strong><br>OSPFコスト = 100,000,000（参照BW）÷
+                    インタフェース帯域幅（bps）。100Mbps FE=コスト1、10Mbps=コスト10。1Gbps以上は全てコスト1になる問題をauto-cost
+                    reference-bandwidthで解決します。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q5. OSPFで「passive-interface」を設定するとどうなるか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. そのインタフェースからHelloパケットを送信しなくなりネイバーを確立しない</button></li>
+                    <li><button class="quiz-option">B. そのインタフェースのルートをOSPFでアドバタイズしなくなる</button></li>
+                    <li><button class="quiz-option">C. OSPFが完全に停止する</button></li>
+                    <li><button class="quiz-option">D. そのインタフェースのコストが無限大になる</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>passive-interfaceを設定するとHelloパケットの送信が止まりネイバーが確立しなくなります。ただしそのインタフェースのネットワークは引き続きOSPFでアドバタイズされます（ルートは残る）。エンドデバイスを接続するインタフェースに設定して不要なHelloを止めるのが用途です。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-3-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-4 FHRP（HSRP・VRRP・GLBP）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> デフォルトゲートウェイの冗長化プロトコルをマスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>FHRPとは</h2>
+        <p>FHRP（First Hop Redundancy
+            Protocol）はデフォルトゲートウェイの冗長化を実現するプロトコルの総称です。複数のルータが仮想IPアドレスを共有し、アクティブルータが障害時にスタンバイルータが自動引き継ぎをします。</p>
+
+        <h2 class="chapter-title"><span class="icon">🏆</span>3つのFHRP比較</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>HSRP</th>
+                        <th>VRRP</th>
+                        <th>GLBP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>規格</td>
+                        <td>Cisco独自</td>
+                        <td>IEEE（標準）</td>
+                        <td>Cisco独自</td>
+                    </tr>
+                    <tr>
+                        <td>アクティブ機器の呼称</td>
+                        <td>Active</td>
+                        <td>Master</td>
+                        <td>AVG（Active Virtual Gateway）</td>
+                    </tr>
+                    <tr>
+                        <td>バックアップ機器の呼称</td>
+                        <td>Standby</td>
+                        <td>Backup</td>
+                        <td>AVF（Active Virtual Forwarder）</td>
+                    </tr>
+                    <tr>
+                        <td>ロードバランシング</td>
+                        <td>なし（片方のみアクティブ）</td>
+                        <td>なし</td>
+                        <td>あり（複数ルータで分散）</td>
+                    </tr>
+                    <tr>
+                        <td>仮想MACアドレス</td>
+                        <td>0000.0C07.ACxx（xx=グループ番号）</td>
+                        <td>0000.5E00.01xx（xx=VRID）</td>
+                        <td>0007.B400.xxyy</td>
+                    </tr>
+                    <tr>
+                        <td>Helloインターバル</td>
+                        <td>3秒（デフォルト）</td>
+                        <td>1秒（デフォルト）</td>
+                        <td>3秒（デフォルト）</td>
+                    </tr>
+                    <tr>
+                        <td>Hold time</td>
+                        <td>10秒</td>
+                        <td>3秒×複数</td>
+                        <td>10秒</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🛡️</span>HSRP（Hot Standby Router Protocol）詳細</h2>
+        <p>CCNAで最もよく出題されるFHRPです。2バージョンあります（HSRPv1とv2）。</p>
+
+        <div class="card">
+            <h4 class="topic-title">HSRPの動作</h4>
+            <pre style="line-height:1.8; font-size:0.9em;">
+              [PC群]
+                |
+        仮想IP: 192.168.1.254
+        ┌───────────────────────┐
+        │                       │
+   [ルータR1]              [ルータR2]
+   192.168.1.1             192.168.1.2
+   HSRP Priority=110       HSRP Priority=100（デフォルト）
+   状態: Active             状態: Standby
+   仮想MACで応答            アクティブを監視（Helloで）
+
+障害発生:
+   R1がダウン → R2が10秒後にActive に昇格
+   → 仮想IP・仮想MACをR2が引き継ぐ
+   → PCのデフォルトゲートウェイ設定変更不要！
+</pre>
+        </div>
+
+        <h3 class="subsection-title">HSRPの設定コマンド</h3>
+        <pre><span class="cmd-comment"># R1（Activeにしたいルータ）の設定</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/0</span>
+<span class="cmd-prompt">R1(config-if)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.1.1 255.255.255.0</span>
+<span class="cmd-prompt">R1(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">ip</span> <span class="cmd-value">192.168.1.254</span>        <span class="cmd-comment"># グループ1の仮想IP</span>
+<span class="cmd-prompt">R1(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">priority</span> <span class="cmd-value">110</span>             <span class="cmd-comment"># デフォルト100より高く設定</span>
+<span class="cmd-prompt">R1(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">preempt</span>                  <span class="cmd-comment"># 復帰時に再びActiveに（プリエンプト）</span>
+<span class="cmd-prompt">R1(config-if)#</span> <span class="cmd-keyword">standby version 2</span>                  <span class="cmd-comment"># HSRPv2を使用（推奨）</span>
+
+<span class="cmd-comment"># R2（Standbyルータ）の設定</span>
+<span class="cmd-prompt">R2(config-if)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.1.2 255.255.255.0</span>
+<span class="cmd-prompt">R2(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">ip</span> <span class="cmd-value">192.168.1.254</span>        <span class="cmd-comment"># 同じ仮想IP</span>
+<span class="cmd-prompt">R2(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">priority</span> <span class="cmd-value">100</span>             <span class="cmd-comment"># デフォルト（Standbyになる）</span>
+
+<span class="cmd-comment"># HSRPの確認コマンド</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show standby</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show standby brief</span>
+GigabitEthernet0/0 - Group 1
+  State is Active  ←現在の状態
+    Virtual IP address is 192.168.1.254
+    Active virtual MAC address is 0000.0c07.ac01
+    Local virtual MAC address is 0000.0c07.ac01 (v1 default)
+  Priority 110 (configured 110)
+  Preemption enabled
+  Active router is local</pre>
+
+        <div class="info-box important">
+            <div class="label">🚨 Preempt（プリエンプト）を忘れずに設定</div>
+            Preemptを設定しないと、Activeルータが復帰しても元のStandbyが継続してActiveのままになります。Preemptにより、優先度が高いルータが復帰した際に自動でActiveを取り返します。
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q3-4">
+            <h3>✏️ 確認問題（第3-4章）</h3>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. HSRPのデフォルトのPriorityはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 100</button></li>
+                    <li><button class="quiz-option">B. 110</button></li>
+                    <li><button class="quiz-option">C. 128</button></li>
+                    <li><button class="quiz-option">D. 200</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（100）</strong><br>HSRPのデフォルトPriorityは100です。Activeにしたいルータのみ110等の高い値を設定します。Priorityが同じ場合はIPアドレスが高い方がActiveになります。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. FHRPの中でロードバランシング（複数ルータへの分散）に対応しているのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. HSRPのみ</button></li>
+                    <li><button class="quiz-option">B. VRRPのみ</button></li>
+                    <li><button class="quiz-option">C. GLBP</button></li>
+                    <li><button class="quiz-option">D. HSRPとVRRP</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（GLBP）</strong><br>GLBPはAVGが仮想IP・複数のAVFが個別の仮想MACを持ち、クライアントを複数ルータに振り分けてロードバランシングができます。HSRPとVRRPは一度に1台しかActiveになれません。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q3. HSRPでPreemptを設定する理由はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Helloインターバルを短縮するため</button></li>
+                    <li><button class="quiz-option">B. 優先度の高いルータが復帰した際に自動でActiveを奪還するため</button></li>
+                    <li><button class="quiz-option">C. 仮想MACアドレスを固定するため</button></li>
+                    <li><button class="quiz-option">D. 障害をより速く検出するため</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B</strong><br>Preemptなしでは、障害から復帰した高優先度ルータがStandbyに留まり、低優先度ルータが継続してActiveになります。Preemptを「standby
+                    1 preempt」で設定すると、高優先度ルータが復帰時に自動でActiveを奪い返します。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q4. VRRPの用語で「Masterルータ」に相当するHSRPの用語はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Primary</button></li>
+                    <li><button class="quiz-option">B. Standby</button></li>
+                    <li><button class="quiz-option">C. Backup</button></li>
+                    <li><button class="quiz-option">D. Active</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D（Active）</strong><br>HSRPのActive =
+                    VRRPのMaster（代表として仮想IPに応答するルータ）。HSRPのStandby = VRRPのBackup（待機中のルータ）。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

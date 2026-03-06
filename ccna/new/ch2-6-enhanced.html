@@ -1,0 +1,192 @@
+<div class="page" id="page-2-6">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-6 無線LAN（WLC・AP）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-concept">概念</span><span
+                class="tag tag-config">設定</span> エンタープライズ無線LANの設計・管理・トラブルシューティングを体系的に理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🏗️</span>エンタープライズ無線LAN設計</h2>
+
+        <h3 class="subsection-title">3層アーキテクチャモデル</h3>
+        <div class="card">
+            <pre style="line-height:1.8; font-size:0.88em;">
+  [WLC（Wireless LAN Controller）]
+    ├── 集中管理: 全APの設定・ポリシーを一元管理
+    ├── ファームウェア管理: 全APのIOSを自動更新
+    ├── セキュリティポリシー: WLAN/SSID/認証を一括適用
+    └── RF管理: チャネル・出力の自動最適化（RRM）
+
+         │ CAPWAP Tunnel
+         │ (UDP/5246制御, UDP/5247データ)
+         ▼
+  [Lightweight AP × 多数]
+    ├── 複雑な処理はWLCに任せる（Thin AP）
+    ├── 「知性」はWLCに集約、APは安価で交換容易
+    └── WLC障害時の動作はモードに依存
+
+Split MACアーキテクチャ:
+  MAC層の処理を「AP側」と「WLC側」に分担
+  ┌─────────────────────────────┐
+  │ APが処理:                         │
+  │  ・ビーコン送信                     │
+  │  ・プローブ応答                     │
+  │  ・暗号化/復号（データフレーム）      │
+  │  ・802.11フレームの送受信            │
+  ├─────────────────────────────┤
+  │ WLCが処理:                         │
+  │  ・認証（802.1X / PSK）              │
+  │  ・セキュリティポリシー適用           │
+  │  ・QoSポリシー                      │
+  │  ・ローミング管理                    │
+  │  ・RF管理（チャネル・出力自動調整）     │
+  └─────────────────────────────┘
+</pre>
+        </div>
+
+        <h3 class="subsection-title">APの動作モード（CCNA必須！）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>モード</th>
+                        <th>データ転送</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Localモード</strong></td>
+                        <td>全データをCAPWAPトンネル経由でWLCへ転送</td>
+                        <td>通常運用（本社等、WLCが近い環境）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FlexConnectモード</strong></td>
+                        <td>ローカルスイッチング可能。WAN障害時もクライアント間通信継続</td>
+                        <td>リモート拠点（支店）向け</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Monitorモード</strong></td>
+                        <td>データ転送しない</td>
+                        <td>不正AP検出・IDS/IPS専用</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Snifferモード</strong></td>
+                        <td>データ転送しない</td>
+                        <td>パケットキャプチャ（分析ツールにミラー）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bridgeモード</strong></td>
+                        <td>ポイントツーポイント</td>
+                        <td>建物間の無線ブリッジ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📡</span>ローミング</h2>
+        <div class="card">
+            <h4 class="topic-title">クライアントがAP間を移動する時の挙動</h4>
+            <pre style="line-height:1.8; font-size:0.88em;">
+┌────────┐          ┌────────┐
+│  AP-1   │ ←移動→  │  AP-2   │
+│ CH: 1   │          │ CH: 6   │
+└────┬───┘          └────┬───┘
+     │  CAPWAP              │  CAPWAP
+     └──────┬───────┘
+             │
+        ┌────┴────┐
+        │    WLC     │
+        └──────────┘
+
+L2ローミング（同一VLAN内）:
+  ・シームレスに移動可能
+  ・IPアドレスは変わらない
+  ・WLCが新APにクライアント情報を引き継ぎ
+
+L3ローミング（異なるVLAN/サブネット間）:
+  ・アンカーWLCの仕組みで元のIPアドレスを維持
+  ・より複雑な処理が必要
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔧</span>WLCの基本的な管理</h2>
+        <pre><span class="cmd-comment"># WLCへのアクセス方法</span>
+<span class="cmd-comment"># ① Webブラウザ（HTTPS）── メインの管理方法</span>
+<span class="cmd-comment"># ② SSH/Telnet（CLI）</span>
+<span class="cmd-comment"># ③ Cisco DNA Center（APIベース）</span>
+
+<span class="cmd-comment"># WLC GUIでの主な設定項目</span>
+<span class="cmd-comment"># ・WLAN（SSID）作成・管理</span>
+<span class="cmd-comment"># ・セキュリティポリシー（WPA2/3, 802.1X）</span>
+<span class="cmd-comment"># ・AP管理（モード変更・チャネル割り当て）</span>
+<span class="cmd-comment"># ・クライアント監視・トラブルシューティング</span>
+
+<span class="cmd-comment"># AP-WLC間の初期接続（APのディスカバリ）</span>
+<span class="cmd-comment"># APがWLCを見つける方法（優先順位順）:</span>
+<span class="cmd-comment"># 1. 以前接続したWLCのIP（NVRAM保存）</span>
+<span class="cmd-comment"># 2. DHCPオプション43（ベンダー固有情報でWLCのIPを通知）</span>
+<span class="cmd-comment"># 3. DNS解決（CISCO-CAPWAP-CONTROLLER.localdomain）</span>
+<span class="cmd-comment"># 4. ブロードキャスト（同一サブネットのWLCを探索）</span></pre>
+
+        <div class="info-box note">
+            <div class="label">💡 DHCPオプション43</div>
+            リモート拠点のAPがWLCを自動的に見つけるために最もよく使われる方法です。DHCPサーバーのオプション43にWLCのIPアドレスを設定しておくと、APがIPアドレス取得時に一緒にWLCの場所を知ることができます。
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q2-6">
+            <h3>✏️ 確認問題（第2-6章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. Split MACアーキテクチャでWLC側が処理するものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ビーコンフレームの送信</button></li>
+                    <li><button class="quiz-option">B. 802.1X認証処理とセキュリティポリシーの適用</button></li>
+                    <li><button class="quiz-option">C. 802.11フレームの暗号化/復号</button></li>
+                    <li><button class="quiz-option">D. プローブ応答の送信</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B</strong><br>Split
+                    MACではリアルタイム無線処理（ビーコン・プローブ応答・暗号化）はAPが処理し、管理機能（認証・ポリシー・QoS・RF管理・ローミング）はWLCが処理します。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. リモート拠点のLightweight APがWLCを自動的に発見するために最もよく使われる方法はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. DHCPオプション43でWLCのIPアドレスを通知</button></li>
+                    <li><button class="quiz-option">B. APに手動でWLCのIPアドレスを設定</button></li>
+                    <li><button class="quiz-option">C. ブロードキャストでWLCを探索</button></li>
+                    <li><button class="quiz-option">D. CDPでWLCを検出</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>DHCPオプション43は異なるサブネットのAPがWLCを見つける最も一般的な方法です。ブロードキャストは同一サブネットでのみ有効です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. CAPWAPの制御チャネルとデータチャネルについて正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 両方ともTCPで通信する</button></li>
+                    <li><button class="quiz-option">B. 制御はUDP/5247、データはUDP/5246を使用</button></li>
+                    <li><button class="quiz-option">C. 制御・データともに暗号化は不可能</button></li>
+                    <li><button class="quiz-option">D. 制御はUDP/5246(DTLS暗号化必須)、データはUDP/5247(暗号化オプション)</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D</strong><br>CAPWAP制御トンネル=UDP/5246(DTLS暗号化は必須)。データトンネル=UDP/5247(暗号化はオプション)。Bはポート番号が逆です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q4. 不正APの検出を目的としたAPモードはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. FlexConnectモード</button></li>
+                    <li><button class="quiz-option">B. Localモード</button></li>
+                    <li><button class="quiz-option">C. Monitorモード</button></li>
+                    <li><button class="quiz-option">D. Bridgeモード</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（Monitor）</strong><br>Monitorモードはクライアントにサービスを提供せず、不正AP検出やセキュリティ監視に特化したモードです。FlexConnect=リモート拠点。Local=通常運用。Bridge=建物間接続。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

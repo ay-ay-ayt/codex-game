@@ -1,0 +1,310 @@
+<div class="page" id="page-1-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-2 OSI参照モデル・TCP/IPモデル</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> 7層の働きとプロトコルの対応を完全暗記する</p>
+
+        <h2 class="chapter-title"><span class="icon">📐</span>OSI参照モデルとは</h2>
+        <p>OSI（Open Systems
+            Interconnection）参照モデルはISO（国際標準化機構）が策定したネットワーク通信を7つの層に分けた<strong>概念的な標準</strong>です。実際の通信プロトコルの設計・理解・トラブルシューティングの共通言語として使われます。
+        </p>
+
+        <h3 class="subsection-title">OSI 7層モデル（完全版）</h3>
+
+        <div class="card">
+            <pre style="font-size:0.88em; line-height:2.0;">
+層番号  層名              英語名                PDU            主な役割・プロトコル
+────────────────────────────────────────────────────────────────────────────
+L7      アプリケーション層  Application Layer   データ（Data） HTTP/S、FTP、DNS、SMTP、Telnet、SSH
+L6      プレゼンテーション層 Presentation Layer  データ（Data） 文字コード変換、暗号化/復号、圧縮
+L5      セッション層       Session Layer        データ（Data） セッション確立・維持・終了管理
+L4      トランスポート層   Transport Layer      セグメント     TCP、UDP　ポート番号で多重化
+L3      ネットワーク層     Network Layer        パケット       IP（v4/v6）、ICMP、ルーティング
+L2      データリンク層     Data Link Layer      フレーム       Ethernet、Wi-Fi、VLAN（802.1Q）、ARP
+L1      物理層            Physical Layer        ビット         ケーブル、コネクタ、電気/光信号
+</pre>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 OSI層の暗記法（上から）</div>
+            <strong>「All People Seem To Need Data Processing」</strong><br>
+            Application / Presentation / Session / Transport / Network / Data Link / Physical
+        </div>
+
+        <h3 class="subsection-title">各層の詳細説明</h3>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>層</th>
+                        <th>機能の詳細</th>
+                        <th>主なプロトコル・規格</th>
+                        <th>Ciscoコマンドとの関係</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>L7<br>アプリケーション</strong></td>
+                        <td>エンドユーザーが直接使うサービスを提供。Webブラウザ・メール・FTPクライアントなど</td>
+                        <td>HTTP(80)、HTTPS(443)、FTP(21)、SMTP(25)、DNS(53)、DHCP(67/68)、Telnet(23)、SSH(22)</td>
+                        <td>ACLでポート番号によるフィルタリング</td>
+                    </tr>
+                    <tr>
+                        <td><strong>L6<br>プレゼンテーション</strong></td>
+                        <td>データの表現形式を変換：文字コード（ASCII/Unicode）変換、SSL/TLS暗号化・復号、データ圧縮</td>
+                        <td>SSL/TLS、JPEG、MPEG、ASCII、UTF-8</td>
+                        <td>HTTPS通信のSSLオフロード</td>
+                    </tr>
+                    <tr>
+                        <td><strong>L5<br>セッション</strong></td>
+                        <td>通信セッションの確立・維持・終了を管理。NFS・RPC等の複数接続管理</td>
+                        <td>NFS、RPC、NetBIOS</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td><strong>L4<br>トランスポート</strong></td>
+                        <td>エンドツーエンドの通信制御。ポート番号で複数アプリを多重化。TCPは信頼性、UDPは高速性</td>
+                        <td>TCP（信頼性・順序保証）、UDP（高速・低遅延）</td>
+                        <td>拡張ACLのポート番号指定（eq 80等）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>L3<br>ネットワーク</strong></td>
+                        <td>異なるネットワーク間の論理アドレス（IP）による転送。ルーティング・パスの選択</td>
+                        <td>IPv4、IPv6、ICMP、OSPF、BGP</td>
+                        <td>ip route、show ip route、router ospf</td>
+                    </tr>
+                    <tr>
+                        <td><strong>L2<br>データリンク</strong></td>
+                        <td>同一ネットワーク内の隣接機器間の転送。MACアドレスで識別。エラーチェック（FCS）</td>
+                        <td>Ethernet、IEEE 802.11（Wi-Fi）、PPP、HDLC、Frame Relay</td>
+                        <td>show mac address-table、switchport</td>
+                    </tr>
+                    <tr>
+                        <td><strong>L1<br>物理</strong></td>
+                        <td>ビット列を電気/光/電波信号に変換して媒体（ケーブル/空気）を通して伝送</td>
+                        <td>UTP、STP、光ファイバー、同軸、RS-232、RJ-45</td>
+                        <td>show interfaces（speed/duplex確認）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>データのカプセル化と非カプセル化</h2>
+        <p>送信側では各層がヘッダ（/フッタ）を追加しながら下の層へ渡します（カプセル化）。受信側では逆に各層がヘッダを取り除きながら上の層へ渡します（非カプセル化）。</p>
+
+        <div class="card">
+            <h4 class="topic-title">カプセル化の流れ（送信側）</h4>
+            <pre style="font-size:0.85em; line-height:2.0;">
+L7/L6/L5  アプリケーション   [データ]
+              ↓ L4ヘッダ追加（ポート番号・シーケンス番号）
+L4        トランスポート     [TCPヘッダ | データ]  ← セグメント
+              ↓ L3ヘッダ追加（送信元IP・宛先IP）
+L3        ネットワーク       [IPヘッダ | TCPヘッダ | データ]  ← パケット
+              ↓ L2ヘッダ+フッタ追加（送信元MAC・宛先MAC・FCS）
+L2        データリンク       [L2ヘッダ | IPヘッダ | TCPヘッダ | データ | FCS]  ← フレーム
+              ↓ ビット変換
+L1        物理              1010100111011...  ← ビット（信号）
+</pre>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 PDU（Protocol Data Unit）の名称は必須暗記</div>
+            L4=<strong>セグメント</strong>（TCP）/
+            <strong>データグラム</strong>（UDP）、L3=<strong>パケット</strong>、L2=<strong>フレーム</strong>、L1=<strong>ビット</strong>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🖥️</span>TCP/IPモデル（実際のインターネットで使われるモデル）</h2>
+        <p>TCP/IPモデルはOSIより先に実用化された4層モデルです。インターネットの実際の実装はTCP/IPモデルに従っています。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>TCP/IP層</th>
+                        <th>対応するOSI層</th>
+                        <th>主なプロトコル</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>アプリケーション層</strong></td>
+                        <td>L5 + L6 + L7</td>
+                        <td>HTTP/S、FTP、DNS、DHCP、SMTP、Telnet、SSH、SNMP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>トランスポート層</strong></td>
+                        <td>L4</td>
+                        <td>TCP、UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>インターネット層</strong></td>
+                        <td>L3</td>
+                        <td>IP（v4/v6）、ICMP、ARP（直接的には）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ネットワークアクセス層</strong></td>
+                        <td>L1 + L2</td>
+                        <td>Ethernet、Wi-Fi、PPP、光ファイバー</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📬</span>ARPの動作（L2とL3の橋渡し）</h2>
+        <p>ARP（Address Resolution Protocol）は宛先IPアドレスから宛先MACアドレスを解決するプロトコルです。L3とL2の橋渡しをします。</p>
+
+        <div class="card">
+            <h4 class="topic-title">ARPの動作手順</h4>
+            <pre style="line-height:1.8;">
+① PC-Aが 192.168.1.20 に通信したいが MACアドレスが不明
+② PC-A → ブロードキャスト ARP Request:
+   「192.168.1.20 のMACアドレスを教えてください」（宛先MAC: FF:FF:FF:FF:FF:FF）
+③ PC-B（192.168.1.20）→ ユニキャスト ARP Reply:
+   「私のMACアドレスは AA:BB:CC:DD:EE:FF です」
+④ PC-AはARPキャッシュにIPとMACの対応を登録
+⑤ 以降は ARPキャッシュを参照してフレームを送信
+</pre>
+            <p>確認: <code>arp -a</code>（Windowsコマンド）でARPキャッシュを確認できます。</p>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔍</span>トラブルシューティングとOSI層</h2>
+        <div class="card">
+            <p>障害対応では<strong>ボトムアップ（L1→L7）</strong>または<strong>トップダウン（L7→L1）</strong>でOSI層を確認します。</p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>確認コマンド</th>
+                            <th>対象OSI層</th>
+                            <th>確認内容</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>show interfaces</code></td>
+                            <td>L1 / L2</td>
+                            <td>リンク状態（up/down）、エラーカウンタ</td>
+                        </tr>
+                        <tr>
+                            <td><code>show ip interface brief</code></td>
+                            <td>L3</td>
+                            <td>IPアドレス・インタフェース状態</td>
+                        </tr>
+                        <tr>
+                            <td><code>show ip route</code></td>
+                            <td>L3</td>
+                            <td>ルーティングテーブル</td>
+                        </tr>
+                        <tr>
+                            <td><code>ping</code></td>
+                            <td>L3（ICMP）</td>
+                            <td>L3到達性確認</td>
+                        </tr>
+                        <tr>
+                            <td><code>telnet / ssh</code></td>
+                            <td>L4〜L7</td>
+                            <td>L4〜L7到達性確認</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-2">
+            <h3>✏️ 確認問題（第1-2章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. OSI参照モデルでMACアドレスを使って隣接する機器へデータを転送するのはどの層か？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ネットワーク層（L3）</button></li>
+                    <li><button class="quiz-option">B. データリンク層（L2）</button></li>
+                    <li><button class="quiz-option">C. トランスポート層（L4）</button></li>
+                    <li><button class="quiz-option">D. 物理層（L1）</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（データリンク層
+                        L2）</strong><br>L2はMACアドレスを使い同一リンク（ネットワーク）内の隣接機器間でフレームを転送します。IPアドレスを使うのはL3のネットワーク層です。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. TCPとHTTPで通信するWebブラウジングのとき、L4のPDU名称はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. フレーム</button></li>
+                    <li><button class="quiz-option">B. パケット</button></li>
+                    <li><button class="quiz-option">C. セグメント</button></li>
+                    <li><button class="quiz-option">D. ビット</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（セグメント）</strong><br>PDU名称：L4(TCP)=セグメント、L4(UDP)=データグラム、L3=パケット、L2=フレーム、L1=ビット。これはCCNA頻出の暗記事項です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q3. カプセル化の説明として正しいものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. データが送信側の各層を下に向かって通過する際にヘッダが追加されること</button></li>
+                    <li><button class="quiz-option">B. データが受信側の各層を上に向かって通過する際にヘッダが追加されること</button></li>
+                    <li><button class="quiz-option">C. データを暗号化すること</button></li>
+                    <li><button class="quiz-option">D. データを圧縮すること</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>送信側でL7→L1へデータが渡される際、各層がヘッダ（L2はフッタも）を追加します。受信側（L1→L7）では逆に各層がヘッダを除去します（非カプセル化・デカプセル化）。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q4. TCP/IPモデルの「インターネット層」に対応するOSI層はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. L2（データリンク層）</button></li>
+                    <li><button class="quiz-option">B. L4（トランスポート層）</button></li>
+                    <li><button class="quiz-option">C. L5〜L7（セッション〜アプリケーション層）</button></li>
+                    <li><button class="quiz-option">D. L3（ネットワーク層）</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D（L3
+                        ネットワーク層）</strong><br>TCP/IPの4層とOSI対応：アプリケーション=L5〜L7、トランスポート=L4、インターネット=L3、ネットワークアクセス=L1〜L2。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q5. ARPプロトコルの目的として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. IPアドレスからMACアドレスを解決する</button></li>
+                    <li><button class="quiz-option">B. MACアドレスからIPアドレスを解決する</button></li>
+                    <li><button class="quiz-option">C. ドメイン名からIPアドレスを解決する</button></li>
+                    <li><button class="quiz-option">D. IPアドレスからポート番号を解決する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（IPアドレス→MACアドレス）</strong><br>ARPはメッセージを送る前に宛先MACアドレスが必要なときに使用します。ARPリクエストはブロードキャスト（FF:FF:FF:FF:FF:FF）で送り、対象ホストがユニキャストでMACアドレスを返します。逆方向（MACアドレス→IP）はRARPです。DNSはドメイン名→IP解決です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q6. SSL/TLSによる暗号化・復号はOSI参照モデルのどの層の機能か？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. セッション層（L5）</button></li>
+                    <li><button class="quiz-option">B. アプリケーション層（L7）</button></li>
+                    <li><button class="quiz-option">C. プレゼンテーション層（L6）</button></li>
+                    <li><button class="quiz-option">D. トランスポート層（L4）</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（プレゼンテーション層
+                        L6）</strong><br>L6プレゼンテーション層はデータ表現の変換（文字コード、暗号化/復号、圧縮）を担います。SSL/TLSはHTTPS通信で使われる暗号化プロトコルです。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q7. ネットワーク障害をボトムアップで確認する場合、最初に確認するOSI層はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. L7（アプリケーション層）</button></li>
+                    <li><button class="quiz-option">B. L1（物理層）</button></li>
+                    <li><button class="quiz-option">C. L3（ネットワーク層）</button></li>
+                    <li><button class="quiz-option">D. L4（トランスポート層）</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（L1
+                        物理層）</strong><br>ボトムアップアプローチはL1（物理：ケーブル接続確認）→L2（リンクアップ確認）→L3（IP・ルーティング確認）→L4→L7の順に上位へ確認します。トップダウンは逆です。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

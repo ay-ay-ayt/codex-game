@@ -1,0 +1,508 @@
+<div class="page" id="page-2-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-1 VLAN（Virtual LAN）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            VLANの概念・設定・確認を完全マスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">🏗️</span>VLANとは何か</h2>
+        <p>VLAN（Virtual
+            LAN）は1台の物理スイッチを複数の論理的なネットワーク（ブロードキャストドメイン）に分割する技術です。物理的な配線を変えず<strong>論理的に</strong>ネットワークを分離できます。</p>
+
+        <div class="card">
+            <h4 class="topic-title">VLANなし vs VLANあり の比較</h4>
+            <pre style="font-size:0.85em; line-height:1.8;">
+【VLANなし】1つの大きなブロードキャストドメイン
+PC-A ──┐
+PC-B ──┤── [スイッチ] ← 全PCが同じL2ネットワーク
+PC-C ──┤             PC-Aのブロードキャストは全員に届く
+PC-D ──┘
+
+【VLANあり】部門ごとに分離したブロードキャストドメイン
+PC-A (VLAN10) ──┐
+PC-B (VLAN10) ──┤── [スイッチ]  VLAN10:営業部（PC-A,B）
+PC-C (VLAN20) ──┤               VLAN20:開発部（PC-C,D）
+PC-D (VLAN20) ──┘
+→ 営業のブロードキャストは開発部のPCには届かない！
+</pre>
+        </div>
+
+        <h3 class="subsection-title">VLANのメリット</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>メリット</th>
+                        <th>具体的な効果</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>セキュリティ向上</strong></td>
+                        <td>VLANが異なる端末間は直接通信不可（ルータ経由が必要）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ブロードキャストの削減</strong></td>
+                        <td>各VLANが独立したブロードキャストドメインになる</td>
+                    </tr>
+                    <tr>
+                        <td><strong>柔軟なグループ化</strong></td>
+                        <td>物理的な場所に関係なく論理的なグループを作成できる</td>
+                    </tr>
+                    <tr>
+                        <td><strong>コスト削減</strong></td>
+                        <td>1台のスイッチで複数ネットワークを実現（機器減少）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔢</span>VLAN ID の範囲</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>範囲</th>
+                        <th>VLAN ID</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>通常VLAN</strong></td>
+                        <td>1〜1005</td>
+                        <td>一般的に使用する範囲。VLANデータベースに保存（vlan.dat）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>拡張VLAN</strong></td>
+                        <td>1006〜4094</td>
+                        <td>VTPモードがトランスペアレントまたはVTPv3が必要</td>
+                    </tr>
+                    <tr>
+                        <td><strong>予約済み</strong></td>
+                        <td>1006〜1024</td>
+                        <td>Ciscoが内部使用のために予約</td>
+                    </tr>
+                    <tr>
+                        <td><strong>VLAN 1</strong></td>
+                        <td>1</td>
+                        <td>デフォルトVLAN。全ポートがデフォルトでVLAN1に属す。削除不可</td>
+                    </tr>
+                    <tr>
+                        <td><strong>VLAN 1002〜1005</strong></td>
+                        <td>—</td>
+                        <td>Token Ring/FDDIのデフォルトVLAN。現在は使用なし。削除不可</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>VLANの設定コマンド（完全版）</h2>
+
+        <h3 class="subsection-title">VLANの作成</h3>
+        <pre><span class="cmd-comment"># 方法1: VLANデータベースモードで作成（VLAN設定専用）</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">vlan database</span>
+<span class="cmd-prompt">Switch(vlan)#</span> <span class="cmd-keyword">vlan</span> <span class="cmd-value">10</span> <span class="cmd-keyword">name</span> <span class="cmd-value">Sales</span>
+<span class="cmd-prompt">Switch(vlan)#</span> <span class="cmd-keyword">apply</span>
+
+<span class="cmd-comment"># 方法2: グローバルコンフィグモードで作成（現代の標準方法）</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">vlan</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Switch(config-vlan)#</span> <span class="cmd-keyword">name</span> <span class="cmd-value">Sales</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">vlan</span> <span class="cmd-value">20</span>
+<span class="cmd-prompt">Switch(config-vlan)#</span> <span class="cmd-keyword">name</span> <span class="cmd-value">Engineering</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">vlan</span> <span class="cmd-value">30</span>
+<span class="cmd-prompt">Switch(config-vlan)#</span> <span class="cmd-keyword">name</span> <span class="cmd-value">Management</span></pre>
+
+        <h3 class="subsection-title">アクセスポート（Access Port）の設定</h3>
+        <p>アクセスポートは1つのVLANのみに属し、エンドデバイス（PC・プリンタ等）を接続するポートです。</p>
+        <pre><span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/1</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode access</span>         <span class="cmd-comment"># アクセスポートに設定</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport access vlan</span> <span class="cmd-value">10</span>        <span class="cmd-comment"># VLAN 10に割り当て</span>
+
+<span class="cmd-comment"># 複数ポートをまとめて設定する場合</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface range GigabitEthernet0/1 - 5</span>
+<span class="cmd-prompt">Switch(config-if-range)#</span> <span class="cmd-keyword">switchport mode access</span>
+<span class="cmd-prompt">Switch(config-if-range)#</span> <span class="cmd-keyword">switchport access vlan</span> <span class="cmd-value">10</span></pre>
+
+        <h3 class="subsection-title">VLANの確認コマンド</h3>
+        <pre><span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show vlan brief</span>
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Gi0/5, Gi0/6, Gi0/7, Gi0/8
+10   Sales                            active    Gi0/1, Gi0/2
+20   Engineering                      active    Gi0/3, Gi0/4
+30   Management                       active
+1002 fddi-default                     act/unsup
+（以下省略）
+
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show vlan id 10</span>               <span class="cmd-comment"># 特定VLANの詳細確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces GigabitEthernet0/1 switchport</span>  <span class="cmd-comment"># ポートのVLAN設定確認</span></pre>
+
+        <div class="info-box note">
+            <div class="label">📌 VLANの保存場所</div>
+            VLANの設定は<strong>vlan.dat</strong>ファイル（フラッシュメモリ）に保存されます。running-configには含まれないため、「copy running-config
+            startup-config」だけではVLAN情報は保存されません。ただし、グローバルコンフィグモードで作成したVLANはrunning-configに含まれます。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>VLAN間ルーティング</h2>
+        <p>異なるVLAN間の通信にはL3デバイス（ルータまたはL3スイッチ）が必要です。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>方式</th>
+                        <th>仕組み</th>
+                        <th>特徴</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Router-on-a-Stick（ROAS）</strong></td>
+                        <td>1本のトランクリンクでルータとスイッチを接続。ルータ上にサブインタフェースを作成</td>
+                        <td>シンプルだがトランクリンクがボトルネックになりやすい</td>
+                    </tr>
+                    <tr>
+                        <td><strong>L3スイッチのSVI</strong></td>
+                        <td>L3スイッチ上にVLAN仮想インタフェース（SVI）を作成してルーティング</td>
+                        <td>高速・標準構成。「ip routing」を有効化する</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <pre><span class="cmd-comment">▼ Router-on-a-Stick の設定例</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/0.10</span>     <span class="cmd-comment"># VLAN10用サブIF</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">encapsulation dot1Q</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.10.1 255.255.255.0</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/0.20</span>     <span class="cmd-comment"># VLAN20用サブIF</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">encapsulation dot1Q</span> <span class="cmd-value">20</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.20.1 255.255.255.0</span>
+
+<span class="cmd-comment">▼ L3スイッチのSVI設定例</span>
+<span class="cmd-prompt">L3Switch(config)#</span> <span class="cmd-keyword">ip routing</span>                           <span class="cmd-comment"># ルーティング有効化</span>
+<span class="cmd-prompt">L3Switch(config)#</span> <span class="cmd-keyword">interface Vlan10</span>
+<span class="cmd-prompt">L3Switch(config-if)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.10.1 255.255.255.0</span>
+<span class="cmd-prompt">L3Switch(config-if)#</span> <span class="cmd-keyword">no shutdown</span>
+<span class="cmd-prompt">L3Switch(config)#</span> <span class="cmd-keyword">interface Vlan20</span>
+<span class="cmd-prompt">L3Switch(config-if)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.20.1 255.255.255.0</span>
+<span class="cmd-prompt">L3Switch(config-if)#</span> <span class="cmd-keyword">no shutdown</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-1">
+            <h3>✏️ 確認問題（第2-1章）</h3>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. VLANを使うことで分割できるのは何か？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. コリジョンドメイン</button></li>
+                    <li><button class="quiz-option">B. ブロードキャストドメイン</button></li>
+                    <li><button class="quiz-option">C. マルチキャストドメイン</button></li>
+                    <li><button class="quiz-option">D. セッションドメイン</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（ブロードキャストドメイン）</strong><br>VLANは1台のスイッチを複数のブロードキャストドメインに分割します。コリジョンドメインはスイッチ（L2）の各ポートで既に分割されています。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. Ciscoスイッチで全ポートがデフォルトで所属するVLANはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. VLAN 0</button></li>
+                    <li><button class="quiz-option">B. VLAN 100</button></li>
+                    <li><button class="quiz-option">C. VLAN 1</button></li>
+                    <li><button class="quiz-option">D. VLAN 1000</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（VLAN 1）</strong><br>Ciscoスイッチの全ポートはデフォルトでVLAN 1に属します。VLAN
+                    1はデフォルトVLANで削除できません。セキュリティ上、VLAN 1をユーザーポートに使うのは推奨されません。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. 異なるVLAN間で通信するために必要なのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. トランクポート</button></li>
+                    <li><button class="quiz-option">B. アクセスポート</button></li>
+                    <li><button class="quiz-option">C. 追加のスイッチ</button></li>
+                    <li><button class="quiz-option">D. ルータまたはL3スイッチ</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D</strong><br>VLANは異なるブロードキャストドメインなので、同士間の通信にはL3（ルータまたはL3スイッチ）によるルーティングが必要です。L2スイッチだけでは異VLAN通信は不可能です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q4. ポートをVLAN 10のアクセスポートに設定するコマンドとして正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. switchport mode access → switchport access vlan 10</button></li>
+                    <li><button class="quiz-option">B. switchport trunk allowed vlan 10</button></li>
+                    <li><button class="quiz-option">C. vlan 10 → interface GigabitEthernet0/1</button></li>
+                    <li><button class="quiz-option">D. ip vlan 10</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A</strong><br>アクセスポート設定は「switchport mode
+                    access」でアクセスモードにし、「switchport access vlan 10」でVLANを指定します。この2コマンドがセットです。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q5. Router-on-a-Stick（ROAS）方式でVLAN間ルーティングを実現する場合、ルータ側で作成するものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. SVI（VLAN仮想インタフェース）</button></li>
+                    <li><button class="quiz-option">B. EtherChannel</button></li>
+                    <li><button class="quiz-option">C. サブインタフェース（.10など）</button></li>
+                    <li><button class="quiz-option">D. トンネルインタフェース</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（サブインタフェース）</strong><br>ROASではルータの物理インタフェースにサブインタフェース（例:
+                    Gi0/0.10 Gi0/0.20）を作成し、各々に「encapsulation dot1Q VLAN-ID」を設定します。SVIはL3スイッチのVLAN間ルーティング方法です。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-2-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-2 トランクポート・802.1Q・VTP</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            トランクの仕組みと設定・VTP の動作を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🔗</span>トランクポートとは</h2>
+        <p>トランクポートは<strong>複数のVLANのトラフィックを1本のリンクで伝送</strong>するためのポートです。スイッチ間やスイッチとルータ間（ROAS）の接続に使います。</p>
+
+        <div class="card">
+            <h4 class="topic-title">アクセスポート vs トランクポートの違い</h4>
+            <pre style="line-height:1.8; font-size:0.9em;">
+アクセスポート（Access Port）
+  ・1つのVLANのみ通す
+  ・フレームにVLANタグを「付けない」
+  ・エンドデバイス（PC・IP電話等）接続に使う
+
+トランクポート（Trunk Port）
+  ・複数VLANのトラフィックを通す
+  ・フレームにVLANタグを「付ける」（IEEE 802.1Q）
+  ・スイッチ間・スイッチ〜ルータ間に使う
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🏷️</span>IEEE 802.1Q タギング</h2>
+        <p>802.1Q（dot1Q）はVLAN IDをEthernetフレームに埋め込む業界標準規格です。</p>
+
+        <div class="card">
+            <h4 class="topic-title">802.1QタグをEthernetフレームに挿入する位置</h4>
+            <pre style="font-size:0.85em; line-height:2.0;">
+【通常の Ethernet II フレーム】
+┌─────────────┬─────────────┬────────┬──────────┬─────┐
+│ 宛先MAC(6B) │ 送信元MAC(6B)│Type(2B)│ データ   │ FCS │
+└─────────────┴─────────────┴────────┴──────────┴─────┘
+
+【802.1Q タグ付きフレーム（送信元MACの直後に挿入）】
+┌─────────────┬─────────────┬────────────────┬────────┬──────────┬─────┐
+│ 宛先MAC(6B) │ 送信元MAC(6B)│802.1Qタグ(4B)  │Type(2B)│ データ   │ FCS │
+└─────────────┴─────────────┴────────────────┴────────┴──────────┴─────┘
+
+802.1Qタグ（4バイト）の内容:
+┌──────────────────┬───┬────────────────────┐
+│ TPID: 0x8100(2B) │PCP│  VLAN ID: 1〜4094   │
+│（タグ付きと識別） │(3)│  (12ビット)         │
+└──────────────────┴───┴────────────────────┘
+</pre>
+        </div>
+
+        <h3 class="subsection-title">ネイティブVLAN（重要）</h3>
+        <div class="card">
+            <ul>
+                <li>ネイティブVLANのトラフィックはトランクリンクで<strong>タグなし</strong>で送受信される</li>
+                <li>Ciscoのデフォルトネイティブ VLAN は<strong>VLAN 1</strong></li>
+                <li>トランクリンクの両端でネイティブVLANが一致していないと通信障害が発生</li>
+                <li>セキュリティ上、ネイティブVLANはユーザーが使わないVLAN（例:VLAN999）に変更を推奨</li>
+            </ul>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>トランクポート設定コマンド</h2>
+        <pre><span class="cmd-comment"># スイッチ間のトランクポート設定</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/24</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode trunk</span>                   <span class="cmd-comment"># トランクに固定</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk encapsulation dot1q</span>    <span class="cmd-comment"># 802.1Q（一部の機種で必要）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk native vlan</span> <span class="cmd-value">999</span>         <span class="cmd-comment"># ネイティブVLANを変更</span>
+
+<span class="cmd-comment"># 通過を許可するVLANを制限（セキュリティ向上・帯域節約）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk allowed vlan</span> <span class="cmd-value">10,20,30</span>    <span class="cmd-comment"># VLAN10,20,30のみ許可</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk allowed vlan add</span> <span class="cmd-value">40</span>       <span class="cmd-comment"># VLAN40を追加</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk allowed vlan remove</span> <span class="cmd-value">30</span>    <span class="cmd-comment"># VLAN30を除外</span>
+
+<span class="cmd-comment"># トランク確認コマンド</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces trunk</span>
+Port        Mode             Encapsulation  Status        Native vlan
+Gi0/24      on               802.1q         trunking      999
+
+Port        Vlans allowed on trunk
+Gi0/24      10,20,30
+
+Port        Vlans allowed and active in management domain
+Gi0/24      10,20,30
+
+Port        Vlans in spanning tree forwarding state and not pruned
+Gi0/24      10,20,30</pre>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>DTPとトランク交渉</h2>
+        <p>DTP（Dynamic Trunking Protocol）はCisco独自のトランク自動交渉プロトコルです。</p>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>モード</th>
+                        <th>コマンド</th>
+                        <th>動作</th>
+                        <th>相手がautoの場合</th>
+                        <th>相手がonの場合</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>access</strong></td>
+                        <td>switchport mode access</td>
+                        <td>常にアクセスポート</td>
+                        <td>アクセス</td>
+                        <td>アクセス（不一致）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>trunk</strong></td>
+                        <td>switchport mode trunk</td>
+                        <td>常にトランクポート</td>
+                        <td>トランク</td>
+                        <td>トランク</td>
+                    </tr>
+                    <tr>
+                        <td><strong>dynamic desirable</strong></td>
+                        <td>switchport mode dynamic desirable</td>
+                        <td>積極的にトランク交渉</td>
+                        <td>トランク</td>
+                        <td>トランク</td>
+                    </tr>
+                    <tr>
+                        <td><strong>dynamic auto</strong></td>
+                        <td>switchport mode dynamic auto</td>
+                        <td>受動的に交渉（デフォルト）</td>
+                        <td>アクセス</td>
+                        <td>トランク</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DTP無効</strong></td>
+                        <td>switchport nonegotiate</td>
+                        <td>DTPフレームを送らない</td>
+                        <td>—</td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 試験ポイント：autoとautoの組み合わせはトランクにならない</div>
+            dynamic auto + dynamic auto = アクセスポートになる（どちらも受動的なので交渉が進まない）<br>
+            セキュリティのベストプラクティス: スイッチポートは<strong>明示的に access または trunk に固定</strong>し、「switchport nonegotiate」でDTPを無効化する。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📡</span>VTP（VLAN Trunking Protocol）</h2>
+        <p>VTPはCisco独自のVLAN情報を複数スイッチ間で同期するプロトコルです。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>VTPモード</th>
+                        <th>VLAN追加/削除</th>
+                        <th>VTP情報の転送</th>
+                        <th>VTP情報の保存</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Server</strong></td>
+                        <td>可能</td>
+                        <td>転送する</td>
+                        <td>保存する</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Client</strong></td>
+                        <td>不可</td>
+                        <td>転送する</td>
+                        <td>保存しない</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Transparent</strong></td>
+                        <td>可能（ローカルのみ）</td>
+                        <td>転送するが適用しない</td>
+                        <td>保存する（ローカル）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Off（VTPv3）</strong></td>
+                        <td>可能（ローカルのみ）</td>
+                        <td>転送しない</td>
+                        <td>保存する</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box warning">
+            <div class="label">⚠️ VTPのリスク（VTPリビジョン番号問題）</div>
+            既存ネットワークに高いリビジョン番号を持つスイッチを追加すると、そのスイッチのVLAN情報が全域に伝播し既存のVLANが削除される危険があります。このためVTPは慎重に使用するか、Transparentモードを推奨します。
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q2-2">
+            <h3>✏️ 確認問題（第2-2章）</h3>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. 802.1QタグがEthernetフレームのどの位置に追加されるか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 送信元MACアドレスの直後</button></li>
+                    <li><button class="quiz-option">B. フレームの最後（FCSの後）</button></li>
+                    <li><button class="quiz-option">C. 宛先MACアドレスの前</button></li>
+                    <li><button class="quiz-option">D. データフィールドの中</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>802.1Qタグは送信元MACアドレスとEtherTypeの間（送信元MACの直後）に4バイト挿入されます。タグにはTPID(0x8100)・PCP・VID（VLAN
+                    ID）が含まれます。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. CiscoスイッチのトランクポートのデフォルトのネイティブVLANはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. VLAN 0</button></li>
+                    <li><button class="quiz-option">B. VLAN 100</button></li>
+                    <li><button class="quiz-option">C. VLAN 1</button></li>
+                    <li><button class="quiz-option">D. VLAN 4094</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（VLAN 1）</strong><br>デフォルトネイティブVLANはVLAN
+                    1です。ネイティブVLANのトラフィックはタグなしで送信されるため、両端のスイッチでネイティブVLANが一致しないとネイティブVLANミスマッチエラーが発生します。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. DTPで「dynamic auto」同士（両方のポートが dynamic auto）を接続した場合の結果はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. トランクポートになる</button></li>
+                    <li><button class="quiz-option">B. 片方がトランク、片方がアクセスになる</button></li>
+                    <li><button class="quiz-option">C. 交渉が無限ループになる</button></li>
+                    <li><button class="quiz-option">D. アクセスポートになる</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D（アクセスポート）</strong><br>dynamic
+                    auto同士はどちらも「相手がdesirable/trunkになるのを待つ」受動的なモードのため、トランク交渉が進まずアクセスポートになります。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q4. VTPでVLAN情報をVTPの同期を受け入れるが、自身ではVLANを追加・削除できないモードはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Server</button></li>
+                    <li><button class="quiz-option">B. Client</button></li>
+                    <li><button class="quiz-option">C. Transparent</button></li>
+                    <li><button class="quiz-option">D. Off</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（Client）</strong><br>VTP
+                    Clientモードはサーバーからのアップデートを受け入れてVLAN情報を適用しますが、自分ではVLANを追加・削除できません。Transparentはローカルで自由に変更可能ですがVTP情報を転送するだけです（適用しない）。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

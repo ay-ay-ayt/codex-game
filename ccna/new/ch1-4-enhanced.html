@@ -1,0 +1,483 @@
+<div class="page" id="page-1-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-4 IPv6アドレス</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">超頻出</span><span class="tag tag-config">設定</span>
+            IPv6はCCNA試験で確実に出題される重要トピック。アドレス体系・自動設定・NDP・設定コマンドを完全理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>なぜIPv6が必要か？</h2>
+        <div class="card">
+            <h4 class="topic-title">IPv4の限界とIPv6の登場</h4>
+            <p>IPv4は32ビット（約43億個）のアドレスしかありません。NATで延命してきましたが、IoTの普及で根本的に不足しています。IPv6は<strong>128ビット（約3.4×10^38個）</strong>のアドレスを持ち、「地球上のすべての砂粒にIPを振ってもまだ余る」と言われています。
+            </p>
+            <pre style="line-height:1.8; font-size:0.88em;">
+IPv4:   32ビット  → 約43億個        例: 192.168.1.1
+IPv6:  128ビット  → 約340澗(かん)個  例: 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+
+IPv6の利点:
+✅ 膨大なアドレス空間 → NATが原則不要（End-to-End通信の復活）
+✅ ヘッダの簡素化 → ルータの処理負荷軽減
+✅ 自動設定機能（SLAAC） → DHCPサーバーなしでもIPアドレスを取得可能
+✅ IPsec標準搭載 → セキュリティ向上
+✅ ブロードキャストなし → マルチキャストで代替
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📝</span>IPv6アドレスの表記法</h2>
+        <div class="card">
+            <h4 class="topic-title">128ビットを16進数で表記する</h4>
+            <pre style="line-height:1.8; font-size:0.88em;">
+完全表記:  2001:0db8:85a3:0000:0000:8a2e:0370:7334
+           ←── 8グループ × 16ビット(4桁の16進数) = 128ビット ──→
+
+【省略ルール1】 各グループの先頭の0は省略できる
+  2001:0db8:85a3:0000:0000:8a2e:0370:7334
+→ 2001:db8:85a3:0:0:8a2e:370:7334
+
+【省略ルール2】 連続する0のグループは :: で省略できる（1回だけ！）
+→ 2001:db8:85a3::8a2e:370:7334
+  ※ :: は「ここに0のグループが入る」を意味する
+  ※ :: は1つのアドレス内で1回しか使えない（曖昧さを防ぐため）
+
+【練習問題】以下のアドレスを省略形に変換してみよう:
+  fe80:0000:0000:0000:0211:22ff:fe33:4455
+→ fe80::211:22ff:fe33:4455
+
+  2001:0db8:0000:0001:0000:0000:0000:0001
+→ 2001:db8:0:1::1
+  ※ 0が連続する最も長い部分を :: に置き換える
+</pre>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 試験でよくある引っかけ</div>
+            <ul>
+                <li><code>::</code> は1つのアドレス内で<strong>1回だけ</strong>使用可能</li>
+                <li><code>2001:db8::1::2</code> は<strong>無効</strong>（::が2回使われている）</li>
+                <li><code>2001:db8:0:0:1:0:0:1</code> → <code>2001:db8::1:0:0:1</code> が正しい省略（最も長い連続する0のグループを::に置換）</li>
+            </ul>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📊</span>IPv6アドレスの種類 ── CCNAで必須の5タイプ</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>プレフィックス</th>
+                        <th>用途</th>
+                        <th>IPv4の相当</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>グローバルユニキャスト (GUA)</strong></td>
+                        <td>2000::/3（通常 2001:で始まる）</td>
+                        <td>インターネット上で一意なアドレス（パブリックIP相当）</td>
+                        <td>パブリックIPv4</td>
+                    </tr>
+                    <tr>
+                        <td><strong>リンクローカル (LLA)</strong></td>
+                        <td>fe80::/10</td>
+                        <td>同一リンク（サブネット）内でのみ有効。自動生成される</td>
+                        <td>169.254.x.x (APIPA)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ユニークローカル (ULA)</strong></td>
+                        <td>fc00::/7（通常 fd で始まる）</td>
+                        <td>プライベートネットワーク内のみ（ルーティング不可）</td>
+                        <td>10.x.x.x / 172.16-31 / 192.168.x.x</td>
+                    </tr>
+                    <tr>
+                        <td><strong>マルチキャスト</strong></td>
+                        <td>ff00::/8</td>
+                        <td>1対多の通信（ブロードキャストの代替）</td>
+                        <td>224.0.0.0/4</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ループバック</strong></td>
+                        <td>::1/128</td>
+                        <td>自分自身への通信テスト</td>
+                        <td>127.0.0.1</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">重要なマルチキャストアドレス（必須暗記！）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>アドレス</th>
+                        <th>名称</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ff02::1</strong></td>
+                        <td>全ノード（All Nodes）</td>
+                        <td>リンク上の全デバイスに送信（IPv4のブロードキャスト相当）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ff02::2</strong></td>
+                        <td>全ルータ（All Routers）</td>
+                        <td>リンク上の全ルータに送信</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ff02::5</strong></td>
+                        <td>全OSPFルータ</td>
+                        <td>OSPFv3で使用</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ff02::6</strong></td>
+                        <td>OSPF DR/BDR</td>
+                        <td>OSPFv3のDR/BDR向け</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ff02::1:ff__:____</strong></td>
+                        <td>要請ノードマルチキャスト</td>
+                        <td>NDP（近隣探索）で使用。ユニキャストアドレスの下位24ビットから生成</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">💡 リンクローカルアドレス(LLA)は必ず存在する</div>
+            IPv6が有効な全インタフェースには、GUAの設定有無に関わらず<strong>自動的にリンクローカルアドレスが生成</strong>されます。LLAはルーティングプロトコル（OSPFv3等）のネクストホップアドレスとして使われるため非常に重要です。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔧</span>EUI-64 ── MACアドレスからインタフェースIDを生成</h2>
+        <div class="card">
+            <h4 class="topic-title">EUI-64の変換手順（試験で計算問題あり！）</h4>
+            <pre style="line-height:2.0; font-size:0.85em;">
+MACアドレス: 00:1A:2B:3C:4D:5E（48ビット）
+
+Step1: MACを前半3オクテット(OUI)と後半3オクテットに分離
+  00:1A:2B | 3C:4D:5E
+
+Step2: 中間にFF:FEを挿入して64ビットに拡張
+  00:1A:2B:FF:FE:3C:4D:5E
+
+Step3: 先頭バイトの第7ビット（U/Lビット）を反転
+  00 = 0000 0000 → 第7ビット反転 → 0000 0010 = 02
+  結果: 02:1A:2B:FF:FE:3C:4D:5E
+
+Step4: IPv6表記に変換（4桁ずつグループ化）
+  インタフェースID: 021a:2bff:fe3c:4d5e
+
+完成: GUA プレフィックス + EUI-64 インタフェースID
+  例: 2001:db8:1:1: + 021a:2bff:fe3c:4d5e
+  →   2001:db8:1:1:21a:2bff:fe3c:4d5e
+
+【EUI-64の見分け方】
+  インタフェースID部分に「FF:FE」が含まれていたら EUI-64 で生成されたアドレス！
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📡</span>SLAAC ── サーバー不要の自動アドレス設定</h2>
+        <p>SLAAC（Stateless Address
+            Auto-Configuration）は、<strong>DHCPサーバーなしで</strong>ホストが自分のIPv6アドレスを自動生成する仕組みです。IPv6の最大の特徴の一つです。</p>
+
+        <div class="card">
+            <h4 class="topic-title">SLAACの動作フロー（重要！）</h4>
+            <pre style="line-height:2.0; font-size:0.85em;">
+ホスト(PC)                           ルータ(R1)
+  |                                    |
+  |── RS（Router Solicitation）──→|   ff02::2（全ルータ宛）に送信
+  |   「ルータさん、ネットワーク情報ください」   |
+  |                                    |
+  |←── RA（Router Advertisement）──|   ff02::1（全ノード宛）に送信
+  |   「プレフィックスは 2001:db8:1:1::/64、     |
+  |     デフォルトGWは fe80::1 です」            |
+  |                                    |
+  | ホストが自動でアドレス生成:                     |
+  | プレフィックス(64ビット) + インタフェースID(64ビット) |
+  | = 2001:db8:1:1:021a:2bff:fe3c:4d5e/64       |
+  |                                    |
+  |── DAD（重複アドレス検出）──→|   生成したアドレスが重複していないか確認
+  |   NS（Neighbor Solicitation）        |   重複なし → アドレス確定！
+  |                                    |
+
+RAに含まれるフラグ:
+  Aフラグ = 1: SLAAC使用可（ホストが自動設定）
+  Oフラグ = 1: DHCPv6から追加情報取得（DNS等）→ ステートレスDHCPv6
+  Mフラグ = 1: DHCPv6からアドレスも取得 → ステートフルDHCPv6
+</pre>
+        </div>
+
+        <h3 class="subsection-title">3つのIPv6アドレス取得方法の比較</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>方式</th>
+                        <th>アドレス取得</th>
+                        <th>DNSサーバー情報</th>
+                        <th>RAフラグ</th>
+                        <th>DHCPv6サーバー</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>SLAAC（のみ）</strong></td>
+                        <td>RA + EUI-64/ランダム</td>
+                        <td>RAから取得（RDNSS）</td>
+                        <td>A=1, O=0, M=0</td>
+                        <td>不要</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ステートレスDHCPv6</strong></td>
+                        <td>RA + EUI-64/ランダム</td>
+                        <td>DHCPv6サーバーから</td>
+                        <td>A=1, O=1, M=0</td>
+                        <td>必要（DNS等のみ提供）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ステートフルDHCPv6</strong></td>
+                        <td>DHCPv6サーバーから</td>
+                        <td>DHCPv6サーバーから</td>
+                        <td>A=0, M=1</td>
+                        <td>必要（アドレス+その他）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔍</span>NDP（近隣探索プロトコル）── IPv6のARP代替</h2>
+        <p>IPv6にはARPがありません。代わりにICMPv6ベースの<strong>NDP</strong>が同様の機能を提供します。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>NDPメッセージ</th>
+                        <th>略称</th>
+                        <th>ICMPv6タイプ</th>
+                        <th>用途</th>
+                        <th>IPv4の相当</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Router Solicitation</strong></td>
+                        <td>RS</td>
+                        <td>133</td>
+                        <td>ルータにRAを要求</td>
+                        <td>（なし）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Router Advertisement</strong></td>
+                        <td>RA</td>
+                        <td>134</td>
+                        <td>プレフィックス・GW情報を通知</td>
+                        <td>（DHCP応答に類似）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Neighbor Solicitation</strong></td>
+                        <td>NS</td>
+                        <td>135</td>
+                        <td>特定IPのMACアドレスを問い合わせ / DAD</td>
+                        <td><strong>ARP Request</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Neighbor Advertisement</strong></td>
+                        <td>NA</td>
+                        <td>136</td>
+                        <td>NSへの応答（MACアドレスを通知）</td>
+                        <td><strong>ARP Reply</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Redirect</strong></td>
+                        <td>—</td>
+                        <td>137</td>
+                        <td>より適切なネクストホップを通知</td>
+                        <td>ICMP Redirect</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 DAD（Duplicate Address Detection）は必ず覚える</div>
+            ホストが新しいIPv6アドレスを設定する時（SLAAC・手動どちらでも）、まずNS（Neighbor
+            Solicitation）を<strong>要請ノードマルチキャスト</strong>アドレスに送信して、アドレスの重複がないか確認します。応答がなければアドレスを確定します。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>IPv6設定コマンド</h2>
+        <pre><span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 【IPv6の有効化】</span>
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ipv6 unicast-routing</span>              <span class="cmd-comment"># IPv6ルーティングを有効化（必須！）</span>
+
+<span class="cmd-comment"># 手動でGUAを設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface GigabitEthernet0/0</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ipv6 address</span> <span class="cmd-value">2001:db8:1:1::1/64</span>     <span class="cmd-comment"># GUA手動設定</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">no shutdown</span>
+
+<span class="cmd-comment"># EUI-64でGUAを自動生成</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ipv6 address</span> <span class="cmd-value">2001:db8:1:1::/64</span> <span class="cmd-keyword">eui-64</span>
+
+<span class="cmd-comment"># リンクローカルアドレスの手動設定</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ipv6 address fe80::1 link-local</span>    <span class="cmd-comment"># LLA手動設定（推奨）</span>
+
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-comment"># 【確認コマンドとその出力の読み方】</span>
+<span class="cmd-comment">═══════════════════════════════════════════════</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ipv6 interface brief</span>
+GigabitEthernet0/0         [up/up]
+    FE80::1                                         <span class="cmd-comment">← リンクローカル</span>
+    2001:DB8:1:1::1                                 <span class="cmd-comment">← グローバルユニキャスト</span>
+GigabitEthernet0/1         [up/up]
+    FE80::2
+    2001:DB8:2:1::1
+
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ipv6 interface GigabitEthernet0/0</span>
+GigabitEthernet0/0 is up, line protocol is up
+  IPv6 is enabled, link-local address is FE80::1
+  Global unicast address(es):
+    2001:DB8:1:1::1, subnet is 2001:DB8:1:1::/64
+  Joined group address(es):
+    FF02::1             <span class="cmd-comment">← 全ノードマルチキャスト(常に参加)</span>
+    FF02::2             <span class="cmd-comment">← 全ルータマルチキャスト(ルータのみ)</span>
+    FF02::1:FF00:1      <span class="cmd-comment">← 要請ノードマルチキャスト</span>
+
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ipv6 neighbors</span>     <span class="cmd-comment"># IPv6版ARPテーブル</span>
+IPv6 Address           Age  Link-layer Addr  State    Interface
+FE80::21A:2BFF:FE3C:4D5E  5  001a.2b3c.4d5e  REACH    Gi0/0
+2001:DB8:1:1::10          2  001a.2b3c.4d5e  STALE    Gi0/0
+
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ipv6 route</span>         <span class="cmd-comment"># IPv6ルーティングテーブル</span>
+C   2001:DB8:1:1::/64 [0/0]
+     via GigabitEthernet0/0, directly connected
+L   2001:DB8:1:1::1/128 [0/0]
+     via GigabitEthernet0/0, receive
+S   ::/0 [1/0]
+     via 2001:DB8:FFFF::1
+<span class="cmd-comment"># C=Connected, L=Local, S=Static, O=OSPFv3</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">🛡️</span>IPv6 ACL</h2>
+        <div class="card">
+            <p>IPv6のACLは<strong>名前付き拡張ACLのみ</strong>（番号付きACLはない）。構文はIPv4と似ていますが違いもあります。</p>
+            <pre style="font-size:0.88em; line-height:1.8;">
+IPv4 ACLとの違い:
+① 名前付きACLのみ（番号なし）
+② 適用コマンドが ipv6 traffic-filter（ip access-group ではない）
+③ 末尾に暗黙の permit icmpv6 がある（NDPを壊さないため）
+④ ワイルドカードマスクの代わりにプレフィックス長を使用
+
+Router(config)# ipv6 access-list BLOCK-TELNET
+Router(config-ipv6-acl)# deny tcp any any eq 23
+Router(config-ipv6-acl)# permit ipv6 any any
+
+Router(config)# interface Gi0/0
+Router(config-if)# ipv6 traffic-filter BLOCK-TELNET in
+
+確認: show ipv6 access-list
+</pre>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-4">
+            <h3>✏️ 確認問題（第1-4章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. IPv6アドレス 2001:0db8:0000:0000:0000:0000:0000:0001 の正しい省略形はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 2001:db8:::1</button></li>
+                    <li><button class="quiz-option">B. 2001:db8:0:0:0:0:0:1</button></li>
+                    <li><button class="quiz-option">C. 2001:db8::1</button></li>
+                    <li><button class="quiz-option">D. 2001:db8::0::1</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C</strong><br>:::
+                    （Aの3つのコロン）は無効表記。Dは::が2回使われているので無効。Bは省略可能だが最も簡潔な形はCです。連続する0のグループを::で置き換えます。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. MACアドレス 00:1A:2B:3C:4D:5E からEUI-64でインタフェースIDを生成した場合、正しい結果はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 001a:2b3c:4d5e:fffe</button></li>
+                    <li><button class="quiz-option">B. 021a:2bff:fe3c:4d5e</button></li>
+                    <li><button class="quiz-option">C. 001a:2bff:fe3c:4d5e</button></li>
+                    <li><button class="quiz-option">D. 021a:2b3c:4dff:fe5e</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B</strong><br>EUI-64の手順: ①MACを半分に分割(00:1A:2B | 3C:4D:5E)
+                    ②中間にFF:FEを挿入(00:1A:2B:FF:FE:3C:4D:5E) ③第7ビット反転(00→02)。結果: 021a:2bff:fe3c:4d5e。Cは第7ビットの反転を忘れています。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q3. SLAACでホストがIPv6アドレスを自動設定する際に使用されるNDPメッセージの組み合わせとして正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. RS（Router Solicitation）とRA（Router Advertisement）</button></li>
+                    <li><button class="quiz-option">B. NS（Neighbor Solicitation）とNA（Neighbor Advertisement）</button>
+                    </li>
+                    <li><button class="quiz-option">C. DHCP DiscoverとDHCP Offer</button></li>
+                    <li><button class="quiz-option">D. ARP RequestとARP Reply</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>SLAACではホストがRS(ff02::2宛)を送信してルータにネットワーク情報を要求し、ルータがRA(ff02::1宛)でプレフィックス情報を返します。B(NS/NA)はMACアドレス解決とDADに使用。DHCPv6は別のメカニズム。ARPはIPv4のみ。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q4. IPv6のリンクローカルアドレスについて正しいのはどれか？（2つ選べ）</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ルータを越えて通信できる</button></li>
+                    <li><button class="quiz-option">B. 手動設定でのみ生成される</button></li>
+                    <li><button class="quiz-option">C. ff80::/10 のプレフィックスを使用する</button></li>
+                    <li><button class="quiz-option">D. IPv6が有効なインタフェースに自動生成され、OSPFv3のネクストホップ等で使われる</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D</strong><br>LLAはfe80::/10（ff80ではない！）で始まり、IPv6が有効な全インタフェースに自動生成されます。ルータを越えることはできません（同一リンク内のみ）。OSPFv3のネクストホップ、NDP、DHCPv6リレーなど重要な用途があります。手動設定も可能（推奨）。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q5.【show出力問題】以下のshow ipv6 interface
+                    briefの出力を見て、このルータのGi0/0に設定されているグローバルユニキャストアドレスはどれか？<br>
+                    <code>GigabitEthernet0/0 [up/up]</code><br>
+                    <code>  FE80::1</code><br>
+                    <code>  2001:DB8:ACAD:1::1</code>
+                </div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. FE80::1</button></li>
+                    <li><button class="quiz-option">B. FF02::1</button></li>
+                    <li><button class="quiz-option">C. 2001:DB8:ACAD:1::1</button></li>
+                    <li><button class="quiz-option">D. ::1</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C</strong><br>FE80::はリンクローカル。2001:で始まるアドレスがグローバルユニキャスト(GUA)です。FF02::はマルチキャスト、::1はループバックです。show
+                    ipv6 interface briefでは各IFのLLAとGUAが表示されます。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q6. ステートレスDHCPv6の特徴を示すRAフラグの組み合わせはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. A=1, O=0, M=0（SLAACのみ）</button></li>
+                    <li><button class="quiz-option">B. A=1, O=1, M=0（SLAAC + DHCPv6でDNS等取得）</button></li>
+                    <li><button class="quiz-option">C. A=0, M=1（DHCPv6でアドレス取得）</button></li>
+                    <li><button class="quiz-option">D. A=0, O=0, M=0（全て無効）</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B</strong><br>ステートレスDHCPv6:
+                    アドレスはSLAAC(A=1)で取得、DNSサーバー等の追加情報はDHCPv6から取得(O=1)。Mフラグが1の場合はステートフルDHCPv6（アドレスもDHCPv6から取得）。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q7. IPv6で、IPv4のARPに相当する機能を提供するプロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. NDP（Neighbor Discovery Protocol）のNS/NA</button></li>
+                    <li><button class="quiz-option">B. DHCPv6</button></li>
+                    <li><button class="quiz-option">C. ICMPv6のエコー要求/応答</button></li>
+                    <li><button class="quiz-option">D. OSPFv3</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A</strong><br>NDPのNS(Neighbor Solicitation, ICMPv6タイプ135)がARP
+                    Request、NA(Neighbor Advertisement, ICMPv6タイプ136)がARP
+                    Replyに相当します。IPv6にはARPブロードキャストがなく、要請ノードマルチキャストで効率的にMACアドレスを解決します。</div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>

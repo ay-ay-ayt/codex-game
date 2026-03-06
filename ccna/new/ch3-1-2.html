@@ -1,0 +1,363 @@
+<div class="page" id="page-3-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-1 ルーティング基礎・ルーティングテーブル</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> ルーティングの仕組み・テーブルの読み方・AD値を完全理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🗺️</span>ルーティングとは</h2>
+        <p>ルーティングはルータが<strong>宛先IPアドレスに基づいてパケットを最適なインタフェースへ転送する</strong>プロセスです。ルータはルーティングテーブルを参照して転送先を決定します。</p>
+
+        <div class="card">
+            <h4 class="topic-title">パケット転送の流れ</h4>
+            <pre style="line-height:1.8; font-size:0.88em;">
+① パケット受信
+② 宛先IPアドレスを確認
+③ ルーティングテーブルを検索
+   ・最もプレフィックス長が長い（最長プレフィックスマッチ）経路を選択
+   ・一致なし → デフォルトルート（0.0.0.0/0）を確認
+   ・デフォルトルートもなし → パケット廃棄（ICMPでDest Unreachable返送）
+④ 次ホップ（Next-hop）または出力インタフェースへ転送
+⑤ 出力インタフェースでL2ヘッダを書き換えて送信
+   （送信元MAC = 自分のIF MAC、宛先MAC = 次ホップのMAC or ゲートウェイMAC）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📋</span>ルーティングテーブルの読み方</h2>
+        <pre><span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route</span>
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+       i - IS-IS, su - IS-IS summary, * - candidate default
+
+Gateway of last resort is 203.0.113.1 to network 0.0.0.0
+
+O    10.0.0.0/8 [110/20] via 192.168.1.2, 00:05:12, GigabitEthernet0/0
+C    192.168.1.0/24 is directly connected, GigabitEthernet0/0
+L    192.168.1.1/32 is directly connected, GigabitEthernet0/0
+S    192.168.2.0/24 [1/0] via 192.168.1.2
+S*   0.0.0.0/0 [1/0] via 203.0.113.1</pre>
+
+        <div class="card">
+            <h4 class="topic-title">ルーティングテーブルエントリの見方</h4>
+            <pre style="font-size:0.88em; line-height:2.0;">
+O    10.0.0.0/8 [110/20] via 192.168.1.2, 00:05:12, GigabitEthernet0/0
+│    │          │   │    │               │           │
+│    │          │   │    │               │           └─ 出力インタフェース
+│    │          │   │    │               └─ 経路が追加されてからの時間
+│    │          │   │    └─ 次ホップIPアドレス
+│    │          │   └─ メトリック（経路コスト。OSPFはコスト値）
+│    │          └─ AD値（Administrative Distance = 110 = OSPF）
+│    └─ 宛先ネットワーク/プレフィックス長
+└─ ルートのソース（O = OSPF）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚖️</span>AD値（Administrative Distance）</h2>
+        <p>複数のルーティングソースから同じネットワークへの経路がある場合、AD値が小さいほど優先されます。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ルートソース</th>
+                        <th>AD値</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>直接接続（Connected）</td>
+                        <td>0</td>
+                    </tr>
+                    <tr>
+                        <td>スタティックルート</td>
+                        <td>1</td>
+                    </tr>
+                    <tr>
+                        <td>EIGRP（集約）</td>
+                        <td>5</td>
+                    </tr>
+                    <tr>
+                        <td>BGP（外部）</td>
+                        <td>20</td>
+                    </tr>
+                    <tr>
+                        <td>EIGRP（内部）</td>
+                        <td>90</td>
+                    </tr>
+                    <tr>
+                        <td>OSPF</td>
+                        <td>110</td>
+                    </tr>
+                    <tr>
+                        <td>IS-IS</td>
+                        <td>115</td>
+                    </tr>
+                    <tr>
+                        <td>RIP</td>
+                        <td>120</td>
+                    </tr>
+                    <tr>
+                        <td>EIGRP（外部）</td>
+                        <td>170</td>
+                    </tr>
+                    <tr>
+                        <td>BGP（内部）</td>
+                        <td>200</td>
+                    </tr>
+                    <tr>
+                        <td>到達不能</td>
+                        <td>255</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box important">
+            <div class="label">🚨 AD値は必須暗記（特にConnected=0、Static=1、OSPF=110、RIP=120）</div>
+            同じ宛先への経路がスタティック（AD=1）とOSPF（AD=110）で競合している場合、AD値が小さいスタティックルートが優先されます。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🔢</span>最長プレフィックスマッチ（Longest Prefix Match）</h2>
+        <div class="card">
+            <h4 class="topic-title">どの経路が選択されるか？</h4>
+            <pre style="font-size:0.88em; line-height:2.0;">
+ルーティングテーブルに以下が存在する場合：
+  10.0.0.0/8       → インタフェースA
+  10.1.0.0/16      → インタフェースB
+  10.1.1.0/24      → インタフェースC
+  0.0.0.0/0        → インタフェースD（デフォルト）
+
+宛先 10.1.1.5 へのパケットはどこへ転送？
+  10.0.0.0/8:   一致（マスク8bit）
+  10.1.0.0/16:  一致（マスク16bit）
+  10.1.1.0/24:  一致（マスク24bit）← 最も長い → 優先！
+
+結果: インタフェースC へ転送（最長プレフィックスが勝つ）
+</pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">📌</span>直接接続ルートとローカルルート</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>コード</th>
+                        <th>意味</th>
+                        <th>プレフィックス長</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>C（Connected）</strong></td>
+                        <td>直接接続ネットワーク（サブネット全体）</td>
+                        <td>設定したサブネットのプレフィックス（例:/24）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>L（Local）</strong></td>
+                        <td>インタフェース自身のIPアドレス</td>
+                        <td>/32（ホストルート）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p>インタフェースにIPアドレスを設定するとCとLの2つのルートが自動的に追加されます。これらはno shutdownになっていることが条件です。</p>
+
+        <div class="quiz-section" data-quiz-id="q3-1">
+            <h3>✏️ 確認問題（第3-1章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. ルーティングテーブルに存在する複数の経路から最適経路を選択する際に最初に参照されるのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. メトリック</button></li>
+                    <li><button class="quiz-option">B. AD値（Administrative Distance）</button></li>
+                    <li><button class="quiz-option">C. プレフィックス長（最長プレフィックスマッチ）</button></li>
+                    <li><button class="quiz-option">D. インタフェースの帯域幅</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（最長プレフィックスマッチ）</strong><br>最初にプレフィックス長が最も長い（最も具体的な）経路が選ばれます。プレフィックス長が同じ場合はAD値、さらに同じ場合はメトリックで比較します。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. OSPFのデフォルトのAD値はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 90</button></li>
+                    <li><button class="quiz-option">B. 110</button></li>
+                    <li><button class="quiz-option">C. 120</button></li>
+                    <li><button class="quiz-option">D. 1</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（110）</strong><br>OSPFのAD値は110。EIGRP内部=90、RIP=120、スタティック=1。AD値が小さいほど信頼性が高く優先されます。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q3. show ip routeコマンドで宛先ネットワークの隣に表示される「[110/20]」の意味として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. AD値/メトリック（110がAD値、20がOSPFコスト）</button></li>
+                    <li><button class="quiz-option">B. メトリック/AD値</button></li>
+                    <li><button class="quiz-option">C. 帯域幅/遅延</button></li>
+                    <li><button class="quiz-option">D. VLAN ID/ホップ数</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>[AD値/メトリック]の順に表示されます。[110/20]であれば、AD値=110（OSPF）、メトリック（OSPFコスト）=20を意味します。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
+
+<div class="page" id="page-3-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-2 スタティックルーティング</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            スタティックルートの設定・種類・フローティングスタティックルートをマスター</p>
+
+        <h2 class="chapter-title"><span class="icon">📍</span>スタティックルートとは</h2>
+        <p>管理者が手動で設定する静的な経路情報です。動的ルーティングプロトコルのオーバーヘッドがなく、<strong>小規模ネットワークや特定の経路制御</strong>に使われます。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>スタティックルーティング</th>
+                        <th>ダイナミックルーティング</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>設定</td>
+                        <td>手動（管理者が入力）</td>
+                        <td>自動（プロトコルで学習）</td>
+                    </tr>
+                    <tr>
+                        <td>障害対応</td>
+                        <td>手動変更が必要</td>
+                        <td>自動的に再計算して迂回</td>
+                    </tr>
+                    <tr>
+                        <td>CPUオーバーヘッド</td>
+                        <td>非常に低い</td>
+                        <td>高い（定期的に計算）</td>
+                    </tr>
+                    <tr>
+                        <td>帯域幅使用</td>
+                        <td>なし</td>
+                        <td>あり（ルーティングアップデート送信）</td>
+                    </tr>
+                    <tr>
+                        <td>スケーラビリティ</td>
+                        <td>低い（規模が大きくなると管理困難）</td>
+                        <td>高い</td>
+                    </tr>
+                    <tr>
+                        <td>セキュリティ</td>
+                        <td>高い（プロトコルの脆弱性なし）</td>
+                        <td>比較的低い</td>
+                    </tr>
+                    <tr>
+                        <td>AD値</td>
+                        <td>1</td>
+                        <td>プロトコルによる（90〜120等）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚙️</span>スタティックルートの設定</h2>
+        <pre><span class="cmd-comment"># 基本構文: ip route [宛先ネットワーク] [サブネットマスク] [次ホップIPまたは出力IF]</span>
+
+<span class="cmd-comment"># 方法1: 次ホップIPアドレスを指定（推奨）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route</span> <span class="cmd-value">10.1.1.0 255.255.255.0</span> <span class="cmd-value">192.168.1.2</span>
+
+<span class="cmd-comment"># 方法2: 出力インタフェースを指定（シリアル等のP-to-Pで使用）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route</span> <span class="cmd-value">10.1.1.0 255.255.255.0</span> <span class="cmd-value">GigabitEthernet0/1</span>
+
+<span class="cmd-comment"># 方法3: 次ホップIPとインタフェースの両方を指定（Ethernetで推奨）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route</span> <span class="cmd-value">10.1.1.0 255.255.255.0</span> <span class="cmd-value">GigabitEthernet0/1</span> <span class="cmd-value">192.168.1.2</span>
+
+<span class="cmd-comment"># デフォルトルート（全ての宛先への経路）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route</span> <span class="cmd-value">0.0.0.0 0.0.0.0</span> <span class="cmd-value">203.0.113.1</span>    <span class="cmd-comment"># ISPゲートウェイへ</span>
+
+<span class="cmd-comment"># スタティックルートの確認</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route static</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route</span></pre>
+
+        <h2 class="chapter-title"><span class="icon">🛡️</span>フローティングスタティックルート</h2>
+        <p>フローティングスタティックルートは通常のルートのバックアップとして機能する静的経路です。<strong>AD値を大きくする</strong>ことで、プライマリ経路が消えた場合にのみ有効になります。</p>
+
+        <div class="card">
+            <h4 class="topic-title">フローティングスタティックの設定例</h4>
+            <pre style="font-size:0.88em; line-height:2.0;">
+構成:
+R1 ─── プライマリ（OSPF経由）─── R2 ─── 10.1.1.0/24
+  └─── バックアップ（スタティック）────────┘
+
+プライマリ経由: OSPFで学習 AD=110
+バックアップ: スタティックルートをAD=210に設定
+
+通常時: OSPFルート（AD=110）が有効
+障害時: OSPFルートが消えるとAD=210のスタティックが有効（フローティング）
+</pre>
+            <pre><span class="cmd-comment"># フローティングスタティックルート（AD値を手動で指定）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route</span> <span class="cmd-value">10.1.1.0 255.255.255.0</span> <span class="cmd-value">192.168.2.1</span> <span class="cmd-value">210</span>
+<span class="cmd-comment"># ↑ 末尾の210がAD値（OSPFの110より大きい値に設定）</span></pre>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>IPv6スタティックルート</h2>
+        <pre><span class="cmd-comment"># IPv6スタティックルートの設定（ipv6 route コマンド）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ipv6 route</span> <span class="cmd-value">2001:db8:2::/64</span> <span class="cmd-value">2001:db8:1::2</span>
+
+<span class="cmd-comment"># IPv6デフォルトルート</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ipv6 route</span> <span class="cmd-value">::/0</span> <span class="cmd-value">2001:db8:1::1</span>
+
+<span class="cmd-comment"># リンクローカルを次ホップにする場合は出力IFも指定が必要</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ipv6 route</span> <span class="cmd-value">2001:db8:2::/64</span> <span class="cmd-value">GigabitEthernet0/0</span> <span class="cmd-value">fe80::2</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q3-2">
+            <h3>✏️ 確認問題（第3-2章）</h3>
+
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. フローティングスタティックルートの説明として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 自動的に最適経路を選択するスタティックルート</button></li>
+                    <li><button class="quiz-option">B. OSPFで学習したルートと同じAD値にしたスタティックルート</button></li>
+                    <li><button class="quiz-option">C. プライマリ経路障害時のバックアップとなるように高いAD値を設定したスタティックルート</button></li>
+                    <li><button class="quiz-option">D. IPv6専用のスタティックルート</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C</strong><br>フローティングスタティックルートはAD値を大きく設定（例:210）することで、プライマリ経路（例:OSPFのAD=110）が有効な間はルーティングテーブルに表示されず（浮いている=floating）、プライマリ障害時のみ有効になる静的経路です。
+                </div>
+            </div>
+
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. デフォルトルートをスタティックで設定するコマンドはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ip route 0.0.0.0 0.0.0.0 203.0.113.1</button></li>
+                    <li><button class="quiz-option">B. ip route default 203.0.113.1</button></li>
+                    <li><button class="quiz-option">C. ip default-route 203.0.113.1</button></li>
+                    <li><button class="quiz-option">D. ip route any any 203.0.113.1</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A</strong><br>デフォルトルートは宛先100.0.0.0
+                    0.0.0.0（全ビット0のネットワーク/マスク）で設定します。これは「任意の宛先」を意味し、他のどの経路にも一致しないパケットがここへ転送されます。</div>
+            </div>
+
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q3. イーサネットインタフェース経由でスタティックルートを設定する時の推奨方法はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 出力インタフェースのみを指定する</button></li>
+                    <li><button class="quiz-option">B. 次ホップIPアドレスのみを指定する</button></li>
+                    <li><button class="quiz-option">C. VLANとIPアドレスを指定する</button></li>
+                    <li><button class="quiz-option">D. 出力インタフェースと次ホップIPアドレスの両方を指定する（または次ホップIPのみ）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：D</strong><br>Ethernetインタフェース（マルチアクセスメディア）で出力IFのみ指定すると、ARPを複数回発生させてしまいます。次ホップIPのみ、または出力IF+次ホップIPの組み合わせが推奨されます。P-to-Pのシリアル回線では出力IFのみ指定でもOKです。
+                </div>
+            </div>
+
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+
+    </div>
+</div>
