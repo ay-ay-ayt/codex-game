@@ -1,0 +1,3422 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA 200-301 完全学習資料</title>
+    <meta name="description" content="CCNA 200-301試験合格のための完全学習資料。ネットワーク基礎からセキュリティ、自動化まで全範囲を網羅。確認問題・練習問題付き。">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div id="overlay"></div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <nav id="sidebar">
+        <div class="sidebar-logo">
+            <h1>🌐 CCNA 200-301</h1>
+            <p>完全学習資料 | Cisco認定試験対策</p>
+        </div>
+
+        <div class="progress-bar-container">
+            <div class="progress-label">
+                <span>学習進捗</span>
+                <span>0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="sidebar-nav">
+
+            <!-- Home -->
+            <div class="nav-section">
+                <div class="nav-section-header open">
+                    <span class="icon">🏠</span>
+                    <span>ホーム</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items open">
+                    <a class="nav-item active" data-page="page-home">トップページ</a>
+                </div>
+            </div>
+
+            <!-- 1. ネットワーク基礎 -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <span class="icon">📡</span>
+                    <span>1. ネットワーク基礎 (20%)</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a class="nav-item" data-page="page-1-1">1-1 ネットワーク概要・機器</a>
+                    <a class="nav-item" data-page="page-1-2">1-2 OSI・TCP/IPモデル</a>
+                    <a class="nav-item" data-page="page-1-3">1-3 IPv4アドレス・サブネット</a>
+                    <a class="nav-item" data-page="page-1-4">1-4 IPv6アドレス</a>
+                    <a class="nav-item" data-page="page-1-5">1-5 TCP・UDP・ポート番号</a>
+                    <a class="nav-item" data-page="page-1-6">1-6 ケーブル・物理インタフェース</a>
+                    <a class="nav-item" data-page="page-1-7">1-7 無線LAN基礎</a>
+                    <a class="nav-item" data-page="page-1-8">1-8 スイッチング基礎・MACアドレス</a>
+                </div>
+            </div>
+
+            <!-- 2. ネットワークアクセス -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <span class="icon">🔌</span>
+                    <span>2. ネットワークアクセス (20%)</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a class="nav-item" data-page="page-2-1">2-1 VLAN基礎・設定</a>
+                    <a class="nav-item" data-page="page-2-2">2-2 トランクポート・802.1Q</a>
+                    <a class="nav-item" data-page="page-2-3">2-3 EtherChannel (LACP)</a>
+                    <a class="nav-item" data-page="page-2-4">2-4 スパニングツリー (STP)</a>
+                    <a class="nav-item" data-page="page-2-5">2-5 CDP・LLDP</a>
+                    <a class="nav-item" data-page="page-2-6">2-6 無線LAN (WLC・AP)</a>
+                </div>
+            </div>
+
+            <!-- 3. IP接続 -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <span class="icon">🔀</span>
+                    <span>3. IP接続 (25%)</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a class="nav-item" data-page="page-3-1">3-1 ルーティング基礎・ルーティングテーブル</a>
+                    <a class="nav-item" data-page="page-3-2">3-2 スタティックルーティング</a>
+                    <a class="nav-item" data-page="page-3-3">3-3 OSPFv2 (シングルエリア)</a>
+                    <a class="nav-item" data-page="page-3-4">3-4 FHRP (HSRP・VRRP)</a>
+                </div>
+            </div>
+
+            <!-- 4. IPサービス -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <span class="icon">⚙️</span>
+                    <span>4. IPサービス (10%)</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a class="nav-item" data-page="page-4-1">4-1 NAT・PAT</a>
+                    <a class="nav-item" data-page="page-4-2">4-2 DHCP・DNS</a>
+                    <a class="nav-item" data-page="page-4-3">4-3 NTP・Syslog・SNMP</a>
+                    <a class="nav-item" data-page="page-4-4">4-4 QoS・TFTP/FTP</a>
+                </div>
+            </div>
+
+            <!-- 5. セキュリティ基礎 -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <span class="icon">🔒</span>
+                    <span>5. セキュリティ基礎 (15%)</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a class="nav-item" data-page="page-5-1">5-1 セキュリティ概念・脅威</a>
+                    <a class="nav-item" data-page="page-5-2">5-2 ACL (アクセスコントロールリスト)</a>
+                    <a class="nav-item" data-page="page-5-3">5-3 デバイスアクセス制御・パスワード</a>
+                    <a class="nav-item" data-page="page-5-4">5-4 L2セキュリティ (DHCPスヌーピング・DAI・PortSecurity)</a>
+                    <a class="nav-item" data-page="page-5-5">5-5 VPN・AAA</a>
+                </div>
+            </div>
+
+            <!-- 6. 自動化 -->
+            <div class="nav-section">
+                <div class="nav-section-header">
+                    <span class="icon">🤖</span>
+                    <span>6. 自動化と可搬性 (10%)</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a class="nav-item" data-page="page-6-1">6-1 ネットワーク自動化概要</a>
+                    <a class="nav-item" data-page="page-6-2">6-2 REST API・JSON</a>
+                    <a class="nav-item" data-page="page-6-3">6-3 Ansible・Puppet・Chef</a>
+                    <a class="nav-item" data-page="page-6-4">6-4 Cisco DNA Center・SDN</a>
+                </div>
+            </div>
+
+        </div><!-- /sidebar-nav -->
+    </nav>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div id="main">
+
+        <!-- Header -->
+        <header class="main-header">
+            <button class="hamburger" aria-label="メニュー">☰</button>
+            <div class="breadcrumb" id="breadcrumb">CCNA 200-301 <span>›</span> ホーム</div>
+            <div class="header-actions">
+                <button class="btn btn-outline btn-complete">✓ 完了マーク</button>
+            </div>
+        </header>
+
+        <!-- ===== HOME PAGE ===== -->
+        <div class="page active" id="page-home">
+            <div class="content-wrapper">
+                <h1 class="section-title">CCNA 200-301 完全学習資料</h1>
+                <p class="section-subtitle">Cisco Certified Network Associate
+                    試験合格のための体系的な学習資料です。全試験範囲を網羅し、確認問題・練習問題付きで実践的に学べます。</p>
+
+                <div class="info-box note">
+                    <div class="label">📋 試験情報</div>
+                    試験番号: 200-301 CCNA ／ 試験時間: 120分 ／ 問題数: 100問前後 ／ 合格点: 825/1000点（目安）
+                </div>
+
+                <h2 class="chapter-title"><span class="icon">📚</span>試験範囲の概要</h2>
+
+                <div class="topic-grid">
+                    <div class="topic-card blue" data-goto="page-1-1">
+                        <div class="topic-card-icon">📡</div>
+                        <div class="topic-card-title">1. ネットワーク基礎</div>
+                        <div class="topic-card-desc">OSI/TCP/IPモデル、IPv4/IPv6、TCP/UDP、ケーブル、スイッチング、無線LAN基礎</div>
+                        <span class="topic-card-badge badge-blue">出題率 20%</span>
+                    </div>
+                    <div class="topic-card cyan" data-goto="page-2-1">
+                        <div class="topic-card-icon">🔌</div>
+                        <div class="topic-card-title">2. ネットワークアクセス</div>
+                        <div class="topic-card-desc">VLAN、トランク、EtherChannel、STP、無線LAN（WLC/AP）</div>
+                        <span class="topic-card-badge badge-cyan">出題率 20%</span>
+                    </div>
+                    <div class="topic-card yellow" data-goto="page-3-1">
+                        <div class="topic-card-icon">🔀</div>
+                        <div class="topic-card-title">3. IP接続</div>
+                        <div class="topic-card-desc">ルーティングテーブル、スタティック、OSPF、FHRP (HSRP/VRRP)</div>
+                        <span class="topic-card-badge badge-yellow">出題率 25% ★最重要</span>
+                    </div>
+                    <div class="topic-card green" data-goto="page-4-1">
+                        <div class="topic-card-icon">⚙️</div>
+                        <div class="topic-card-title">4. IPサービス</div>
+                        <div class="topic-card-desc">NAT/PAT、DHCP、DNS、NTP、Syslog、SNMP、QoS</div>
+                        <span class="topic-card-badge badge-green">出題率 10%</span>
+                    </div>
+                    <div class="topic-card red" data-goto="page-5-1">
+                        <div class="topic-card-icon">🔒</div>
+                        <div class="topic-card-title">5. セキュリティ基礎</div>
+                        <div class="topic-card-desc">脅威・攻撃種別、ACL、パスワード管理、L2セキュリティ、VPN、AAA</div>
+                        <span class="topic-card-badge badge-red">出題率 15%</span>
+                    </div>
+                    <div class="topic-card purple" data-goto="page-6-1">
+                        <div class="topic-card-icon">🤖</div>
+                        <div class="topic-card-title">6. 自動化と可搬性</div>
+                        <div class="topic-card-desc">ネットワーク自動化、REST API、JSON、Ansible、SDN、DNA Center</div>
+                        <span class="topic-card-badge badge-purple">出題率 10%</span>
+                    </div>
+                </div>
+
+                <h2 class="chapter-title"><span class="icon">💡</span>効果的な学習方法</h2>
+                <div class="card">
+                    <h4 class="topic-title">推奨学習順序</h4>
+                    <ol>
+                        <li><strong>1. ネットワーク基礎</strong>から始め、OSIモデル・IPアドレス・サブネットを確実に理解する</li>
+                        <li><strong>2. ネットワークアクセス</strong>でVLAN・STPの設定を実践的に学ぶ</li>
+                        <li><strong>3. IP接続</strong>（最重要・25%）でルーティングとOSPFをマスターする</li>
+                        <li><strong>4. IPサービス</strong>でNAT・DHCPの設定を確認する</li>
+                        <li><strong>5. セキュリティ基礎</strong>でACLと各種セキュリティ機能を学ぶ</li>
+                        <li><strong>6. 自動化</strong>で新しいネットワーク管理技術を理解する</li>
+                        <li>各セクションの練習問題を必ず解き、弱点を把握する</li>
+                    </ol>
+                </div>
+
+                <div class="info-box warning">
+                    <div class="label">⚠️ 重要な学習ポイント</div>
+                    CCNAはコンセプト理解と実設定コマンドの両方が求められます。特にサブネット計算、OSPFの設定・確認コマンド、ACLの動作は頻出です。本資料の確認問題で繰り返し練習してください。
+                </div>
+
+                <h2 class="chapter-title"><span class="icon">🧮</span>サブネット計算機</h2>
+                <div class="subnet-calc">
+                    <h4>📐 IPアドレス / サブネット計算ツール</h4>
+                    <div class="calc-inputs">
+                        <div class="calc-input-group">
+                            <label>IPアドレス</label>
+                            <input type="text" id="calc-ip" placeholder="例: 192.168.1.0" value="192.168.10.0">
+                        </div>
+                        <div class="calc-input-group">
+                            <label>プレフィックス長</label>
+                            <input type="text" id="calc-prefix" placeholder="例: 24" value="26">
+                        </div>
+                        <div class="calc-input-group" style="display:flex;align-items:flex-end;">
+                            <button class="btn btn-primary" id="calc-subnet-btn" style="margin-bottom:0">計算する</button>
+                        </div>
+                    </div>
+                    <div class="calc-result" id="calc-result"></div>
+                </div>
+
+            </div>
+        </div><!-- /page-home -->
+
+        <!-- ===== CHAPTER 1-1: ネットワーク概要・機器 ===== -->
+        <div class="page" id="page-1-1">
+            <div class="content-wrapper">
+                <h1 class="section-title">1-1 ネットワーク概要・機器の役割</h1>
+                <p class="section-subtitle">
+                    <span class="tag tag-concept">概念</span>
+                    ネットワークを構成する機器の種類と役割、ネットワークトポロジを理解する
+                </p>
+
+                <h2 class="chapter-title"><span class="icon">🖧</span>ネットワーク機器の種類と役割</h2>
+
+                <h3 class="subsection-title">主要なネットワーク機器</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>機器</th>
+                                <th>OSI層</th>
+                                <th>主な役割</th>
+                                <th>転送単位</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>ハブ (Hub)</strong></td>
+                                <td>L1（物理層）</td>
+                                <td>受信した信号を全ポートに送信（ブロードキャスト）</td>
+                                <td>ビット</td>
+                            </tr>
+                            <tr>
+                                <td><strong>スイッチ (Switch)</strong></td>
+                                <td>L2（データリンク層）</td>
+                                <td>MACアドレステーブルに基づき適切なポートへ転送</td>
+                                <td>フレーム</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ルータ (Router)</strong></td>
+                                <td>L3（ネットワーク層）</td>
+                                <td>IPアドレスに基づき異なるネットワーク間でパケットを転送</td>
+                                <td>パケット</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ファイアウォール</strong></td>
+                                <td>L3〜L7</td>
+                                <td>セキュリティポリシーに基づきトラフィックをフィルタリング</td>
+                                <td>パケット/セッション</td>
+                            </tr>
+                            <tr>
+                                <td><strong>アクセスポイント (AP)</strong></td>
+                                <td>L1〜L2</td>
+                                <td>有線LANと無線LANを接続するブリッジ</td>
+                                <td>フレーム</td>
+                            </tr>
+                            <tr>
+                                <td><strong>WLCコントローラ</strong></td>
+                                <td>L2〜L3</td>
+                                <td>複数のAPを集中管理</td>
+                                <td>フレーム/パケット</td>
+                            </tr>
+                            <tr>
+                                <td><strong>IDS/IPS</strong></td>
+                                <td>L3〜L7</td>
+                                <td>不正侵入の検知・防御</td>
+                                <td>パケット/セッション</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-box note">
+                    <div class="label">📌 試験ポイント</div>
+                    スイッチとルータの違いは最頻出！スイッチはL2でMACアドレスを見る。ルータはL3でIPアドレスを見る。この区別を確実に覚えること。
+                </div>
+
+                <h3 class="subsection-title">ネットワークトポロジ（Topology）</h3>
+                <div class="card">
+                    <h4 class="topic-title">2層構成（2-Tier / Collapsed Core）</h4>
+                    <p>アクセス層とコア層の2つの層で構成。中小規模ネットワーク向け。</p>
+                    <ul>
+                        <li><strong>アクセス層：</strong>端末（PC、サーバー等）が接続される層</li>
+                        <li><strong>コア/ディストリビューション層：</strong>高速転送と集約を担う</li>
+                    </ul>
+
+                    <h4 class="topic-title">3層構成（3-Tier）</h4>
+                    <p>アクセス・ディストリビューション・コアの3層で構成。大規模ネットワーク向け。</p>
+                    <ul>
+                        <li><strong>アクセス層：</strong>エンドデバイスが接続</li>
+                        <li><strong>ディストリビューション層：</strong>ポリシー適用・ルーティング</li>
+                        <li><strong>コア層：</strong>高速バックボーン転送</li>
+                    </ul>
+
+                    <h4 class="topic-title">スパイン・リーフ構成（Spine-Leaf）</h4>
+                    <p>データセンター向けの構成。すべてのリーフスイッチがすべてのスパインスイッチに接続され、一定のホップ数（レイテンシ）を保証する。</p>
+                    <ul>
+                        <li><strong>スパイン：</strong>バックボーン（リーフ間の転送を担う）</li>
+                        <li><strong>リーフ：</strong>サーバーやエンドポイントが接続</li>
+                    </ul>
+                </div>
+
+                <h3 class="subsection-title">WAN・SOHO トポロジ</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>種別</th>
+                                <th>特徴</th>
+                                <th>代表的な接続方式</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>WAN</strong></td>
+                                <td>広域ネットワーク。拠点間を接続</td>
+                                <td>専用線、MPLS、インターネットVPN</td>
+                            </tr>
+                            <tr>
+                                <td><strong>SOHO</strong></td>
+                                <td>Small Office / Home Office。小規模な事業所向け</td>
+                                <td>ブロードバンドルータ、DSL、光ファイバー</td>
+                            </tr>
+                            <tr>
+                                <td><strong>オンプレミス</strong></td>
+                                <td>自社データセンターにインフラを配置</td>
+                                <td>専用サーバー、ストレージ</td>
+                            </tr>
+                            <tr>
+                                <td><strong>クラウド</strong></td>
+                                <td>外部クラウドプロバイダーにリソースを配置</td>
+                                <td>AWS、Azure、GCP</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mini Quiz 1-1 -->
+                <div class="quiz-section" data-quiz-id="q1-1">
+                    <h3>✏️ 確認問題（第1-1章）</h3>
+
+                    <div class="quiz-item" data-answer="1">
+                        <div class="quiz-question">Q1. OSI参照モデルのL2（データリンク層）で動作し、MACアドレステーブルを使ってフレームを転送するネットワーク機器はどれか？
+                        </div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. ルータ</button></li>
+                            <li><button class="quiz-option">B. スイッチ</button></li>
+                            <li><button class="quiz-option">C. ハブ</button></li>
+                            <li><button class="quiz-option">D. IPS</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：B（スイッチ）</strong><br>スイッチはL2でMACアドレステーブルを参照し、適切なポートにのみフレームを転送します。ハブはL1ですべてのポートに転送し、ルータはL3でIPパケットを転送します。
+                        </div>
+                    </div>
+
+                    <div class="quiz-item" data-answer="2">
+                        <div class="quiz-question">Q2. 大規模データセンターで採用されることが多く、すべてのリーフがすべてのスパインに接続されたトポロジの名称は？</div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. 2層構成（2-Tier）</button></li>
+                            <li><button class="quiz-option">B. 3層構成（3-Tier）</button></li>
+                            <li><button class="quiz-option">C. スパイン・リーフ（Spine-Leaf）</button></li>
+                            <li><button class="quiz-option">D. スター型</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：C（スパイン・リーフ）</strong><br>スパイン・リーフはデータセンター向けの構成で、すべてのリーフスイッチがすべてのスパインスイッチに接続されます。どの通信も2ホップで届くため、一定の低レイテンシを実現します。
+                        </div>
+                    </div>
+
+                    <div class="quiz-item" data-answer="0">
+                        <div class="quiz-question">Q3. ファイアウォールとIPS（不正侵入防止システム）を比較したとき、IPS固有の機能として最も適切なものはどれか？</div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. 不正なパケットをリアルタイムでブロックする</button></li>
+                            <li><button class="quiz-option">B. IPアドレスに基づきトラフィックを許可・拒否する</button></li>
+                            <li><button class="quiz-option">C. VLANを設定する</button></li>
+                            <li><button class="quiz-option">D. MACアドレスで転送先を決定する</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：A</strong><br>IPSはパケットの中身（シグネチャ）を検査し、攻撃パターンに一致した場合にリアルタイムでブロックします。ファイアウォールは主にIPアドレス／ポート番号でのフィルタリングです。
+                        </div>
+                    </div>
+
+                    <div class="quiz-actions">
+                        <button class="btn btn-outline btn-reset-quiz">リセット</button>
+                    </div>
+                </div>
+
+            </div>
+        </div><!-- /page-1-1 -->
+
+        <!-- ===== CHAPTER 1-2: OSI・TCP/IPモデル ===== -->
+        <div class="page" id="page-1-2">
+            <div class="content-wrapper">
+                <h1 class="section-title">1-2 OSI・TCP/IPモデル</h1>
+                <p class="section-subtitle">
+                    <span class="tag tag-concept">概念</span>
+                    ネットワーク通信の階層モデルを理解し、各層のプロトコルと機能を把握する
+                </p>
+
+                <h2 class="chapter-title"><span class="icon">📊</span>OSI参照モデル（7層モデル）</h2>
+                <p>OSI（Open Systems Interconnection）モデルはISOが策定したネットワーク通信のための標準的な参照モデルです。</p>
+
+                <div class="osi-diagram">
+                    <div class="osi-layer layer-7">
+                        <div class="osi-layer-num">7</div>
+                        <div class="osi-layer-info">
+                            <div class="osi-layer-name">アプリケーション層</div>
+                            <div class="osi-layer-desc">ユーザーが直接利用するサービス提供</div>
+                            <div class="osi-layer-proto">HTTP/HTTPS, FTP, SMTP, DNS, DHCP, SSH, Telnet</div>
+                        </div>
+                    </div>
+                    <div class="osi-layer layer-6">
+                        <div class="osi-layer-num">6</div>
+                        <div class="osi-layer-info">
+                            <div class="osi-layer-name">プレゼンテーション層</div>
+                            <div class="osi-layer-desc">データの形式変換・暗号化・圧縮</div>
+                            <div class="osi-layer-proto">SSL/TLS, JPEG, MPEG, ASCII, EBCDIC</div>
+                        </div>
+                    </div>
+                    <div class="osi-layer layer-5">
+                        <div class="osi-layer-num">5</div>
+                        <div class="osi-layer-info">
+                            <div class="osi-layer-name">セッション層</div>
+                            <div class="osi-layer-desc">通信セッションの確立・管理・終了</div>
+                            <div class="osi-layer-proto">NetBIOS, RPC, SQL</div>
+                        </div>
+                    </div>
+                    <div class="osi-layer layer-4">
+                        <div class="osi-layer-num">4</div>
+                        <div class="osi-layer-info">
+                            <div class="osi-layer-name">トランスポート層</div>
+                            <div class="osi-layer-desc">エンドツーエンドの信頼性・フロー制御・セグメント化</div>
+                            <div class="osi-layer-proto">TCP, UDP → <strong>PDU: セグメント</strong></div>
+                        </div>
+                    </div>
+                    <div class="osi-layer layer-3">
+                        <div class="osi-layer-num">3</div>
+                        <div class="osi-layer-info">
+                            <div class="osi-layer-name">ネットワーク層</div>
+                            <div class="osi-layer-desc">異なるネットワーク間のルーティング・IPアドレッシング</div>
+                            <div class="osi-layer-proto">IP, ICMP, ARP → <strong>PDU: パケット</strong></div>
+                        </div>
+                    </div>
+                    <div class="osi-layer layer-2">
+                        <div class="osi-layer-num">2</div>
+                        <div class="osi-layer-info">
+                            <div class="osi-layer-name">データリンク層</div>
+                            <div class="osi-layer-desc">同一ネットワーク内転送・MACアドレッシング・エラー検出</div>
+                            <div class="osi-layer-proto">Ethernet, Wi-Fi (802.11), PPP → <strong>PDU: フレーム</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="osi-layer layer-1">
+                        <div class="osi-layer-num">1</div>
+                        <div class="osi-layer-info">
+                            <div class="osi-layer-name">物理層</div>
+                            <div class="osi-layer-desc">電気信号・光信号の送受信。物理的接続の定義</div>
+                            <div class="osi-layer-proto">ケーブル, 光ファイバー, 電波 → <strong>PDU: ビット</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box note">
+                    <div class="label">💡 覚え方（上から）</div>
+                    <strong>「ア・プ・セ・ト・ネ・デ・ブ」</strong>（アプリ・プレゼン・セッション・トランスポート・ネットワーク・データリンク・物理）
+                </div>
+
+                <h2 class="chapter-title"><span class="icon">📋</span>TCP/IPモデル（4層モデル）</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>TCP/IP層</th>
+                                <th>対応するOSI層</th>
+                                <th>主なプロトコル</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>アプリケーション層</strong></td>
+                                <td>5・6・7層</td>
+                                <td>HTTP, HTTPS, FTP, SMTP, DNS, DHCP, SSH, Telnet, SNMP</td>
+                            </tr>
+                            <tr>
+                                <td><strong>トランスポート層</strong></td>
+                                <td>4層</td>
+                                <td>TCP, UDP</td>
+                            </tr>
+                            <tr>
+                                <td><strong>インターネット層</strong></td>
+                                <td>3層</td>
+                                <td>IP (v4/v6), ICMP, OSPF, BGP</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ネットワークインタフェース層</strong></td>
+                                <td>1・2層</td>
+                                <td>Ethernet, Wi-Fi, PPP, ARP</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title">カプセル化と非カプセル化</h3>
+                <div class="card">
+                    <h4 class="topic-title">カプセル化（送信側：上位層→下位層）</h4>
+                    <p>データを送信する際、各層でヘッダ（および末尾にトレーラ）が追加される。</p>
+                    <pre>データ（アプリケーション）
+  → [TCPヘッダ] + データ  = セグメント（L4）
+  → [IPヘッダ] + セグメント = パケット（L3）
+  → [Ethernetヘッダ] + パケット + [FCS] = フレーム（L2）
+  → ビット列（L1）</pre>
+                    <h4 class="topic-title">非カプセル化（受信側：下位層→上位層）</h4>
+                    <p>受信した際は逆順に各層のヘッダを解析・除去しながら上位層に渡す。</p>
+                </div>
+
+                <!-- Quiz 1-2 -->
+                <div class="quiz-section" data-quiz-id="q1-2">
+                    <h3>✏️ 確認問題（第1-2章）</h3>
+
+                    <div class="quiz-item" data-answer="2">
+                        <div class="quiz-question">Q1. OSI参照モデルにおいて、IPアドレスを使ってルーティングを行う層はどれか？</div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. 第2層（データリンク層）</button></li>
+                            <li><button class="quiz-option">B. 第4層（トランスポート層）</button></li>
+                            <li><button class="quiz-option">C. 第3層（ネットワーク層）</button></li>
+                            <li><button class="quiz-option">D. 第5層（セッション層）</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：C（第3層）</strong><br>ネットワーク層（L3）はIPアドレスを使ってパケットのルーティングを行います。ルータがこの層で動作します。
+                        </div>
+                    </div>
+
+                    <div class="quiz-item" data-answer="1">
+                        <div class="quiz-question">Q2. L4（トランスポート層）のPDU（プロトコルデータユニット）の正しい呼び名はどれか？</div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. フレーム</button></li>
+                            <li><button class="quiz-option">B. セグメント</button></li>
+                            <li><button class="quiz-option">C. パケット</button></li>
+                            <li><button class="quiz-option">D. ビット</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：B（セグメント）</strong><br>L4=セグメント、L3=パケット、L2=フレーム、L1=ビット。この対応は頻出です。
+                        </div>
+                    </div>
+
+                    <div class="quiz-item" data-answer="3">
+                        <div class="quiz-question">Q3. TCP/IPモデルの「インターネット層」に対応するOSIモデルの層はどれか？</div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. 第1・2層</button></li>
+                            <li><button class="quiz-option">B. 第4層</button></li>
+                            <li><button class="quiz-option">C. 第5・6・7層</button></li>
+                            <li><button class="quiz-option">D. 第3層</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：D（第3層）</strong><br>TCP/IPモデルのインターネット層はOSIの第3層（ネットワーク層）に対応します。IPプロトコルがこの層で動作します。
+                        </div>
+                    </div>
+
+                    <div class="quiz-actions">
+                        <button class="btn btn-outline btn-reset-quiz">リセット</button>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /page-1-2 -->
+
+        <!-- ===== CHAPTER 1-3: IPv4アドレス・サブネット ===== -->
+        <div class="page" id="page-1-3">
+            <div class="content-wrapper">
+                <h1 class="section-title">1-3 IPv4アドレス・サブネット</h1>
+                <p class="section-subtitle">
+                    <span class="tag tag-exam">頻出</span>
+                    <span class="tag tag-concept">概念</span>
+                    サブネット計算はCCNA最重要トピックの一つ。確実に計算できるようにしよう
+                </p>
+
+                <h2 class="chapter-title"><span class="icon">🔢</span>IPv4アドレスの基礎</h2>
+
+                <div class="card">
+                    <h4 class="topic-title">IPv4アドレスの構造</h4>
+                    <p>IPv4アドレスは<strong>32ビット</strong>で構成され、8ビットずつ4つのオクテットに分けてドット区切りで表記します。</p>
+                    <div class="ip-visual">
+                        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">例：192.168.10.1 /24</p>
+                        <div class="ip-bits">
+                            <div class="ip-octet">
+                                <div class="ip-bit network">1</div>
+                                <div class="ip-bit network">1</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                            </div>
+                            <div class="ip-separator">.</div>
+                            <div class="ip-octet">
+                                <div class="ip-bit network">1</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">1</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">1</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                            </div>
+                            <div class="ip-separator">.</div>
+                            <div class="ip-octet">
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">1</div>
+                                <div class="ip-bit network">0</div>
+                                <div class="ip-bit network">1</div>
+                                <div class="ip-bit network">0</div>
+                            </div>
+                            <div class="ip-separator">.</div>
+                            <div class="ip-octet">
+                                <div class="ip-bit host">0</div>
+                                <div class="ip-bit host">0</div>
+                                <div class="ip-bit host">0</div>
+                                <div class="ip-bit host">0</div>
+                                <div class="ip-bit host">0</div>
+                                <div class="ip-bit host">0</div>
+                                <div class="ip-bit host">0</div>
+                                <div class="ip-bit host">1</div>
+                            </div>
+                        </div>
+                        <p style="font-size:0.78rem;margin-top:6px;margin-bottom:0;">
+                            <span style="color:var(--accent-blue)">■ ネットワーク部（24ビット）</span>　
+                            <span style="color:var(--accent-green)">■ ホスト部（8ビット）</span>
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">アドレスクラス（クラスフル）</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>クラス</th>
+                                <th>先頭ビット</th>
+                                <th>範囲</th>
+                                <th>デフォルトマスク</th>
+                                <th>用途</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>クラスA</strong></td>
+                                <td>0</td>
+                                <td>1.0.0.0 〜 126.255.255.255</td>
+                                <td>/8（255.0.0.0）</td>
+                                <td>大規模ネットワーク</td>
+                            </tr>
+                            <tr>
+                                <td><strong>クラスB</strong></td>
+                                <td>10</td>
+                                <td>128.0.0.0 〜 191.255.255.255</td>
+                                <td>/16（255.255.0.0）</td>
+                                <td>中規模ネットワーク</td>
+                            </tr>
+                            <tr>
+                                <td><strong>クラスC</strong></td>
+                                <td>110</td>
+                                <td>192.0.0.0 〜 223.255.255.255</td>
+                                <td>/24（255.255.255.0）</td>
+                                <td>小規模ネットワーク</td>
+                            </tr>
+                            <tr>
+                                <td><strong>クラスD</strong></td>
+                                <td>1110</td>
+                                <td>224.0.0.0 〜 239.255.255.255</td>
+                                <td>—</td>
+                                <td>マルチキャスト</td>
+                            </tr>
+                            <tr>
+                                <td><strong>クラスE</strong></td>
+                                <td>1111</td>
+                                <td>240.0.0.0 〜 255.255.255.255</td>
+                                <td>—</td>
+                                <td>実験用（予約済み）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="subsection-title">プライベートIPアドレス</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>範囲</th>
+                                <th>CIDR表記</th>
+                                <th>クラス</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>10.0.0.0 〜 10.255.255.255</td>
+                                <td>10.0.0.0/8</td>
+                                <td>A</td>
+                            </tr>
+                            <tr>
+                                <td>172.16.0.0 〜 172.31.255.255</td>
+                                <td>172.16.0.0/12</td>
+                                <td>B</td>
+                            </tr>
+                            <tr>
+                                <td>192.168.0.0 〜 192.168.255.255</td>
+                                <td>192.168.0.0/16</td>
+                                <td>C</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-box important">
+                    <div class="label">🚨 重要</div>
+                    127.0.0.0/8 はループバックアドレス（自分自身を指す）。特に 127.0.0.1 が代表的。インターネットには使用不可。
+                </div>
+
+                <h2 class="chapter-title"><span class="icon">✂️</span>サブネット化の計算方法</h2>
+
+                <div class="card">
+                    <h4 class="topic-title">重要な計算式</h4>
+                    <ul>
+                        <li><strong>サブネット数</strong>（クラスフル）= 2<sup>n</sup>（nはサブネットビット数）</li>
+                        <li><strong>ホスト数</strong> = 2<sup>h</sup> - 2（hはホストビット数、-2はネットワーク＆ブロードキャスト）</li>
+                        <li><strong>ブロックサイズ</strong> = 256 - サブネットマスク値の最後のオクテット</li>
+                    </ul>
+                </div>
+
+                <h3 class="subsection-title">サブネット計算例</h3>
+                <div class="card">
+                    <h4 class="topic-title">例：192.168.1.0/26</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <tr>
+                                <td>プレフィックス長</td>
+                                <td>/26 （クラスCの24ビット + サブネット2ビット）</td>
+                            </tr>
+                            <tr>
+                                <td>サブネットマスク</td>
+                                <td>255.255.255.192</td>
+                            </tr>
+                            <tr>
+                                <td>ブロックサイズ</td>
+                                <td>256 - 192 = 64</td>
+                            </tr>
+                            <tr>
+                                <td>ホスト数</td>
+                                <td>2<sup>6</sup> - 2 = 62 台</td>
+                            </tr>
+                            <tr>
+                                <td>サブネット①</td>
+                                <td>192.168.1.0 〜 192.168.1.63（ホスト：.1〜.62）</td>
+                            </tr>
+                            <tr>
+                                <td>サブネット②</td>
+                                <td>192.168.1.64 〜 192.168.1.127（ホスト：.65〜.126）</td>
+                            </tr>
+                            <tr>
+                                <td>サブネット③</td>
+                                <td>192.168.1.128 〜 192.168.1.191（ホスト：.129〜.190）</td>
+                            </tr>
+                            <tr>
+                                <td>サブネット④</td>
+                                <td>192.168.1.192 〜 192.168.1.255（ホスト：.193〜.254）</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <h3 class="subsection-title">プレフィックス長とサブネットマスクの対応表</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>CIDR/プレフィックス</th>
+                                <th>サブネットマスク</th>
+                                <th>ホスト数</th>
+                                <th>ブロックサイズ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>/24</td>
+                                <td>255.255.255.0</td>
+                                <td>254</td>
+                                <td>256</td>
+                            </tr>
+                            <tr>
+                                <td>/25</td>
+                                <td>255.255.255.128</td>
+                                <td>126</td>
+                                <td>128</td>
+                            </tr>
+                            <tr>
+                                <td>/26</td>
+                                <td>255.255.255.192</td>
+                                <td>62</td>
+                                <td>64</td>
+                            </tr>
+                            <tr>
+                                <td>/27</td>
+                                <td>255.255.255.224</td>
+                                <td>30</td>
+                                <td>32</td>
+                            </tr>
+                            <tr>
+                                <td>/28</td>
+                                <td>255.255.255.240</td>
+                                <td>14</td>
+                                <td>16</td>
+                            </tr>
+                            <tr>
+                                <td>/29</td>
+                                <td>255.255.255.248</td>
+                                <td>6</td>
+                                <td>8</td>
+                            </tr>
+                            <tr>
+                                <td>/30</td>
+                                <td>255.255.255.252</td>
+                                <td>2</td>
+                                <td>4</td>
+                            </tr>
+                            <tr>
+                                <td>/31</td>
+                                <td>255.255.255.254</td>
+                                <td>2（P-to-P）</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td>/32</td>
+                                <td>255.255.255.255</td>
+                                <td>1（ホストルート）</td>
+                                <td>1</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Subnet Calc embed -->
+                <div class="subnet-calc">
+                    <h4>📐 サブネット計算ツール</h4>
+                    <div class="calc-inputs">
+                        <div class="calc-input-group">
+                            <label>IPアドレス</label>
+                            <input type="text" id="calc-ip2" placeholder="例: 192.168.1.0" value="192.168.1.0">
+                        </div>
+                        <div class="calc-input-group">
+                            <label>プレフィックス長</label>
+                            <input type="text" id="calc-prefix2" placeholder="例: 27" value="27">
+                        </div>
+                        <div class="calc-input-group" style="display:flex;align-items:flex-end;">
+                            <button class="btn btn-primary"
+                                onclick="calcSubnetInline('calc-ip2','calc-prefix2','calc-result2')">計算する</button>
+                        </div>
+                    </div>
+                    <div class="calc-result" id="calc-result2"></div>
+                </div>
+
+                <!-- Quiz 1-3 -->
+                <div class="quiz-section" data-quiz-id="q1-3">
+                    <h3>✏️ 確認問題（第1-3章）</h3>
+
+                    <div class="quiz-item" data-answer="2">
+                        <div class="quiz-question">Q1. IPアドレス 172.16.5.10/20 のネットワークアドレスはどれか？</div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. 172.16.0.0</button></li>
+                            <li><button class="quiz-option">B. 172.16.5.0</button></li>
+                            <li><button class="quiz-option">C. 172.16.0.0（/20）</button></li>
+                            <li><button class="quiz-option">D. 172.0.0.0</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：C（172.16.0.0/20）</strong><br>/20のサブネットマスクは255.255.240.0です。172.16.5.10の第3オクテット5をマスク（240）でANDすると0になります。よってネットワークアドレスは172.16.0.0/20。ブロックサイズ=16なので、172.16.0.0,
+                            172.16.16.0, 172.16.32.0...と分割されます。
+                        </div>
+                    </div>
+
+                    <div class="quiz-item" data-answer="1">
+                        <div class="quiz-question">Q2. /27 のサブネットで使用できるホスト数はいくつか？</div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. 32</button></li>
+                            <li><button class="quiz-option">B. 30</button></li>
+                            <li><button class="quiz-option">C. 28</button></li>
+                            <li><button class="quiz-option">D. 14</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：B（30）</strong><br>/27はホストビットが5ビット。2<sup>5</sup>=32のうち、ネットワークアドレスとブロードキャストアドレスの2つを引いて30台。
+                        </div>
+                    </div>
+
+                    <div class="quiz-item" data-answer="0">
+                        <div class="quiz-question">Q3. プライベートIPアドレスに該当しないものはどれか？</div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. 172.32.0.1</button></li>
+                            <li><button class="quiz-option">B. 10.255.255.1</button></li>
+                            <li><button class="quiz-option">C. 192.168.100.1</button></li>
+                            <li><button class="quiz-option">D. 172.16.50.1</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：A（172.32.0.1）</strong><br>プライベートアドレスのクラスBは172.16.0.0〜172.31.255.255（/12）です。172.32.0.1はこの範囲外なのでパブリックアドレスです。
+                        </div>
+                    </div>
+
+                    <div class="quiz-item" data-answer="3">
+                        <div class="quiz-question">Q4. 192.168.20.0/24 のネットワークを /27 に分割した場合、作成されるサブネットの数はいくつか？</div>
+                        <ul class="quiz-options">
+                            <li><button class="quiz-option">A. 4</button></li>
+                            <li><button class="quiz-option">B. 6</button></li>
+                            <li><button class="quiz-option">C. 4（-2でサブネット0と全1を除く）</button></li>
+                            <li><button class="quiz-option">D. 8</button></li>
+                        </ul>
+                        <div class="quiz-explanation">
+                            <strong>正解：D（8）</strong><br>/24から/27への変更は3ビットのサブネット拡張（27-24=3）。2<sup>3</sup>=8サブネットが作成されます。CIDRでは0サブネットと全1サブネットも使用可能です。
+                        </div>
+                    </div>
+
+                    <div class="quiz-actions">
+                        <button class="btn btn-outline btn-reset-quiz">リセット</button>
+                    </div>
+                </div>
+
+            </div>
+        </div><!-- /page-1-3 -->
+
+        <!-- 1-4 IPv6 -->
+<div class="page" id="page-1-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-4 IPv6アドレス</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> IPv6の基礎・アドレス種別・EUI-64を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>IPv6の基礎</h2>
+        <div class="card">
+            <h4 class="topic-title">IPv4 vs IPv6</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>IPv4</th>
+                            <th>IPv6</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>アドレス長</td>
+                            <td>32ビット</td>
+                            <td>128ビット</td>
+                        </tr>
+                        <tr>
+                            <td>表記</td>
+                            <td>10進ドット区切り (192.168.1.1)</td>
+                            <td>16進コロン区切り (2001:db8::1)</td>
+                        </tr>
+                        <tr>
+                            <td>アドレス数</td>
+                            <td>約43億</td>
+                            <td>約340澗（3.4×10³⁸）</td>
+                        </tr>
+                        <tr>
+                            <td>ブロードキャスト</td>
+                            <td>あり</td>
+                            <td>なし（マルチキャストで代替）</td>
+                        </tr>
+                        <tr>
+                            <td>NAT</td>
+                            <td>必要</td>
+                            <td>不要（アドレス枯渇なし）</td>
+                        </tr>
+                        <tr>
+                            <td>ヘッダ</td>
+                            <td>可変長（20〜60バイト）</td>
+                            <td>固定40バイト</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h3 class="subsection-title">IPv6アドレスの表記ルール</h3>
+        <div class="card">
+            <h4 class="topic-title">省略ルール（2つのルール）</h4>
+            <ul>
+                <li><strong>ルール1：</strong>各グループの先頭ゼロは省略可。<code>0db8</code>→<code>db8</code></li>
+                <li><strong>ルール2：</strong>連続する0グループは「::」で1か所だけ省略可。<code>0000:0000:0000</code>→<code>::</code></li>
+            </ul>
+            <pre>完全形: 2001:0db8:0000:0000:0000:0000:0000:0001
+省略形: 2001:db8::1</pre>
+        </div>
+
+        <h3 class="subsection-title">IPv6アドレスの種別</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種別</th>
+                        <th>プレフィックス</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>グローバルユニキャスト</strong></td>
+                        <td>2000::/3</td>
+                        <td>インターネット上で一意。IPv4のパブリックIPに相当</td>
+                    </tr>
+                    <tr>
+                        <td><strong>リンクローカル</strong></td>
+                        <td>FE80::/10</td>
+                        <td>同一リンク内のみ有効。自動生成される</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ユニークローカル</strong></td>
+                        <td>FC00::/7</td>
+                        <td>プライベートネットワーク内。IPv4プライベートIPに相当</td>
+                    </tr>
+                    <tr>
+                        <td><strong>マルチキャスト</strong></td>
+                        <td>FF00::/8</td>
+                        <td>複数宛先への一括送信</td>
+                    </tr>
+                    <tr>
+                        <td><strong>エニーキャスト</strong></td>
+                        <td>ユニキャストと同じ</td>
+                        <td>最近傍ノードへ送信</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ループバック</strong></td>
+                        <td>::1/128</td>
+                        <td>自分自身（IPv4の127.0.0.1に相当）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">EUI-64によるインタフェースID生成</h3>
+        <div class="card">
+            <h4 class="topic-title">EUI-64の計算手順</h4>
+            <ol>
+                <li>MACアドレス（48ビット）を取得（例：AA:BB:CC:DD:EE:FF）</li>
+                <li>中央に「FFFE」を挿入→ AA:BB:CC:FF:FE:DD:EE:FF</li>
+                <li>先頭バイトの第7ビット（U/Lビット）を反転→ A8:BB:CC:FF:FE:DD:EE:FF</li>
+                <li>この64ビットをインタフェースIDとして使用</li>
+            </ol>
+            <pre>MAC:  AA:BB:CC:DD:EE:FF
+EUI-64インタフェースID: A8BB:CCFF:FEDD:EEFF</pre>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">📌 試験ポイント</div>
+            リンクローカルアドレスはOSPFv3のネイバー確立など、同一リンク内通信に必ず使用される。show ipv6 interfaceで確認できる。
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-4">
+            <h3>✏️ 確認問題（第1-4章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. IPv6のリンクローカルアドレスのプレフィックスとして正しいものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 2000::/3</button></li>
+                    <li><button class="quiz-option">B. FC00::/7</button></li>
+                    <li><button class="quiz-option">C. FE80::/10</button></li>
+                    <li><button class="quiz-option">D. FF00::/8</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（FE80::/10）</strong><br>リンクローカルアドレスはFE80::/10のプレフィックスを持ち、同一リンク内通信にのみ使用されます。</div>
+            </div>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. IPv6でブロードキャストが廃止された代わりに使用されるものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ユニキャスト</button></li>
+                    <li><button class="quiz-option">B. マルチキャスト</button></li>
+                    <li><button class="quiz-option">C. エニーキャスト</button></li>
+                    <li><button class="quiz-option">D. ユニークローカル</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（マルチキャスト）</strong><br>IPv6ではブロードキャストが廃止され、マルチキャストがその役割を担います。例えば全ルータ宛のFF02::2などが使われます。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 1-5 TCP・UDP -->
+<div class="page" id="page-1-5">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-5 TCP・UDP・ポート番号</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> トランスポート層のプロトコルと主要ポート番号を覚える</p>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>TCP vs UDP</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>特徴</th>
+                        <th>TCP</th>
+                        <th>UDP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>接続確立</td>
+                        <td>3ウェイハンドシェイク（コネクション型）</td>
+                        <td>コネクションレス型</td>
+                    </tr>
+                    <tr>
+                        <td>信頼性</td>
+                        <td>高い（再送制御・順序制御）</td>
+                        <td>低い（再送なし）</td>
+                    </tr>
+                    <tr>
+                        <td>速度</td>
+                        <td>遅い（オーバーヘッドあり）</td>
+                        <td>速い</td>
+                    </tr>
+                    <tr>
+                        <td>フロー制御</td>
+                        <td>あり（ウィンドウサイズ）</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td>主な用途</td>
+                        <td>HTTP/S、FTP、SSH、SMTP</td>
+                        <td>DNS、DHCP、SNMP、VoIP、動画ストリーミング</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">TCPの3ウェイハンドシェイク</h4>
+            <pre><span class="cmd-prompt">クライアント</span>          <span class="cmd-prompt">サーバー</span>
+   |── SYN ──────────→ |  (接続要求)
+   |← SYN-ACK ────── |  (受入+確認)
+   |── ACK ──────────→ |  (確認応答)
+   |                   |  (接続確立！)</pre>
+        </div>
+
+        <h3 class="subsection-title">主要ポート番号（必須暗記）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ポート番号</th>
+                        <th>プロトコル</th>
+                        <th>説明</th>
+                        <th>TCP/UDP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>20, 21</strong></td>
+                        <td>FTP</td>
+                        <td>ファイル転送（20:データ、21:制御）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>22</strong></td>
+                        <td>SSH</td>
+                        <td>暗号化リモートアクセス</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>23</strong></td>
+                        <td>Telnet</td>
+                        <td>平文リモートアクセス（非推奨）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>25</strong></td>
+                        <td>SMTP</td>
+                        <td>メール送信</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>53</strong></td>
+                        <td>DNS</td>
+                        <td>ドメイン名解決</td>
+                        <td>UDP/TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>67, 68</strong></td>
+                        <td>DHCP</td>
+                        <td>IPアドレス自動割当（67:サーバー、68:クライアント）</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>69</strong></td>
+                        <td>TFTP</td>
+                        <td>簡易ファイル転送</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>80</strong></td>
+                        <td>HTTP</td>
+                        <td>Web通信（平文）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>110</strong></td>
+                        <td>POP3</td>
+                        <td>メール受信</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>123</strong></td>
+                        <td>NTP</td>
+                        <td>時刻同期</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>161, 162</strong></td>
+                        <td>SNMP</td>
+                        <td>ネットワーク管理（161:ポーリング、162:トラップ）</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>443</strong></td>
+                        <td>HTTPS</td>
+                        <td>Web通信（暗号化）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>514</strong></td>
+                        <td>Syslog</td>
+                        <td>ログ転送</td>
+                        <td>UDP</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-5">
+            <h3>✏️ 確認問題（第1-5章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. TCPの「3ウェイハンドシェイク」で、サーバーが最初にクライアントへ返すパケットはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. SYN</button></li>
+                    <li><button class="quiz-option">B. SYN-ACK</button></li>
+                    <li><button class="quiz-option">C. ACK</button></li>
+                    <li><button class="quiz-option">D. FIN</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（SYN-ACK）</strong><br>クライアントがSYNを送り、サーバーがSYN-ACKで応答し、クライアントがACKを送って接続確立（SYN→SYN-ACK→ACK）。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. DHCPで使用されるポート番号として正しい組み合わせはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. サーバー:67、クライアント:68（UDP）</button></li>
+                    <li><button class="quiz-option">B. サーバー:53、クライアント:68（TCP）</button></li>
+                    <li><button class="quiz-option">C. サーバー:68、クライアント:67（UDP）</button></li>
+                    <li><button class="quiz-option">D. サーバー:80、クライアント:443（TCP）</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（67/68
+                        UDP）</strong><br>DHCPサーバーはポート67、クライアントはポート68を使用します。プロトコルはUDPです。</div>
+            </div>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q3. 次のうちUDPを使用するプロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. HTTP</button></li>
+                    <li><button class="quiz-option">B. SSH</button></li>
+                    <li><button class="quiz-option">C. SNMP</button></li>
+                    <li><button class="quiz-option">D. FTP</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（SNMP）</strong><br>SNMPはポート161/162でUDPを使用します。HTTP・SSH・FTPはTCPです。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 1-6 ケーブル -->
+<div class="page" id="page-1-6">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-6 ケーブル・物理インタフェース</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> ケーブルの種類・規格・PoEの基礎を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🔌</span>銅線ケーブル</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種別</th>
+                        <th>規格</th>
+                        <th>最大速度</th>
+                        <th>最大距離</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>UTP Cat5e</td>
+                        <td>1000BASE-T</td>
+                        <td>1Gbps</td>
+                        <td>100m</td>
+                    </tr>
+                    <tr>
+                        <td>UTP Cat6</td>
+                        <td>10GBASE-T</td>
+                        <td>10Gbps</td>
+                        <td>55m（37〜55m）</td>
+                    </tr>
+                    <tr>
+                        <td>UTP Cat6a</td>
+                        <td>10GBASE-T</td>
+                        <td>10Gbps</td>
+                        <td>100m</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="info-box note">
+            <div class="label">📌 ストレートケーブル vs クロスケーブル</div>
+            現代のスイッチはAuto-MDIX（自動判別）搭載のため基本的にどちらでもOK。試験ではストレート=異種機器間、クロス=同種機器間と覚える。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">💡</span>光ファイバーケーブル</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種別</th>
+                        <th>コア径</th>
+                        <th>光源</th>
+                        <th>主な用途</th>
+                        <th>最大距離</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>シングルモード (SMF)</strong></td>
+                        <td>9μm</td>
+                        <td>レーザー</td>
+                        <td>長距離WAN</td>
+                        <td>〜100km以上</td>
+                    </tr>
+                    <tr>
+                        <td><strong>マルチモード (MMF)</strong></td>
+                        <td>50/62.5μm</td>
+                        <td>LED</td>
+                        <td>LAN・データセンター</td>
+                        <td>〜2km</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚡</span>PoE（Power over Ethernet）</h2>
+        <div class="card">
+            <ul>
+                <li><strong>PoE（802.3af）：</strong>最大15.4W供給（APや小型IPカメラ向け）</li>
+                <li><strong>PoE+（802.3at）：</strong>最大30W供給（より高出力のAP向け）</li>
+                <li><strong>PoE++（802.3bt）：</strong>最大60/100W供給（PTZカメラ・小型PC向け）</li>
+            </ul>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-6">
+            <h3>✏️ 確認問題（第1-6章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. 長距離WAN接続に適した光ファイバーの種類はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. マルチモード光ファイバー</button></li>
+                    <li><button class="quiz-option">B. シングルモード光ファイバー</button></li>
+                    <li><button class="quiz-option">C. Cat6 UTP</button></li>
+                    <li><button class="quiz-option">D. 同軸ケーブル</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（シングルモード）</strong><br>SMFはレーザー光源を使い100km以上の長距離伝送が可能です。MMFはLAN内の短距離向けです。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 1-7 無線LAN基礎 -->
+<div class="page" id="page-1-7">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-7 無線LAN基礎</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> Wi-Fiの規格・チャネル・セキュリティを理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">📶</span>Wi-Fi規格</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>規格名</th>
+                        <th>IEEE標準</th>
+                        <th>周波数帯</th>
+                        <th>最大速度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Wi-Fi 4</td>
+                        <td>802.11n</td>
+                        <td>2.4/5GHz</td>
+                        <td>600Mbps</td>
+                    </tr>
+                    <tr>
+                        <td>Wi-Fi 5</td>
+                        <td>802.11ac</td>
+                        <td>5GHz</td>
+                        <td>6.9Gbps</td>
+                    </tr>
+                    <tr>
+                        <td>Wi-Fi 6</td>
+                        <td>802.11ax</td>
+                        <td>2.4/5/6GHz</td>
+                        <td>9.6Gbps</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">2.4GHz帯の非重複チャネル</h3>
+        <div class="info-box important">
+            <div class="label">🚨 最重要暗記事項</div>
+            2.4GHz帯の<strong>非重複チャネルは1・6・11（日本）</strong>の3チャネル。隣接するAPにはこの3つを割り当て干渉を防ぐ。5GHz帯は多数のチャネルがあるため干渉しにくい。
+        </div>
+
+        <h3 class="subsection-title">無線セキュリティ方式</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>方式</th>
+                        <th>暗号化</th>
+                        <th>安全性</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>WEP</td>
+                        <td>RC4（40/104bit）</td>
+                        <td>非常に低い（使用禁止）</td>
+                    </tr>
+                    <tr>
+                        <td>WPA</td>
+                        <td>TKIP</td>
+                        <td>低い（非推奨）</td>
+                    </tr>
+                    <tr>
+                        <td>WPA2</td>
+                        <td>AES-CCMP</td>
+                        <td>高い（現在の標準）</td>
+                    </tr>
+                    <tr>
+                        <td>WPA3</td>
+                        <td>AES-GCMP</td>
+                        <td>非常に高い（最新標準）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-7">
+            <h3>✏️ 確認問題（第1-7章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 2.4GHz帯における非重複チャネルの正しい組み合わせはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 1・2・3</button></li>
+                    <li><button class="quiz-option">B. 1・5・10</button></li>
+                    <li><button class="quiz-option">C. 1・6・11</button></li>
+                    <li><button class="quiz-option">D. 1・7・13</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（1・6・11）</strong><br>2.4GHz帯は各チャネルが重複するため、非重複チャネルは1・6・11の3つだけです。隣接するAPはこの3チャネルを使い分けて干渉を回避します。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 1-8 スイッチング基礎 -->
+<div class="page" id="page-1-8">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-8 スイッチング基礎・MACアドレス</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> スイッチの動作原理とMACアドレステーブルを理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🔀</span>スイッチの転送動作</h2>
+        <div class="card">
+            <h4 class="topic-title">MACアドレステーブルの動作（4ステップ）</h4>
+            <ol>
+                <li><strong>学習（Learning）：</strong>受信フレームの送信元MACと受信ポートをテーブルに記録</li>
+                <li><strong>エージング（Aging）：</strong>一定時間（300秒）通信のないエントリを自動削除</li>
+                <li><strong>フィルタリング（Filtering）：</strong>送信元と宛先が同じポートならフレームを破棄</li>
+                <li><strong>フォワーディング/フラッディング：</strong>宛先MACがテーブルにあれば該当ポートへ転送、なければ全ポートへフラッド</li>
+            </ol>
+        </div>
+
+        <h3 class="subsection-title">フレームの転送方式</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>方式</th>
+                        <th>特徴</th>
+                        <th>遅延</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ストアアンドフォワード</strong></td>
+                        <td>フレーム全体受信後にFCSエラーチェックしてから転送。エラー検出あり</td>
+                        <td>最大</td>
+                    </tr>
+                    <tr>
+                        <td><strong>カットスルー</strong></td>
+                        <td>宛先MACアドレス（先頭6バイト）を読んだ時点で転送開始。エラー検出なし</td>
+                        <td>最小</td>
+                    </tr>
+                    <tr>
+                        <td><strong>フラグメントフリー</strong></td>
+                        <td>先頭64バイト受信後に転送。衝突による不正フレームを除去</td>
+                        <td>中間</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">重要なCiscoコマンド</h3>
+        <pre><span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show mac address-table</span>       <span class="cmd-comment"># MACアドレステーブル確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces</span>              <span class="cmd-comment"># インタフェース状態確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces status</span>        <span class="cmd-comment"># インタフェース一覧・速度・duplex</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">speed</span> <span class="cmd-value">100</span>       <span class="cmd-comment"># 速度設定（10/100/1000/auto）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">duplex</span> <span class="cmd-value">full</span>     <span class="cmd-comment"># 全二重設定</span></pre>
+
+        <div class="info-box warning">
+            <div class="label">⚠️ デュプレックスミスマッチ</div>
+            一方がfull、他方がhalfだと遅延・エラーが多発する。両端を同じ設定にするか、両端ともautoに設定する。
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-8">
+            <h3>✏️ 確認問題（第1-8章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. スイッチが宛先MACアドレスをMACアドレステーブルで見つけられない場合、どのような動作をするか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 受信ポート以外の全ポートにフレームをフラッドする</button></li>
+                    <li><button class="quiz-option">B. フレームを破棄する</button></li>
+                    <li><button class="quiz-option">C. ルータに転送する</button></li>
+                    <li><button class="quiz-option">D. ARPリクエストを送信する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（フラッド）</strong><br>宛先MACが不明な場合、スイッチは受信ポート以外の全ポートへフレームをフラッド（送信）します。これをユニキャストフラッディングと呼びます。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. フレーム全体を受信してからFCSエラーチェックを行い転送するスイッチ方式はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ストアアンドフォワード</button></li>
+                    <li><button class="quiz-option">B. カットスルー</button></li>
+                    <li><button class="quiz-option">C. フラグメントフリー</button></li>
+                    <li><button class="quiz-option">D. ファストフォワード</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（ストアアンドフォワード）</strong><br>ストアアンドフォワード方式はフレーム全体を受信後にFCSエラーチェックを行います。信頼性が最も高いが遅延が最大です。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+<!-- 2-1 VLAN -->
+<div class="page" id="page-2-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-1 VLAN基礎・設定</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            VLANの概念と基本設定コマンドをマスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">🏷️</span>VLANとは</h2>
+        <p>VLAN（Virtual LAN）は、物理的な配線に関係なく論理的にネットワークを分割する技術です。同一VLAN内の機器はL2で通信でき、異なるVLAN間の通信にはルータ（またはL3スイッチ）が必要です。</p>
+
+        <div class="card">
+            <h4 class="topic-title">VLANのメリット</h4>
+            <ul>
+                <li><strong>セキュリティ向上：</strong>部門ごとにVLANを分けてトラフィックを隔離</li>
+                <li><strong>ブロードキャストドメインの縮小：</strong>不要なブロードキャストを制限しパフォーマンス向上</li>
+                <li><strong>柔軟な管理：</strong>物理的な移動なしに論理的なグループ変更が可能</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">VLAN番号の分類</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>VLAN番号</th>
+                        <th>種別</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>デフォルトVLAN</td>
+                        <td>全ポートのデフォルト。削除不可</td>
+                    </tr>
+                    <tr>
+                        <td>2〜1001</td>
+                        <td>通常VLAN（Normal Range）</td>
+                        <td>ユーザー定義可能。VTP対応</td>
+                    </tr>
+                    <tr>
+                        <td>1002〜1005</td>
+                        <td>予約済み</td>
+                        <td>レガシーTR/FDDI用。削除不可</td>
+                    </tr>
+                    <tr>
+                        <td>1006〜4094</td>
+                        <td>拡張VLAN（Extended Range）</td>
+                        <td>VTPトランスペアレントモードのみ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">VLAN設定コマンド</h3>
+        <pre><span class="cmd-comment"># VLANデータベースへ登録</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">vlan</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Switch(config-vlan)#</span> <span class="cmd-keyword">name</span> <span class="cmd-value">Sales</span>
+<span class="cmd-prompt">Switch(config-vlan)#</span> <span class="cmd-keyword">exit</span>
+
+<span class="cmd-comment"># アクセスポートへのVLAN割り当て</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/1</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode access</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport access vlan</span> <span class="cmd-value">10</span>
+
+<span class="cmd-comment"># 確認コマンド</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show vlan brief</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show vlan id</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces GigabitEthernet0/1 switchport</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-1">
+            <h3>✏️ 確認問題（第2-1章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 異なるVLAN間で通信するために必要なものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ハブ</button></li>
+                    <li><button class="quiz-option">B. スイッチ（L2）</button></li>
+                    <li><button class="quiz-option">C. ルータまたはL3スイッチ</button></li>
+                    <li><button class="quiz-option">D. アクセスポイント</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（ルータまたはL3スイッチ）</strong><br>VLANはL2でブロードキャストドメインを分割します。異なるVLAN間の通信にはL3でのルーティングが必要です。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. CiscoスイッチでVLAN 20を作成し「Engineering」と名前を付けるコマンドとして正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Switch(config)# vlan name 20 Engineering</button></li>
+                    <li><button class="quiz-option">B. Switch(config)# vlan 20 → Switch(config-vlan)# name
+                            Engineering</button></li>
+                    <li><button class="quiz-option">C. Switch(config-if)# switchport vlan 20 Engineering</button></li>
+                    <li><button class="quiz-option">D. Switch# vlan 20 Engineering</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B</strong><br>VLAN作成はグローバルコンフィグモードで「vlan
+                    番号」と入力し、vlan-configモードで「name 名前」と設定します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-2 トランク -->
+<div class="page" id="page-2-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-2 トランクポート・802.1Q</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            複数VLANを1本のリンクで伝送するトランキング技術</p>
+
+        <h2 class="chapter-title"><span class="icon">🔗</span>トランクとは</h2>
+        <p>トランクポートは複数のVLANのトラフィックを1本のリンクで伝送するポートです。スイッチ間、またはスイッチとルータ間の接続に使用します。</p>
+
+        <h3 class="subsection-title">802.1Q（IEEE標準）</h3>
+        <div class="card">
+            <h4 class="topic-title">タグ付きフレームの構造</h4>
+            <pre>通常フレーム:   [宛先MAC][送信元MAC][EtherType][データ][FCS]
+802.1Qフレーム: [宛先MAC][送信元MAC][802.1Qタグ(4byte)][EtherType][データ][FCS]
+                                      └─ TPID(0x8100) + PCP(3bit) + DEI(1bit) + VLAN ID(12bit)</pre>
+            <p><strong>ネイティブVLAN：</strong>タグなしで送受信されるVLAN（デフォルトはVLAN 1）。両端で一致させる必要がある。</p>
+        </div>
+
+        <h3 class="subsection-title">トランク設定コマンド</h3>
+        <pre><span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode trunk</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk encapsulation dot1q</span>  <span class="cmd-comment"># 一部機種のみ必要</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk native vlan</span> <span class="cmd-value">99</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk allowed vlan</span> <span class="cmd-value">10,20,30</span>
+
+<span class="cmd-comment"># 確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces trunk</span></pre>
+
+        <h3 class="subsection-title">Router-on-a-Stick（ルータの1アームルーティング）</h3>
+        <pre><span class="cmd-comment"># ルータ側のサブインタフェース設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/0.10</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">encapsulation dot1Q</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.10.1 255.255.255.0</span>
+
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/0.20</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">encapsulation dot1Q</span> <span class="cmd-value">20</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.20.1 255.255.255.0</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-2">
+            <h3>✏️ 確認問題（第2-2章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 802.1Qトランクにおいてタグなしで送受信されるVLANを何というか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. デフォルトVLAN</button></li>
+                    <li><button class="quiz-option">B. 管理VLAN</button></li>
+                    <li><button class="quiz-option">C. ネイティブVLAN</button></li>
+                    <li><button class="quiz-option">D. 拡張VLAN</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（ネイティブVLAN）</strong><br>ネイティブVLANのフレームは802.1Qタグなしでトランクリンクを通過します。両端で一致しないとVLAN不一致の問題が起きます。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-3 EtherChannel -->
+<div class="page" id="page-2-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-3 EtherChannel (LACP)</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span> 複数の物理リンクを1本の論理リンクに束ねる技術</p>
+
+        <h2 class="chapter-title"><span class="icon">⛓️</span>EtherChannelとは</h2>
+        <p>EtherChannelは複数の物理リンクを1つの論理リンクとして束ねる技術です。帯域幅の増加と冗長性を同時に実現します。</p>
+
+        <h3 class="subsection-title">ネゴシエーションプロトコル</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プロトコル</th>
+                        <th>標準</th>
+                        <th>モード</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>LACP</strong></td>
+                        <td>IEEE 802.3ad</td>
+                        <td>active / passive</td>
+                        <td>業界標準。activeが交渉を開始</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PAgP</strong></td>
+                        <td>Cisco独自</td>
+                        <td>desirable / auto</td>
+                        <td>Cisco機器間でのみ動作。desirableが交渉を開始</td>
+                    </tr>
+                    <tr>
+                        <td>Static</td>
+                        <td>—</td>
+                        <td>on</td>
+                        <td>ネゴシエーションなし。両端onが必要</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">EtherChannel設定（LACP）</h3>
+        <pre><span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface range</span> <span class="cmd-value">GigabitEthernet0/1 - 2</span>
+<span class="cmd-prompt">Switch(config-if-range)#</span> <span class="cmd-keyword">channel-group</span> <span class="cmd-value">1</span> <span class="cmd-keyword">mode</span> <span class="cmd-value">active</span>    <span class="cmd-comment"># LACP active</span>
+<span class="cmd-prompt">Switch(config-if-range)#</span> <span class="cmd-keyword">exit</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface port-channel</span> <span class="cmd-value">1</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode trunk</span>
+
+<span class="cmd-comment"># 確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show etherchannel summary</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show etherchannel port-channel</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-3">
+            <h3>✏️ 確認問題（第2-3章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. EtherChannelでIEEE 802.3adに基づく標準プロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. LACP</button></li>
+                    <li><button class="quiz-option">B. PAgP</button></li>
+                    <li><button class="quiz-option">C. STP</button></li>
+                    <li><button class="quiz-option">D. CDP</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（LACP）</strong><br>LACPはIEEE
+                    802.3adの標準プロトコルで、異なるベンダー間でも動作します。PAgPはCisco独自です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-4 STP -->
+<div class="page" id="page-2-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-4 スパニングツリープロトコル (STP)</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> L2ループを防ぐSTPの動作・ポートロール・状態遷移を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🌳</span>STPの目的</h2>
+        <p>L2ネットワークでは冗長リンクがあるとブロードキャストストームやMACアドレステーブルの不安定化が起きます。STPは一部ポートをブロッキングして論理的にループのないトポロジを作ります。</p>
+
+        <h3 class="subsection-title">STPの選定プロセス</h3>
+        <div class="card">
+            <ol>
+                <li><strong>ルートブリッジの選出：</strong>最小のブリッジID（プライオリティ+MACアドレス）を持つスイッチ</li>
+                <li><strong>ルートポートの選定：</strong>各非ルートスイッチのルートブリッジへの最短経路ポート（最小累積コスト）</li>
+                <li><strong>デジグネイテッドポートの選定：</strong>各セグメントでルートブリッジへ最短のポート</li>
+                <li><strong>ブロッキング：</strong>上記以外のポートはブロッキング（フレーム転送停止）</li>
+            </ol>
+        </div>
+
+        <h3 class="subsection-title">STPポートの状態（Rapid PVST+）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>状態</th>
+                        <th>転送</th>
+                        <th>学習</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Discarding</strong></td>
+                        <td>×</td>
+                        <td>×</td>
+                        <td>ブロッキング・フレーム転送なし</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Learning</strong></td>
+                        <td>×</td>
+                        <td>○</td>
+                        <td>MACアドレスを学習中</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Forwarding</strong></td>
+                        <td>○</td>
+                        <td>○</td>
+                        <td>通常転送状態</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">STPコスト（リンク速度別）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>リンク速度</th>
+                        <th>STPコスト</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>10Mbps</td>
+                        <td>100</td>
+                    </tr>
+                    <tr>
+                        <td>100Mbps</td>
+                        <td>19</td>
+                    </tr>
+                    <tr>
+                        <td>1Gbps</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <td>10Gbps</td>
+                        <td>2</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">Rapid PVST+設定</h3>
+        <pre><span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">spanning-tree mode</span> <span class="cmd-value">rapid-pvst</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">spanning-tree vlan</span> <span class="cmd-value">10</span> <span class="cmd-keyword">priority</span> <span class="cmd-value">4096</span>   <span class="cmd-comment"># ルートブリッジに設定</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">spanning-tree vlan</span> <span class="cmd-value">10</span> <span class="cmd-keyword">root primary</span>   <span class="cmd-comment"># 自動でプライオリティ設定</span>
+
+<span class="cmd-comment"># PortFast（エッジポート向け）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">spanning-tree portfast</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">spanning-tree bpduguard enable</span>
+
+<span class="cmd-comment"># 確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show spanning-tree vlan</span> <span class="cmd-value">10</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-4">
+            <h3>✏️ 確認問題（第2-4章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. STPにおいてルートブリッジが選出される基準として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 最も小さいブリッジID（プライオリティ+MACアドレス）</button></li>
+                    <li><button class="quiz-option">B. 最も大きいブリッジID</button></li>
+                    <li><button class="quiz-option">C. 最も多くのポートを持つスイッチ</button></li>
+                    <li><button class="quiz-option">D. 最も高いIPアドレスを持つスイッチ</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>ルートブリッジは最小のブリッジIDを持つスイッチが選出されます。ブリッジID=プライオリティ（デフォルト32768）+MACアドレスです。</div>
+            </div>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. 1GbpsリンクのSTPコストはいくつか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 100</button></li>
+                    <li><button class="quiz-option">B. 19</button></li>
+                    <li><button class="quiz-option">C. 4</button></li>
+                    <li><button class="quiz-option">D. 2</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（4）</strong><br>STPコスト：10Mbps=100、100Mbps=19、1Gbps=4、10Gbps=2。コストが小さいほど優先されます。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-5 CDP/LLDP -->
+<div class="page" id="page-2-5">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-5 CDP・LLDP</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span> 隣接機器を自動探索するL2探索プロトコル</p>
+
+        <h2 class="chapter-title"><span class="icon">🔍</span>CDP vs LLDP</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>CDP</th>
+                        <th>LLDP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>開発元</td>
+                        <td>Cisco（独自）</td>
+                        <td>IEEE 802.1AB（標準）</td>
+                    </tr>
+                    <tr>
+                        <td>対応機器</td>
+                        <td>Cisco機器のみ</td>
+                        <td>マルチベンダー</td>
+                    </tr>
+                    <tr>
+                        <td>デフォルト状態</td>
+                        <td>有効</td>
+                        <td>無効</td>
+                    </tr>
+                    <tr>
+                        <td>通知間隔</td>
+                        <td>60秒</td>
+                        <td>30秒</td>
+                    </tr>
+                    <tr>
+                        <td>ホールドタイム</td>
+                        <td>180秒</td>
+                        <td>120秒</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <pre><span class="cmd-comment"># CDP確認コマンド</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show cdp neighbors</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show cdp neighbors detail</span>
+
+<span class="cmd-comment"># LLDP有効化と確認</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">lldp run</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show lldp neighbors</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-5">
+            <h3>✏️ 確認問題（第2-5章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. マルチベンダー環境で動作するIEEE標準のL2探索プロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. CDP</button></li>
+                    <li><button class="quiz-option">B. LLDP</button></li>
+                    <li><button class="quiz-option">C. STP</button></li>
+                    <li><button class="quiz-option">D. VTP</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（LLDP）</strong><br>LLDPはIEEE
+                    802.1ABの標準プロトコルで、異なるベンダーの機器間でも動作します。CDPはCisco独自です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-6 無線LAN WLC/AP -->
+<div class="page" id="page-2-6">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-6 Cisco無線LAN (WLC・AP)</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> CiscoのWLCとAPの管理アーキテクチャを理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">📡</span>APの動作モード</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>モード</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Autonomous（自律型）</strong></td>
+                        <td>APが独立して動作。各APを個別設定</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Lightweight（集中管理型）</strong></td>
+                        <td>WLC（無線LANコントローラ）が全APを集中管理。CAPWAPで通信</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FlexConnect</strong></td>
+                        <td>WLCへの接続が切れてもローカルで動作継続可能</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">CAPWAP（Control And Provisioning of Wireless Access Points）</h3>
+        <div class="card">
+            <ul>
+                <li>APとWLC間の制御・データ転送に使用するトンネルプロトコル</li>
+                <li><strong>制御チャネル：</strong>UDP 5246（暗号化）</li>
+                <li><strong>データチャネル：</strong>UDP 5247（暗号化オプション）</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">WLC管理アクセス方法</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>アクセス方法</th>
+                        <th>プロトコル</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>WebUI</td>
+                        <td>HTTP/HTTPS</td>
+                        <td>GUIによる設定（最も一般的）</td>
+                    </tr>
+                    <tr>
+                        <td>CLI</td>
+                        <td>SSH/Telnet</td>
+                        <td>コマンドライン設定</td>
+                    </tr>
+                    <tr>
+                        <td>コンソール</td>
+                        <td>RS-232</td>
+                        <td>初期設定・障害対応時</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q2-6">
+            <h3>✏️ 確認問題（第2-6章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. LightweightモードのAPとWLC間で使用されるトンネルプロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. GRE</button></li>
+                    <li><button class="quiz-option">B. CAPWAP</button></li>
+                    <li><button class="quiz-option">C. IPSec</button></li>
+                    <li><button class="quiz-option">D. MPLS</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（CAPWAP）</strong><br>CAPWAPはLightweight
+                    APとWLC間の制御・データ通信に使用されます。UDP 5246（制御）とUDP 5247（データ）を使用します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+<!-- 3-1 ルーティング基礎 -->
+<div class="page" id="page-3-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-1 ルーティング基礎・ルーティングテーブル</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> ルータの転送判断とルーティングテーブルの読み方を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🗺️</span>ルーティングテーブルの見方</h2>
+        <pre><span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route</span>
+Codes: C - connected, S - static, O - OSPF, R - RIP, * - candidate default
+
+     10.0.0.0/8 is variably subnetted, 2 subnets, 2 masks
+<span class="cmd-value">C</span>       10.1.1.0/24 is directly connected, GigabitEthernet0/0
+<span class="cmd-value">L</span>       10.1.1.1/32 is directly connected, GigabitEthernet0/0
+<span class="cmd-value">S</span>    192.168.2.0/24 [1/0] via 10.1.1.2
+<span class="cmd-value">O</span>    172.16.0.0/16 [110/2] via 10.1.1.2, 00:05:30, GigabitEthernet0/0
+<span class="cmd-value">S*</span>   0.0.0.0/0 [1/0] via 203.0.113.1</pre>
+
+        <div class="card">
+            <h4 class="topic-title">ルーティングテーブルのコード説明</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>コード</th>
+                            <th>意味</th>
+                            <th>AD値</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>C</strong></td>
+                            <td>Connected（直接接続）</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>L</strong></td>
+                            <td>Local（ルータ自身のアドレス）</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>S</strong></td>
+                            <td>Static（スタティックルート）</td>
+                            <td>1</td>
+                        </tr>
+                        <tr>
+                            <td><strong>O</strong></td>
+                            <td>OSPF</td>
+                            <td>110</td>
+                        </tr>
+                        <tr>
+                            <td><strong>R</strong></td>
+                            <td>RIP</td>
+                            <td>120</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D</strong></td>
+                            <td>EIGRP</td>
+                            <td>90</td>
+                        </tr>
+                        <tr>
+                            <td><strong>S*</strong></td>
+                            <td>デフォルトルート（0.0.0.0/0）</td>
+                            <td>1</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h3 class="subsection-title">アドミニストレーティブディスタンス（AD値）</h3>
+        <p>同じ宛先ネットワークへの経路が複数ある場合、<strong>AD値が小さいほど優先</strong>されます。</p>
+        <div class="info-box important">
+            <div class="label">🚨 AD値の暗記（頻出）</div>
+            直接接続(0) ＞ スタティック(1) ＞ EIGRP(90) ＞ OSPF(110) ＞ RIP(120) ＞ 外部EIGRP(170)
+        </div>
+
+        <h3 class="subsection-title">ロンゲストマッチ（最長一致）</h3>
+        <div class="card">
+            <p>宛先IPに対して最も長い（詳細な）プレフィックスのルートが選択されます。</p>
+            <pre>例：宛先 192.168.1.100 へのパケット
+  ルータに以下のルートがある場合:
+  192.168.0.0/16 → が一致
+  192.168.1.0/24 → がより詳細に一致 ← こちらが選択される
+  192.168.1.96/28 → さらに詳細 ← もしあればこちらが選択</pre>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q3-1">
+            <h3>✏️ 確認問題（第3-1章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. ルーティングテーブルの「O 172.16.0.0/16 [110/2]」の「110」が表すものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. メトリック（コスト）</button></li>
+                    <li><button class="quiz-option">B. アドミニストレーティブディスタンス（AD値）</button></li>
+                    <li><button class="quiz-option">C. VLAN番号</button></li>
+                    <li><button class="quiz-option">D. ホップ数</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（AD値）</strong><br>[AD値/メトリック]の形式で表記されます。OSPFのAD値は110、この場合のメトリックは2です。</div>
+            </div>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. ルーティングテーブルに複数の経路がある場合、最終的に使用される経路の選択基準で最初に確認されるものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ロンゲストマッチ（プレフィックス長が最大のもの）</button></li>
+                    <li><button class="quiz-option">B. AD値が最小のもの</button></li>
+                    <li><button class="quiz-option">C. メトリックが最小のもの</button></li>
+                    <li><button class="quiz-option">D. 設定順が早いもの</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（ロンゲストマッチ）</strong><br>まずプレフィックス長が最長のルートが選ばれます。同じプレフィックス長が複数あればAD値、さらにメトリックで選択します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 3-2 スタティックルーティング -->
+<div class="page" id="page-3-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-2 スタティックルーティング</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span> 手動設定するスタティックルートの設定方法をマスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">✏️</span>スタティックルートの種類</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>説明</th>
+                        <th>設定例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ネットワークルート</strong></td>
+                        <td>特定のネットワーク宛のルート</td>
+                        <td>ip route 192.168.2.0 255.255.255.0 10.1.1.2</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ホストルート (/32)</strong></td>
+                        <td>特定の1ホスト宛のルート</td>
+                        <td>ip route 192.168.2.100 255.255.255.255 10.1.1.2</td>
+                    </tr>
+                    <tr>
+                        <td><strong>デフォルトルート</strong></td>
+                        <td>0.0.0.0/0。一致するルートがない場合に使用</td>
+                        <td>ip route 0.0.0.0 0.0.0.0 203.0.113.1</td>
+                    </tr>
+                    <tr>
+                        <td><strong>フローティングスタティック</strong></td>
+                        <td>AD値を大きくして通常ルートのバックアップとして使用</td>
+                        <td>ip route 192.168.2.0 255.255.255.0 10.2.2.2 200</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">スタティックルート設定コマンド</h3>
+        <pre><span class="cmd-comment"># ネクストホップIPアドレス指定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route</span> <span class="cmd-value">192.168.2.0 255.255.255.0 10.1.1.2</span>
+
+<span class="cmd-comment"># 出口インタフェース指定（P-to-Pリンク向け）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route</span> <span class="cmd-value">192.168.2.0 255.255.255.0 GigabitEthernet0/1</span>
+
+<span class="cmd-comment"># デフォルトルート</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route 0.0.0.0 0.0.0.0</span> <span class="cmd-value">203.0.113.1</span>
+
+<span class="cmd-comment"># IPv6スタティックルート</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ipv6 route</span> <span class="cmd-value">2001:db8:2::/64 2001:db8:1::2</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ipv6 route ::/0</span> <span class="cmd-value">2001:db8:1::1</span>  <span class="cmd-comment"># IPv6デフォルト</span>
+
+<span class="cmd-comment"># 確認</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route static</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q3-2">
+            <h3>✏️ 確認問題（第3-2章）</h3>
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q1. デフォルトルートの設定として正しいコマンドはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ip route 255.255.255.255 0.0.0.0 10.1.1.1</button></li>
+                    <li><button class="quiz-option">B. ip route default 10.1.1.1</button></li>
+                    <li><button class="quiz-option">C. ip default-gateway 10.1.1.1</button></li>
+                    <li><button class="quiz-option">D. ip route 0.0.0.0 0.0.0.0 10.1.1.1</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D</strong><br>デフォルトルートは「ip route 0.0.0.0 0.0.0.0
+                    ネクストホップ」で設定します。ip default-gatewayはルーティング機能を持たないスイッチで使用します。</div>
+            </div>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. フローティングスタティックルートの目的として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 最も速いパスを選択する</button></li>
+                    <li><button class="quiz-option">B. 等コストの経路を並列使用する</button></li>
+                    <li><button class="quiz-option">C. 通常ルートが消えた際のバックアップとして機能する</button></li>
+                    <li><button class="quiz-option">D. IPv6専用のルートを設定する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C</strong><br>フローティングスタティックはAD値を大きく設定して通常は使用されず、メインルートが失われた時のみ有効になるバックアップルートです。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 3-3 OSPF -->
+<div class="page" id="page-3-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-3 OSPFv2（シングルエリア）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            CCNA最重要トピック。OSPFの動作・設定・確認をマスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>OSPFの基本</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>内容</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>プロトコル</td>
+                        <td>リンクステート型プロトコル（アルゴリズム：Dijkstra SPF）</td>
+                    </tr>
+                    <tr>
+                        <td>AD値</td>
+                        <td>110</td>
+                    </tr>
+                    <tr>
+                        <td>メトリック</td>
+                        <td>コスト（= 参照帯域/インタフェース帯域）</td>
+                    </tr>
+                    <tr>
+                        <td>参照帯域</td>
+                        <td>デフォルト100Mbps（変更可能）</td>
+                    </tr>
+                    <tr>
+                        <td>ハローパケット</td>
+                        <td>10秒（P-to-P）、30秒（NBMA/broadcast）</td>
+                    </tr>
+                    <tr>
+                        <td>デッドタイム</td>
+                        <td>ハロー間隔×4（デフォルト40秒）</td>
+                    </tr>
+                    <tr>
+                        <td>マルチキャスト</td>
+                        <td>224.0.0.5（全OSPFルータ）、224.0.0.6（DR/BDR宛）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">OSPFネイバー関係の確立</h3>
+        <div class="card">
+            <h4 class="topic-title">ネイバー確立の条件（これが一致しないとネイバーにならない！）</h4>
+            <ul>
+                <li>同じエリアID</li>
+                <li>同じサブネット</li>
+                <li>同じハロー/デッドタイム</li>
+                <li>同じMTU</li>
+                <li>認証パスワード（設定している場合）</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">DR・BDR選出（ブロードキャストネットワーク）</h3>
+        <div class="card">
+            <h4 class="topic-title">DR/BDRの選出基準（優先順位）</h4>
+            <ol>
+                <li>最大の OSPF プライオリティ（デフォルト1、0にするとDR/BDRにならない）</li>
+                <li>プライオリティが同じ場合は最大のルータID</li>
+            </ol>
+            <p>ルータIDの決定：①明示的設定 → ②最大のループバックIP → ③最大のアクティブなIPアドレス</p>
+        </div>
+
+        <h3 class="subsection-title">OSPFv2の設定</h3>
+        <pre><span class="cmd-comment"># OSPF有効化</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">router ospf</span> <span class="cmd-value">1</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">router-id</span> <span class="cmd-value">1.1.1.1</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">network</span> <span class="cmd-value">10.1.1.0 0.0.0.255 area 0</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">network</span> <span class="cmd-value">192.168.1.0 0.0.0.255 area 0</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">passive-interface</span> <span class="cmd-value">GigabitEthernet0/1</span>  <span class="cmd-comment"># エンドユーザー向けIF</span>
+
+<span class="cmd-comment"># インタフェース単位での設定（代替方法）</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip ospf</span> <span class="cmd-value">1</span> <span class="cmd-keyword">area</span> <span class="cmd-value">0</span>
+
+<span class="cmd-comment"># コスト調整</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">router ospf 1</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">auto-cost reference-bandwidth</span> <span class="cmd-value">10000</span>  <span class="cmd-comment"># 10Gbps基準</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip ospf cost</span> <span class="cmd-value">10</span>  <span class="cmd-comment"># 手動コスト設定</span>
+
+<span class="cmd-comment"># 確認コマンド（重要！）</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf neighbor</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf interface</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route ospf</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf database</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q3-3">
+            <h3>✏️ 確認問題（第3-3章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. OSPFのAD（アドミニストレーティブディスタンス）値はいくつか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 1</button></li>
+                    <li><button class="quiz-option">B. 90</button></li>
+                    <li><button class="quiz-option">C. 110</button></li>
+                    <li><button class="quiz-option">D. 120</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（110）</strong><br>OSPFのAD値は110です。EIGRP=90、RIP=120。AD値が小さいほど優先されます。</div>
+            </div>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. OSPFで全OSPFルータ宛のマルチキャストアドレスはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 224.0.0.5</button></li>
+                    <li><button class="quiz-option">B. 224.0.0.6</button></li>
+                    <li><button class="quiz-option">C. 224.0.0.9</button></li>
+                    <li><button class="quiz-option">D. 224.0.0.10</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（224.0.0.5）</strong><br>224.0.0.5は全OSPFルータ宛、224.0.0.6はDR/BDR宛のマルチキャストアドレスです。</div>
+            </div>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q3. OSPFネイバーが確立されない原因として考えられないものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. エリアIDが異なる</button></li>
+                    <li><button class="quiz-option">B. ルータIDが異なる</button></li>
+                    <li><button class="quiz-option">C. ハローとデッドタイムが異なる</button></li>
+                    <li><button class="quiz-option">D. サブネットが異なる</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（ルータIDが異なる）</strong><br>ルータIDは各ルータで固有である必要がありますが（同じIDだとエラー）、ネイバー確立の条件ではありません。異なるルータIDは正常です。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 3-4 FHRP -->
+<div class="page" id="page-3-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-4 FHRP（HSRP・VRRP）</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> デフォルトゲートウェイの冗長化プロトコル</p>
+
+        <h2 class="chapter-title"><span class="icon">🛡️</span>FHRPとは</h2>
+        <p>FHRP（First Hop Redundancy
+            Protocol）は、エンドホストのデフォルトゲートウェイを冗長化するプロトコルです。仮想IPアドレスと仮想MACアドレスを使い、アクティブルータが障害時に自動で切り替わります。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>HSRP</th>
+                        <th>VRRP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>標準</td>
+                        <td>Cisco独自</td>
+                        <td>IEEE標準（RFC 5798）</td>
+                    </tr>
+                    <tr>
+                        <td>アクティブ呼称</td>
+                        <td>Active</td>
+                        <td>Master</td>
+                    </tr>
+                    <tr>
+                        <td>仮想MAC</td>
+                        <td>0000.0c07.acXX</td>
+                        <td>0000.5e00.01XX</td>
+                    </tr>
+                    <tr>
+                        <td>ハロー間隔</td>
+                        <td>3秒</td>
+                        <td>1秒</td>
+                    </tr>
+                    <tr>
+                        <td>ホールドタイム</td>
+                        <td>10秒</td>
+                        <td>3秒</td>
+                    </tr>
+                    <tr>
+                        <td>プリエンプション</td>
+                        <td>デフォルト無効</td>
+                        <td>デフォルト有効</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">HSRP設定（バージョン2）</h3>
+        <pre><span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">standby version</span> <span class="cmd-value">2</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">ip</span> <span class="cmd-value">192.168.1.254</span>        <span class="cmd-comment"># 仮想IP</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">priority</span> <span class="cmd-value">110</span>           <span class="cmd-comment"># 優先度（デフォルト100）</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">preempt</span>               <span class="cmd-comment"># プリエンプション有効化</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show standby</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show standby brief</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q3-4">
+            <h3>✏️ 確認問題（第3-4章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. HSRPはCiscoが開発したFHRPです。IEEEが標準化した同様のプロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. VRRP</button></li>
+                    <li><button class="quiz-option">B. GLBP</button></li>
+                    <li><button class="quiz-option">C. STP</button></li>
+                    <li><button class="quiz-option">D. CDP</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（VRRP）</strong><br>VRRPはIEEE/IETFが標準化（RFC
+                    5798）したFHRPで、マルチベンダー環境でも使用できます。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+<!-- 4-1 NAT/PAT -->
+<div class="page" id="page-4-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-1 NAT・PAT</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span></p>
+        <h2 class="chapter-title"><span class="icon">🔁</span>NATの種類</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>スタティックNAT</strong></td>
+                        <td>プライベートIP ↔ グローバルIPを1対1で固定変換</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ダイナミックNAT</strong></td>
+                        <td>プールのグローバルIPを動的に割り当て（1対1）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PAT（NATオーバーロード）</strong></td>
+                        <td>多数のプライベートIPを1つのグローバルIPとポート番号で変換。最も一般的</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h4 class="topic-title">NATの用語</h4>
+            <ul>
+                <li><strong>Inside Local：</strong>内部のプライベートIPアドレス</li>
+                <li><strong>Inside Global：</strong>外部から見た内部ホストのグローバルIP</li>
+                <li><strong>Outside Global：</strong>外部サーバーのグローバルIP</li>
+                <li><strong>Outside Local：</strong>内部から見た外部サーバーのIP（通常Outside Globalと同じ）</li>
+            </ul>
+        </div>
+        <h3 class="subsection-title">PAT設定（最も重要）</h3>
+        <pre><span class="cmd-comment"># インタフェース指定（よく使われる方法）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/0</span>  <span class="cmd-comment"># 内部</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip nat inside</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/1</span>  <span class="cmd-comment"># 外部</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip nat outside</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">access-list</span> <span class="cmd-value">1 permit 192.168.1.0 0.0.0.255</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip nat inside source list</span> <span class="cmd-value">1</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/1</span> <span class="cmd-keyword">overload</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip nat translations</span></pre>
+        <div class="quiz-section" data-quiz-id="q4-1">
+            <h3>✏️ 確認問題（第4-1章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 多数の内部ホストが1つのグローバルIPでインターネットに接続するNAT方式はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. スタティックNAT</button></li>
+                    <li><button class="quiz-option">B. ダイナミックNAT</button></li>
+                    <li><button class="quiz-option">C. PAT（NATオーバーロード）</button></li>
+                    <li><button class="quiz-option">D. ブリッジングNAT</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（PAT）</strong><br>PATはポート番号を使って多対1の変換を行い、1つのグローバルIPで多数の内部ホストがインターネット接続できます。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 4-2 DHCP/DNS -->
+<div class="page" id="page-4-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-2 DHCP・DNS</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span></p>
+        <h2 class="chapter-title"><span class="icon">📋</span>DHCP</h2>
+        <div class="card">
+            <h4 class="topic-title">DHCPの動作（DORA）</h4>
+            <ol>
+                <li><strong>Discover：</strong>クライアントがブロードキャストでDHCPサーバーを探す</li>
+                <li><strong>Offer：</strong>DHCPサーバーがIPアドレスを提案</li>
+                <li><strong>Request：</strong>クライアントが提案を承認</li>
+                <li><strong>Acknowledge：</strong>サーバーが確定通知を送信</li>
+            </ol>
+        </div>
+        <h3 class="subsection-title">CiscoルータをDHCPサーバーとして設定</h3>
+        <pre><span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip dhcp excluded-address</span> <span class="cmd-value">192.168.1.1 192.168.1.10</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip dhcp pool</span> <span class="cmd-value">MYPOOL</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">network</span> <span class="cmd-value">192.168.1.0 255.255.255.0</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">default-router</span> <span class="cmd-value">192.168.1.1</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">dns-server</span> <span class="cmd-value">8.8.8.8</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">lease</span> <span class="cmd-value">1</span>  <span class="cmd-comment"># リース期間1日</span>
+
+<span class="cmd-comment"># DHCPリレーエージェント（別セグメントへのDHCP転送）</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip helper-address</span> <span class="cmd-value">10.1.1.100</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip dhcp binding</span></pre>
+        <h2 class="chapter-title"><span class="icon">🌐</span>DNS</h2>
+        <p>DNS（Domain Name System）はFQDN（完全修飾ドメイン名）をIPアドレスに変換します。ポート53（UDP/TCP）を使用。再帰的クエリと反復的クエリがある。</p>
+        <div class="quiz-section" data-quiz-id="q4-2">
+            <h3>✏️ 確認問題（第4-2章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. DHCPのDORAプロセスでクライアントが最初に送信するメッセージはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Offer</button></li>
+                    <li><button class="quiz-option">B. Discover</button></li>
+                    <li><button class="quiz-option">C. Request</button></li>
+                    <li><button class="quiz-option">D. Acknowledge</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（Discover）</strong><br>DHCPはDiscover→Offer→Request→Acknowledgeの順（DORA）。最初にクライアントがDiscoverをブロードキャストします。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. 異なるサブネットのクライアントへDHCPを提供するために設定するのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ip dhcp pool</button></li>
+                    <li><button class="quiz-option">B. ip dhcp excluded-address</button></li>
+                    <li><button class="quiz-option">C. ip helper-address</button></li>
+                    <li><button class="quiz-option">D. ip dhcp relay</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（ip helper-address）</strong><br>DHCPリレーエージェントとして「ip
+                    helper-address DHCPサーバーのIP」を設定することで、ブロードキャストを別セグメントのDHCPサーバーにユニキャストで転送します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 4-3 NTP/Syslog/SNMP -->
+<div class="page" id="page-4-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-3 NTP・Syslog・SNMP</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">⏱️</span>NTP（Network Time Protocol）</h2>
+        <p>ネットワーク機器の時刻を同期するプロトコル。ポート<strong>UDP 123</strong>を使用。</p>
+        <pre><span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ntp server</span> <span class="cmd-value">pool.ntp.org</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ntp status</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ntp associations</span></pre>
+        <h2 class="chapter-title"><span class="icon">📝</span>Syslog（ログ管理）</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>レベル</th>
+                        <th>名称</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>0</td>
+                        <td>Emergency</td>
+                        <td>システム使用不能</td>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>Alert</td>
+                        <td>即時対応が必要</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Critical</td>
+                        <td>重大な状況</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Error</td>
+                        <td>エラー状態</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Warning</td>
+                        <td>警告</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>Notice</td>
+                        <td>注意すべき正常な状態</td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td>Informational</td>
+                        <td>情報メッセージ</td>
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        <td>Debug</td>
+                        <td>デバッグメッセージ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="info-box note">
+            <div class="label">💡 覚え方</div>「<strong>Every Awful Crisis Ends With Notable Innovative
+                Decisions</strong>」（順番：0〜7）
+        </div>
+        <pre><span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">logging host</span> <span class="cmd-value">192.168.1.100</span>   <span class="cmd-comment"># Syslogサーバー指定（UDP 514）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">logging trap</span> <span class="cmd-value">informational</span>  <span class="cmd-comment"># レベル6以上を送信</span></pre>
+        <h2 class="chapter-title"><span class="icon">📊</span>SNMP</h2>
+        <div class="card">
+            <ul>
+                <li>ポート<strong>UDP 161</strong>（Get/Set）、<strong>UDP 162</strong>（Trap）</li>
+                <li><strong>Get：</strong>マネージャーがエージェントに情報を要求</li>
+                <li><strong>Trap：</strong>エージェントが異常をマネージャーへ自発的に通知</li>
+                <li><strong>SNMPv3：</strong>認証・暗号化あり（USM）→セキュリティに優れる</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q4-3">
+            <h3>✏️ 確認問題（第4-3章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. Syslogのログレベルで「3」が示すものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Warning</button></li>
+                    <li><button class="quiz-option">B. Critical</button></li>
+                    <li><button class="quiz-option">C. Error</button></li>
+                    <li><button class="quiz-option">D. Notice</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（Error）</strong><br>レベル0=Emergency、1=Alert、2=Critical、3=Error、4=Warning、5=Notice、6=Informational、7=Debug。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 4-4 QoS -->
+<div class="page" id="page-4-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-4 QoS・TFTP/FTP</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">📶</span>QoS（Quality of Service）</h2>
+        <div class="card">
+            <h4 class="topic-title">PHB（Per-Hop Behavior）の種類</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>種類</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>EF（Expedited Forwarding）</strong></td>
+                            <td>最優先転送。VoIPなどのリアルタイムトラフィック</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AF（Assured Forwarding）</strong></td>
+                            <td>4つのクラス（AF1〜4）各3レベルの廃棄優先度</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BE（Best Effort）</strong></td>
+                            <td>デフォルト。優先なし</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <h2 class="chapter-title"><span class="icon">📁</span>TFTP・FTP・SFTP</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プロトコル</th>
+                        <th>ポート</th>
+                        <th>暗号化</th>
+                        <th>認証</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>TFTP</td>
+                        <td>UDP 69</td>
+                        <td>なし</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td>FTP</td>
+                        <td>TCP 20/21</td>
+                        <td>なし</td>
+                        <td>あり</td>
+                    </tr>
+                    <tr>
+                        <td>SFTP</td>
+                        <td>TCP 22</td>
+                        <td>SSH暗号化</td>
+                        <td>あり</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="quiz-section" data-quiz-id="q4-4">
+            <h3>✏️ 確認問題（第4-4章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. VoIPなどのリアルタイムトラフィックに最適なQoS PHBはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. EF（Expedited Forwarding）</button></li>
+                    <li><button class="quiz-option">B. AF（Assured Forwarding）</button></li>
+                    <li><button class="quiz-option">C. BE（Best Effort）</button></li>
+                    <li><button class="quiz-option">D. DSCP</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（EF）</strong><br>EFは最優先転送で低遅延・低ジッターが必要なVoIPに最適です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-1 セキュリティ概念 -->
+<div class="page" id="page-5-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-1 セキュリティ概念・脅威</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">⚠️</span>主な脅威・攻撃の種類</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>攻撃</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DoS/DDoS</strong></td>
+                        <td>サービス妨害攻撃。大量パケットでリソースを枯渇</td>
+                    </tr>
+                    <tr>
+                        <td><strong>スプーフィング</strong></td>
+                        <td>送信元IPやMACを偽装</td>
+                    </tr>
+                    <tr>
+                        <td><strong>フィッシング</strong></td>
+                        <td>偽サイト・メールで認証情報を詐取</td>
+                    </tr>
+                    <tr>
+                        <td><strong>中間者攻撃（MitM）</strong></td>
+                        <td>通信の盗聴・改ざん</td>
+                    </tr>
+                    <tr>
+                        <td><strong>バッファオーバーフロー</strong></td>
+                        <td>メモリ境界を超えたデータで任意コード実行</td>
+                    </tr>
+                    <tr>
+                        <td><strong>パスワードアタック</strong></td>
+                        <td>ブルートフォース・辞書攻撃</td>
+                    </tr>
+                    <tr>
+                        <td><strong>マルウェア</strong></td>
+                        <td>ウィルス・ワーム・トロイの木馬・ランサムウェア</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <h3 class="subsection-title">CIAトライアド（情報セキュリティの3要素）</h3>
+        <div class="card">
+            <ul>
+                <li><strong>Confidentiality（機密性）：</strong>許可された者のみがアクセスできる</li>
+                <li><strong>Integrity（完全性）：</strong>データが正確で改ざんされていない</li>
+                <li><strong>Availability（可用性）：</strong>必要な時にシステムを利用できる</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q5-1">
+            <h3>✏️ 確認問題（第5-1章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. 情報セキュリティの「CIAトライアド」のIが意味するものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 識別（Identification）</button></li>
+                    <li><button class="quiz-option">B. 完全性（Integrity）</button></li>
+                    <li><button class="quiz-option">C. 実装（Implementation）</button></li>
+                    <li><button class="quiz-option">D. インフラ（Infrastructure）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（Integrity）</strong><br>CIAはConfidentiality（機密性）・Integrity（完全性）・Availability（可用性）の頭文字です。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-2 ACL -->
+<div class="page" id="page-5-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-2 ACL（アクセスコントロールリスト）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span></p>
+        <h2 class="chapter-title"><span class="icon">🚦</span>ACLの基礎</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>番号</th>
+                        <th>マッチ対象</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>標準ACL（Standard）</strong></td>
+                        <td>1〜99、1300〜1999</td>
+                        <td>送信元IPのみ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>拡張ACL（Extended）</strong></td>
+                        <td>100〜199、2000〜2699</td>
+                        <td>送信元IP、宛先IP、プロトコル、ポート番号</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="info-box important">
+            <div class="label">🚨 ACL配置の原則</div>
+            <ul>
+                <li><strong>標準ACL：</strong>宛先に近い場所に配置（送信元しか見ないため）</li>
+                <li><strong>拡張ACL：</strong>送信元に近い場所に配置（早期フィルタリング）</li>
+                <li>暗黙の<strong>deny any</strong>：全ACLの最後に自動追加される</li>
+            </ul>
+        </div>
+        <h3 class="subsection-title">ACL設定コマンド</h3>
+        <pre><span class="cmd-comment"># 標準ACL（番号形式）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">access-list</span> <span class="cmd-value">10 permit 192.168.1.0 0.0.0.255</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">access-list</span> <span class="cmd-value">10 deny any</span>
+
+<span class="cmd-comment"># 拡張ACL（名前形式・推奨）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip access-list extended</span> <span class="cmd-value">BLOCK_HTTP</span>
+<span class="cmd-prompt">Router(config-ext-nacl)#</span> <span class="cmd-keyword">deny tcp 192.168.1.0 0.0.0.255 any eq</span> <span class="cmd-value">80</span>
+<span class="cmd-prompt">Router(config-ext-nacl)#</span> <span class="cmd-keyword">permit ip any any</span>
+
+<span class="cmd-comment"># インタフェースへ適用</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip access-group</span> <span class="cmd-value">BLOCK_HTTP</span> <span class="cmd-keyword">in</span>   <span class="cmd-comment"># inbound</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip access-group</span> <span class="cmd-value">10</span> <span class="cmd-keyword">out</span>            <span class="cmd-comment"># outbound</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip access-lists</span></pre>
+        <div class="quiz-section" data-quiz-id="q5-2">
+            <h3>✏️ 確認問題（第5-2章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. 標準ACLはどこに配置するのが推奨されるか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 宛先に最も近いインタフェース</button></li>
+                    <li><button class="quiz-option">B. 送信元に最も近いインタフェース</button></li>
+                    <li><button class="quiz-option">C. ネットワークの中央</button></li>
+                    <li><button class="quiz-option">D. コアスイッチ</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（宛先に近い場所）</strong><br>標準ACLは送信元IPのみでフィルタリングするため、宛先近くに置かないと意図しないトラフィックもブロックする恐れがあります。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. 拡張ACLの番号範囲として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 1〜99</button></li>
+                    <li><button class="quiz-option">B. 100〜199</button></li>
+                    <li><button class="quiz-option">C. 200〜299</button></li>
+                    <li><button class="quiz-option">D. 1000〜1099</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（100〜199）</strong><br>標準ACL=1〜99（および1300〜1999）、拡張ACL=100〜199（および2000〜2699）です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-3 デバイスアクセス制御 -->
+<div class="page" id="page-5-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-3 デバイスアクセス制御・パスワード</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span></p>
+        <h2 class="chapter-title"><span class="icon">🔑</span>基本的なデバイスセキュリティ設定</h2>
+        <pre><span class="cmd-comment"># ホスト名設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">hostname</span> <span class="cmd-value">R1</span>
+
+<span class="cmd-comment"># 特権EXECモードのパスワード（暗号化）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">enable secret</span> <span class="cmd-value">Cisco1234!</span>
+
+<span class="cmd-comment"># コンソールパスワード</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">line console 0</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">password</span> <span class="cmd-value">console123</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">login</span>
+
+<span class="cmd-comment"># SSH設定（推奨）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">ip domain-name</span> <span class="cmd-value">example.com</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">crypto key generate rsa modulus</span> <span class="cmd-value">2048</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">ip ssh version</span> <span class="cmd-value">2</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">username admin secret</span> <span class="cmd-value">Admin123!</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">line vty 0 4</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">transport input ssh</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">login local</span>
+
+<span class="cmd-comment"># パスワードの暗号化（全平文パスワードを暗号化）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">service password-encryption</span>
+
+<span class="cmd-comment"># バナーメッセージ</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">banner motd</span> <span class="cmd-value"># 無許可アクセス禁止 #</span></pre>
+        <div class="quiz-section" data-quiz-id="q5-3">
+            <h3>✏️ 確認問題（第5-3章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. Ciscoデバイスでリモートアクセスに使用するプロトコルとして、セキュリティ上最も推奨されるものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Telnet</button></li>
+                    <li><button class="quiz-option">B. SSH</button></li>
+                    <li><button class="quiz-option">C. HTTP</button></li>
+                    <li><button class="quiz-option">D. FTP</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（SSH）</strong><br>SSHは通信を暗号化します。Telnetは平文のため盗聴リスクがあり、CCNAではSSHの使用が推奨されます。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-4 L2セキュリティ -->
+<div class="page" id="page-5-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-4 L2セキュリティ</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            DHCPスヌーピング・DAI・ポートセキュリティ</p>
+        <h2 class="chapter-title"><span class="icon">🛡️</span>DHCPスヌーピング</h2>
+        <p>不正なDHCPサーバーからの応答をブロック。<strong>Trusted/Untrustedポート</strong>で制御。</p>
+        <pre><span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">ip dhcp snooping</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">ip dhcp snooping vlan</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">ip dhcp snooping trust</span>  <span class="cmd-comment"># 上位スイッチ/DHCPサーバー向けポート</span></pre>
+        <h2 class="chapter-title"><span class="icon">🔒</span>DAI（Dynamic ARP Inspection）</h2>
+        <p>ARPスプーフィングを防ぐ。DHCPスヌーピングバインディングテーブルでARP検証。</p>
+        <pre><span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">ip arp inspection vlan</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">ip arp inspection trust</span>  <span class="cmd-comment"># 信頼できるポート</span></pre>
+        <h2 class="chapter-title"><span class="icon">🔐</span>ポートセキュリティ（Port Security）</h2>
+        <pre><span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode access</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security maximum</span> <span class="cmd-value">2</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security violation</span> <span class="cmd-value">restrict</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security mac-address sticky</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show port-security interface</span> <span class="cmd-value">Gi0/1</span></pre>
+        <div class="card">
+            <h4 class="topic-title">違反アクション（Violation Mode）</h4>
+            <ul>
+                <li><strong>Protect：</strong>違反フレーム破棄、ログなし</li>
+                <li><strong>Restrict：</strong>違反フレーム破棄、ログ・SNMPトラップ送信</li>
+                <li><strong>Shutdown（デフォルト）：</strong>ポートをerr-disabledにシャットダウン</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q5-4">
+            <h3>✏️ 確認問題（第5-4章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. ポートセキュリティのデフォルトの違反アクションはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Protect</button></li>
+                    <li><button class="quiz-option">B. Restrict</button></li>
+                    <li><button class="quiz-option">C. Shutdown</button></li>
+                    <li><button class="quiz-option">D. Drop</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（Shutdown）</strong><br>デフォルトはShutdownで、違反が発生するとポートがerr-disabled状態になります。err-disabledからの復旧はshutdown→no
+                    shutdownが必要です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-5 VPN/AAA -->
+<div class="page" id="page-5-5">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-5 VPN・AAA</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">🔒</span>VPN（Virtual Private Network）</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>サイト間VPN</strong></td>
+                        <td>拠点間の常時接続。IPsecトンネルで暗号化</td>
+                    </tr>
+                    <tr>
+                        <td><strong>リモートアクセスVPN</strong></td>
+                        <td>個人ユーザーが社内ネットワークにアクセス（SSL VPN / IPsec）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <h2 class="chapter-title"><span class="icon">🔐</span>AAA（認証・認可・アカウンティング）</h2>
+        <div class="card">
+            <ul>
+                <li><strong>Authentication（認証）：</strong>誰か？を確認（ユーザー名・パスワード）</li>
+                <li><strong>Authorization（認可）：</strong>何をしてよいか？を制御</li>
+                <li><strong>Accounting（アカウンティング）：</strong>何をしたか？を記録</li>
+            </ul>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プロトコル</th>
+                        <th>ポート</th>
+                        <th>暗号化</th>
+                        <th>特徴</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>RADIUS</strong></td>
+                        <td>UDP 1812/1813</td>
+                        <td>パスワードのみ</td>
+                        <td>IEEE標準。主にネットワークアクセス認証</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TACACS+</strong></td>
+                        <td>TCP 49</td>
+                        <td>全パケット</td>
+                        <td>Cisco独自。管理者アクセス制御に優れる</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="quiz-section" data-quiz-id="q5-5">
+            <h3>✏️ 確認問題（第5-5章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. AAAの「A」のうち、「ユーザーが何をしてよいか制御する」機能はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Authentication（認証）</button></li>
+                    <li><button class="quiz-option">B. Authorization（認可）</button></li>
+                    <li><button class="quiz-option">C. Accounting（アカウンティング）</button></li>
+                    <li><button class="quiz-option">D. Access（アクセス）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（Authorization）</strong><br>AuthorizationはACLやコマンド制御でユーザーが実行できる操作を制御します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 6-1 自動化概要 -->
+<div class="page" id="page-6-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-1 ネットワーク自動化概要</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">🤖</span>従来型 vs コントローラベース</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>従来型ネットワーク</th>
+                        <th>コントローラベース（SDN）</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>設定管理</td>
+                        <td>機器ごとに個別CLI設定</td>
+                        <td>中央コントローラから一括設定</td>
+                    </tr>
+                    <tr>
+                        <td>スケーラビリティ</td>
+                        <td>低い（機器増加で管理複雑化）</td>
+                        <td>高い（自動プロビジョニング）</td>
+                    </tr>
+                    <tr>
+                        <td>柔軟性</td>
+                        <td>低い</td>
+                        <td>高い（プログラム可能）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <h3 class="subsection-title">SDNの3層アーキテクチャ</h3>
+        <div class="card">
+            <ul>
+                <li><strong>アプリケーション層：</strong>ビジネスアプリ・ネットワーク管理ツール</li>
+                <li><strong>コントロール層：</strong>SDNコントローラ（Cisco APIC等）。ネットワーク全体を把握</li>
+                <li><strong>インフラ層：</strong>物理スイッチ・ルータ。コントローラの指示に従い転送</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q6-1">
+            <h3>✏️ 確認問題（第6-1章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. SDNアーキテクチャで、物理スイッチ・ルータが存在する層はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. アプリケーション層</button></li>
+                    <li><button class="quiz-option">B. インフラ層</button></li>
+                    <li><button class="quiz-option">C. コントロール層</button></li>
+                    <li><button class="quiz-option">D. マネジメント層</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（インフラ層）</strong><br>SDNの3層：アプリケーション層（アプリ）→コントロール層（コントローラ）→インフラ層（物理機器）。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 6-2 REST API/JSON -->
+<div class="page" id="page-6-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-2 REST API・JSON</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">🔌</span>REST API</h2>
+        <div class="card">
+            <h4 class="topic-title">REST APIの特徴</h4>
+            <ul>
+                <li><strong>HTTP動詞：</strong>GET（取得）、POST（作成）、PUT（更新）、DELETE（削除）、PATCH（一部更新）</li>
+                <li><strong>ステートレス：</strong>各リクエストは独立（セッション状態を保持しない）</li>
+                <li><strong>データ形式：</strong>主にJSONまたはXML</li>
+            </ul>
+        </div>
+        <h2 class="chapter-title"><span class="icon">📄</span>JSON（JavaScript Object Notation）</h2>
+        <pre>{
+  "device": {
+    "hostname": "R1",
+    "interfaces": [
+      {"name": "GigabitEthernet0/0", "ip": "10.1.1.1", "mask": "255.255.255.0"},
+      {"name": "GigabitEthernet0/1", "ip": "192.168.1.1", "mask": "255.255.255.0"}
+    ],
+    "ospf_enabled": true
+  }
+}</pre>
+        <div class="quiz-section" data-quiz-id="q6-2">
+            <h3>✏️ 確認問題（第6-2章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. REST APIでリソースの情報を取得する際に使用するHTTPメソッドはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. GET</button></li>
+                    <li><button class="quiz-option">B. POST</button></li>
+                    <li><button class="quiz-option">C. DELETE</button></li>
+                    <li><button class="quiz-option">D. PUT</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（GET）</strong><br>GET=取得、POST=作成、PUT=更新（全体）、PATCH=更新（一部）、DELETE=削除。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 6-3 Ansible -->
+<div class="page" id="page-6-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-3 Ansible・Puppet・Chef</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">⚙️</span>設定管理ツールの比較</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>Ansible</th>
+                        <th>Puppet</th>
+                        <th>Chef</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>アーキテクチャ</td>
+                        <td>エージェントレス</td>
+                        <td>エージェント型</td>
+                        <td>エージェント型</td>
+                    </tr>
+                    <tr>
+                        <td>設定言語</td>
+                        <td>YAML（Playbook）</td>
+                        <td>Puppet DSL (Ruby系)</td>
+                        <td>Ruby (Cookbook)</td>
+                    </tr>
+                    <tr>
+                        <td>通信</td>
+                        <td>SSH/NETCONF</td>
+                        <td>HTTPS (8140)</td>
+                        <td>HTTPS</td>
+                    </tr>
+                    <tr>
+                        <td>学習コスト</td>
+                        <td>低い</td>
+                        <td>中程度</td>
+                        <td>高い</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="info-box note">
+            <div class="label">📌 試験ポイント</div>
+            Ansibleはエージェントレスでシンプル（YAMLのPlaybook）。PuppetとChefはエージェントが必要。CCNAではAnsibleが最も出題されやすい。
+        </div>
+        <div class="quiz-section" data-quiz-id="q6-3">
+            <h3>✏️ 確認問題（第6-3章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. エージェントレスで動作し、YAMLのPlaybookを使う設定管理ツールはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Ansible</button></li>
+                    <li><button class="quiz-option">B. Puppet</button></li>
+                    <li><button class="quiz-option">C. Chef</button></li>
+                    <li><button class="quiz-option">D. Salt</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（Ansible）</strong><br>AnsibleはSSHを使いエージェント不要で動作します。設定はYAML形式のPlaybookで記述します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 6-4 DNA Center/SDN -->
+<div class="page" id="page-6-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-4 Cisco DNA Center・SDN</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">🏗️</span>Cisco DNA Center</h2>
+        <div class="card">
+            <h4 class="topic-title">主な機能</h4>
+            <ul>
+                <li><strong>デザイン：</strong>ネットワークの設計・階層的サイト管理</li>
+                <li><strong>ポリシー：</strong>セグメンテーション・QoSポリシーの一元管理</li>
+                <li><strong>プロビジョニング：</strong>デバイスへの自動設定配布（PnP対応）</li>
+                <li><strong>アシュアランス：</strong>AIを活用したネットワーク分析・問題検出</li>
+            </ul>
+        </div>
+        <h3 class="subsection-title">Cisco SD-Access（ソフトウェア定義アクセス）</h3>
+        <div class="card">
+            <ul>
+                <li><strong>ファブリック：</strong>VXLANオーバーレイネットワーク</li>
+                <li><strong>コントロールプレーン：</strong>LISP（Locator/ID Separation Protocol）</li>
+                <li><strong>ポリシープレーン：</strong>ユーザーID（SGT）に基づくセグメンテーション</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q6-4">
+            <h3>✏️ 確認問題（第6-4章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. Cisco DNA Centerの「Assurance」機能の説明として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. デバイスへの設定を自動配布する</button></li>
+                    <li><button class="quiz-option">B. ネットワークのセグメンテーションポリシーを管理する</button></li>
+                    <li><button class="quiz-option">C. AIを活用してネットワークの問題を分析・検出する</button></li>
+                    <li><button class="quiz-option">D. ネットワーク機器のデザインを行う</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（アシュアランス）</strong><br>アシュアランスはAI/MLを活用してネットワークの状態を継続的に監視・分析し、問題を自動検出します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+        <!-- Scroll Top Button -->
+        <button id="scrollTop" aria-label="トップへ戻る">↑</button>
+
+    </div><!-- /main -->
+
+    <script src="app.js"></script>
+    <script>
+        // ページ内サブネット計算
+        function calcSubnetInline(ipId, prefixId, resultId) {
+            const ipStr = document.getElementById(ipId)?.value.trim();
+            const prefixStr = document.getElementById(prefixId)?.value.trim();
+            const result = document.getElementById(resultId);
+            if (!ipStr || !prefixStr || !result) return;
+            const prefix = parseInt(prefixStr.replace('/', ''));
+            if (isNaN(prefix) || prefix < 0 || prefix > 32) { result.innerHTML = '<span style="color:var(--accent-red)">無効なプレフィックス長</span>'; result.classList.add('show'); return; }
+            const ipParts = ipStr.split('.').map(Number);
+            if (ipParts.length !== 4 || ipParts.some(p => isNaN(p) || p < 0 || p > 255)) { result.innerHTML = '<span style="color:var(--accent-red)">無効なIPアドレス</span>'; result.classList.add('show'); return; }
+            const ipInt = (ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3];
+            const maskInt = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0;
+            const netInt = (ipInt & maskInt) >>> 0;
+            const bcInt = (netInt | (~maskInt >>> 0)) >>> 0;
+            const f = prefix < 31 ? netInt + 1 : netInt, l = prefix < 31 ? bcInt - 1 : bcInt;
+            const hosts = prefix >= 32 ? 1 : prefix === 31 ? 2 : Math.pow(2, 32 - prefix) - 2;
+            function i2ip(n) { return [(n >>> 24), (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.'); }
+            function m2s(m) { return [(m >>> 24), (m >>> 16) & 255, (m >>> 8) & 255, m & 255].join('.'); }
+            result.innerHTML = `<div class="calc-result-row"><span class="calc-result-label">ネットワークアドレス:</span><span class="calc-result-value">${i2ip(netInt)}/${prefix}</span></div><div class="calc-result-row"><span class="calc-result-label">サブネットマスク:</span><span class="calc-result-value">${m2s(maskInt)}</span></div><div class="calc-result-row"><span class="calc-result-label">ブロードキャスト:</span><span class="calc-result-value">${i2ip(bcInt)}</span></div><div class="calc-result-row"><span class="calc-result-label">使用可能範囲:</span><span class="calc-result-value">${i2ip(f)} ～ ${i2ip(l)}</span></div><div class="calc-result-row"><span class="calc-result-label">ホスト数:</span><span class="calc-result-value">${hosts.toLocaleString()} 台</span></div>`;
+            result.classList.add('show');
+        }
+    </script>
+</body>
+
+</html>

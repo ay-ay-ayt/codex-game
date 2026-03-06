@@ -1,0 +1,514 @@
+<!-- 2-1 VLAN -->
+<div class="page" id="page-2-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-1 VLAN基礎・設定</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            VLANの概念と基本設定コマンドをマスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">🏷️</span>VLANとは</h2>
+        <p>VLAN（Virtual LAN）は、物理的な配線に関係なく論理的にネットワークを分割する技術です。同一VLAN内の機器はL2で通信でき、異なるVLAN間の通信にはルータ（またはL3スイッチ）が必要です。</p>
+
+        <div class="card">
+            <h4 class="topic-title">VLANのメリット</h4>
+            <ul>
+                <li><strong>セキュリティ向上：</strong>部門ごとにVLANを分けてトラフィックを隔離</li>
+                <li><strong>ブロードキャストドメインの縮小：</strong>不要なブロードキャストを制限しパフォーマンス向上</li>
+                <li><strong>柔軟な管理：</strong>物理的な移動なしに論理的なグループ変更が可能</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">VLAN番号の分類</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>VLAN番号</th>
+                        <th>種別</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>デフォルトVLAN</td>
+                        <td>全ポートのデフォルト。削除不可</td>
+                    </tr>
+                    <tr>
+                        <td>2〜1001</td>
+                        <td>通常VLAN（Normal Range）</td>
+                        <td>ユーザー定義可能。VTP対応</td>
+                    </tr>
+                    <tr>
+                        <td>1002〜1005</td>
+                        <td>予約済み</td>
+                        <td>レガシーTR/FDDI用。削除不可</td>
+                    </tr>
+                    <tr>
+                        <td>1006〜4094</td>
+                        <td>拡張VLAN（Extended Range）</td>
+                        <td>VTPトランスペアレントモードのみ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">VLAN設定コマンド</h3>
+        <pre><span class="cmd-comment"># VLANデータベースへ登録</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">vlan</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Switch(config-vlan)#</span> <span class="cmd-keyword">name</span> <span class="cmd-value">Sales</span>
+<span class="cmd-prompt">Switch(config-vlan)#</span> <span class="cmd-keyword">exit</span>
+
+<span class="cmd-comment"># アクセスポートへのVLAN割り当て</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/1</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode access</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport access vlan</span> <span class="cmd-value">10</span>
+
+<span class="cmd-comment"># 確認コマンド</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show vlan brief</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show vlan id</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces GigabitEthernet0/1 switchport</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-1">
+            <h3>✏️ 確認問題（第2-1章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 異なるVLAN間で通信するために必要なものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ハブ</button></li>
+                    <li><button class="quiz-option">B. スイッチ（L2）</button></li>
+                    <li><button class="quiz-option">C. ルータまたはL3スイッチ</button></li>
+                    <li><button class="quiz-option">D. アクセスポイント</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（ルータまたはL3スイッチ）</strong><br>VLANはL2でブロードキャストドメインを分割します。異なるVLAN間の通信にはL3でのルーティングが必要です。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. CiscoスイッチでVLAN 20を作成し「Engineering」と名前を付けるコマンドとして正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Switch(config)# vlan name 20 Engineering</button></li>
+                    <li><button class="quiz-option">B. Switch(config)# vlan 20 → Switch(config-vlan)# name
+                            Engineering</button></li>
+                    <li><button class="quiz-option">C. Switch(config-if)# switchport vlan 20 Engineering</button></li>
+                    <li><button class="quiz-option">D. Switch# vlan 20 Engineering</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B</strong><br>VLAN作成はグローバルコンフィグモードで「vlan
+                    番号」と入力し、vlan-configモードで「name 名前」と設定します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-2 トランク -->
+<div class="page" id="page-2-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-2 トランクポート・802.1Q</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            複数VLANを1本のリンクで伝送するトランキング技術</p>
+
+        <h2 class="chapter-title"><span class="icon">🔗</span>トランクとは</h2>
+        <p>トランクポートは複数のVLANのトラフィックを1本のリンクで伝送するポートです。スイッチ間、またはスイッチとルータ間の接続に使用します。</p>
+
+        <h3 class="subsection-title">802.1Q（IEEE標準）</h3>
+        <div class="card">
+            <h4 class="topic-title">タグ付きフレームの構造</h4>
+            <pre>通常フレーム:   [宛先MAC][送信元MAC][EtherType][データ][FCS]
+802.1Qフレーム: [宛先MAC][送信元MAC][802.1Qタグ(4byte)][EtherType][データ][FCS]
+                                      └─ TPID(0x8100) + PCP(3bit) + DEI(1bit) + VLAN ID(12bit)</pre>
+            <p><strong>ネイティブVLAN：</strong>タグなしで送受信されるVLAN（デフォルトはVLAN 1）。両端で一致させる必要がある。</p>
+        </div>
+
+        <h3 class="subsection-title">トランク設定コマンド</h3>
+        <pre><span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode trunk</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk encapsulation dot1q</span>  <span class="cmd-comment"># 一部機種のみ必要</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk native vlan</span> <span class="cmd-value">99</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport trunk allowed vlan</span> <span class="cmd-value">10,20,30</span>
+
+<span class="cmd-comment"># 確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces trunk</span></pre>
+
+        <h3 class="subsection-title">Router-on-a-Stick（ルータの1アームルーティング）</h3>
+        <pre><span class="cmd-comment"># ルータ側のサブインタフェース設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/0.10</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">encapsulation dot1Q</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.10.1 255.255.255.0</span>
+
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/0.20</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">encapsulation dot1Q</span> <span class="cmd-value">20</span>
+<span class="cmd-prompt">Router(config-subif)#</span> <span class="cmd-keyword">ip address</span> <span class="cmd-value">192.168.20.1 255.255.255.0</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-2">
+            <h3>✏️ 確認問題（第2-2章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 802.1Qトランクにおいてタグなしで送受信されるVLANを何というか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. デフォルトVLAN</button></li>
+                    <li><button class="quiz-option">B. 管理VLAN</button></li>
+                    <li><button class="quiz-option">C. ネイティブVLAN</button></li>
+                    <li><button class="quiz-option">D. 拡張VLAN</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（ネイティブVLAN）</strong><br>ネイティブVLANのフレームは802.1Qタグなしでトランクリンクを通過します。両端で一致しないとVLAN不一致の問題が起きます。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-3 EtherChannel -->
+<div class="page" id="page-2-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-3 EtherChannel (LACP)</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span> 複数の物理リンクを1本の論理リンクに束ねる技術</p>
+
+        <h2 class="chapter-title"><span class="icon">⛓️</span>EtherChannelとは</h2>
+        <p>EtherChannelは複数の物理リンクを1つの論理リンクとして束ねる技術です。帯域幅の増加と冗長性を同時に実現します。</p>
+
+        <h3 class="subsection-title">ネゴシエーションプロトコル</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プロトコル</th>
+                        <th>標準</th>
+                        <th>モード</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>LACP</strong></td>
+                        <td>IEEE 802.3ad</td>
+                        <td>active / passive</td>
+                        <td>業界標準。activeが交渉を開始</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PAgP</strong></td>
+                        <td>Cisco独自</td>
+                        <td>desirable / auto</td>
+                        <td>Cisco機器間でのみ動作。desirableが交渉を開始</td>
+                    </tr>
+                    <tr>
+                        <td>Static</td>
+                        <td>—</td>
+                        <td>on</td>
+                        <td>ネゴシエーションなし。両端onが必要</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">EtherChannel設定（LACP）</h3>
+        <pre><span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface range</span> <span class="cmd-value">GigabitEthernet0/1 - 2</span>
+<span class="cmd-prompt">Switch(config-if-range)#</span> <span class="cmd-keyword">channel-group</span> <span class="cmd-value">1</span> <span class="cmd-keyword">mode</span> <span class="cmd-value">active</span>    <span class="cmd-comment"># LACP active</span>
+<span class="cmd-prompt">Switch(config-if-range)#</span> <span class="cmd-keyword">exit</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">interface port-channel</span> <span class="cmd-value">1</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode trunk</span>
+
+<span class="cmd-comment"># 確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show etherchannel summary</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show etherchannel port-channel</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-3">
+            <h3>✏️ 確認問題（第2-3章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. EtherChannelでIEEE 802.3adに基づく標準プロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. LACP</button></li>
+                    <li><button class="quiz-option">B. PAgP</button></li>
+                    <li><button class="quiz-option">C. STP</button></li>
+                    <li><button class="quiz-option">D. CDP</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（LACP）</strong><br>LACPはIEEE
+                    802.3adの標準プロトコルで、異なるベンダー間でも動作します。PAgPはCisco独自です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-4 STP -->
+<div class="page" id="page-2-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-4 スパニングツリープロトコル (STP)</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> L2ループを防ぐSTPの動作・ポートロール・状態遷移を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🌳</span>STPの目的</h2>
+        <p>L2ネットワークでは冗長リンクがあるとブロードキャストストームやMACアドレステーブルの不安定化が起きます。STPは一部ポートをブロッキングして論理的にループのないトポロジを作ります。</p>
+
+        <h3 class="subsection-title">STPの選定プロセス</h3>
+        <div class="card">
+            <ol>
+                <li><strong>ルートブリッジの選出：</strong>最小のブリッジID（プライオリティ+MACアドレス）を持つスイッチ</li>
+                <li><strong>ルートポートの選定：</strong>各非ルートスイッチのルートブリッジへの最短経路ポート（最小累積コスト）</li>
+                <li><strong>デジグネイテッドポートの選定：</strong>各セグメントでルートブリッジへ最短のポート</li>
+                <li><strong>ブロッキング：</strong>上記以外のポートはブロッキング（フレーム転送停止）</li>
+            </ol>
+        </div>
+
+        <h3 class="subsection-title">STPポートの状態（Rapid PVST+）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>状態</th>
+                        <th>転送</th>
+                        <th>学習</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Discarding</strong></td>
+                        <td>×</td>
+                        <td>×</td>
+                        <td>ブロッキング・フレーム転送なし</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Learning</strong></td>
+                        <td>×</td>
+                        <td>○</td>
+                        <td>MACアドレスを学習中</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Forwarding</strong></td>
+                        <td>○</td>
+                        <td>○</td>
+                        <td>通常転送状態</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">STPコスト（リンク速度別）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>リンク速度</th>
+                        <th>STPコスト</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>10Mbps</td>
+                        <td>100</td>
+                    </tr>
+                    <tr>
+                        <td>100Mbps</td>
+                        <td>19</td>
+                    </tr>
+                    <tr>
+                        <td>1Gbps</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <td>10Gbps</td>
+                        <td>2</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">Rapid PVST+設定</h3>
+        <pre><span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">spanning-tree mode</span> <span class="cmd-value">rapid-pvst</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">spanning-tree vlan</span> <span class="cmd-value">10</span> <span class="cmd-keyword">priority</span> <span class="cmd-value">4096</span>   <span class="cmd-comment"># ルートブリッジに設定</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">spanning-tree vlan</span> <span class="cmd-value">10</span> <span class="cmd-keyword">root primary</span>   <span class="cmd-comment"># 自動でプライオリティ設定</span>
+
+<span class="cmd-comment"># PortFast（エッジポート向け）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">spanning-tree portfast</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">spanning-tree bpduguard enable</span>
+
+<span class="cmd-comment"># 確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show spanning-tree vlan</span> <span class="cmd-value">10</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-4">
+            <h3>✏️ 確認問題（第2-4章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. STPにおいてルートブリッジが選出される基準として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 最も小さいブリッジID（プライオリティ+MACアドレス）</button></li>
+                    <li><button class="quiz-option">B. 最も大きいブリッジID</button></li>
+                    <li><button class="quiz-option">C. 最も多くのポートを持つスイッチ</button></li>
+                    <li><button class="quiz-option">D. 最も高いIPアドレスを持つスイッチ</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A</strong><br>ルートブリッジは最小のブリッジIDを持つスイッチが選出されます。ブリッジID=プライオリティ（デフォルト32768）+MACアドレスです。</div>
+            </div>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. 1GbpsリンクのSTPコストはいくつか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 100</button></li>
+                    <li><button class="quiz-option">B. 19</button></li>
+                    <li><button class="quiz-option">C. 4</button></li>
+                    <li><button class="quiz-option">D. 2</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（4）</strong><br>STPコスト：10Mbps=100、100Mbps=19、1Gbps=4、10Gbps=2。コストが小さいほど優先されます。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-5 CDP/LLDP -->
+<div class="page" id="page-2-5">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-5 CDP・LLDP</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span> 隣接機器を自動探索するL2探索プロトコル</p>
+
+        <h2 class="chapter-title"><span class="icon">🔍</span>CDP vs LLDP</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>CDP</th>
+                        <th>LLDP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>開発元</td>
+                        <td>Cisco（独自）</td>
+                        <td>IEEE 802.1AB（標準）</td>
+                    </tr>
+                    <tr>
+                        <td>対応機器</td>
+                        <td>Cisco機器のみ</td>
+                        <td>マルチベンダー</td>
+                    </tr>
+                    <tr>
+                        <td>デフォルト状態</td>
+                        <td>有効</td>
+                        <td>無効</td>
+                    </tr>
+                    <tr>
+                        <td>通知間隔</td>
+                        <td>60秒</td>
+                        <td>30秒</td>
+                    </tr>
+                    <tr>
+                        <td>ホールドタイム</td>
+                        <td>180秒</td>
+                        <td>120秒</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <pre><span class="cmd-comment"># CDP確認コマンド</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show cdp neighbors</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show cdp neighbors detail</span>
+
+<span class="cmd-comment"># LLDP有効化と確認</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">lldp run</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show lldp neighbors</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q2-5">
+            <h3>✏️ 確認問題（第2-5章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. マルチベンダー環境で動作するIEEE標準のL2探索プロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. CDP</button></li>
+                    <li><button class="quiz-option">B. LLDP</button></li>
+                    <li><button class="quiz-option">C. STP</button></li>
+                    <li><button class="quiz-option">D. VTP</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（LLDP）</strong><br>LLDPはIEEE
+                    802.1ABの標準プロトコルで、異なるベンダーの機器間でも動作します。CDPはCisco独自です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-6 無線LAN WLC/AP -->
+<div class="page" id="page-2-6">
+    <div class="content-wrapper">
+        <h1 class="section-title">2-6 Cisco無線LAN (WLC・AP)</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> CiscoのWLCとAPの管理アーキテクチャを理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">📡</span>APの動作モード</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>モード</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Autonomous（自律型）</strong></td>
+                        <td>APが独立して動作。各APを個別設定</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Lightweight（集中管理型）</strong></td>
+                        <td>WLC（無線LANコントローラ）が全APを集中管理。CAPWAPで通信</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FlexConnect</strong></td>
+                        <td>WLCへの接続が切れてもローカルで動作継続可能</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">CAPWAP（Control And Provisioning of Wireless Access Points）</h3>
+        <div class="card">
+            <ul>
+                <li>APとWLC間の制御・データ転送に使用するトンネルプロトコル</li>
+                <li><strong>制御チャネル：</strong>UDP 5246（暗号化）</li>
+                <li><strong>データチャネル：</strong>UDP 5247（暗号化オプション）</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">WLC管理アクセス方法</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>アクセス方法</th>
+                        <th>プロトコル</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>WebUI</td>
+                        <td>HTTP/HTTPS</td>
+                        <td>GUIによる設定（最も一般的）</td>
+                    </tr>
+                    <tr>
+                        <td>CLI</td>
+                        <td>SSH/Telnet</td>
+                        <td>コマンドライン設定</td>
+                    </tr>
+                    <tr>
+                        <td>コンソール</td>
+                        <td>RS-232</td>
+                        <td>初期設定・障害対応時</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q2-6">
+            <h3>✏️ 確認問題（第2-6章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. LightweightモードのAPとWLC間で使用されるトンネルプロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. GRE</button></li>
+                    <li><button class="quiz-option">B. CAPWAP</button></li>
+                    <li><button class="quiz-option">C. IPSec</button></li>
+                    <li><button class="quiz-option">D. MPLS</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：B（CAPWAP）</strong><br>CAPWAPはLightweight
+                    APとWLC間の制御・データ通信に使用されます。UDP 5246（制御）とUDP 5247（データ）を使用します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>

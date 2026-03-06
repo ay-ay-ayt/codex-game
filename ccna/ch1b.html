@@ -1,0 +1,639 @@
+<!-- 1-4 IPv6 -->
+<div class="page" id="page-1-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-4 IPv6アドレス</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> IPv6の基礎・アドレス種別・EUI-64を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🌐</span>IPv6の基礎</h2>
+        <div class="card">
+            <h4 class="topic-title">IPv4 vs IPv6</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>IPv4</th>
+                            <th>IPv6</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>アドレス長</td>
+                            <td>32ビット</td>
+                            <td>128ビット</td>
+                        </tr>
+                        <tr>
+                            <td>表記</td>
+                            <td>10進ドット区切り (192.168.1.1)</td>
+                            <td>16進コロン区切り (2001:db8::1)</td>
+                        </tr>
+                        <tr>
+                            <td>アドレス数</td>
+                            <td>約43億</td>
+                            <td>約340澗（3.4×10³⁸）</td>
+                        </tr>
+                        <tr>
+                            <td>ブロードキャスト</td>
+                            <td>あり</td>
+                            <td>なし（マルチキャストで代替）</td>
+                        </tr>
+                        <tr>
+                            <td>NAT</td>
+                            <td>必要</td>
+                            <td>不要（アドレス枯渇なし）</td>
+                        </tr>
+                        <tr>
+                            <td>ヘッダ</td>
+                            <td>可変長（20〜60バイト）</td>
+                            <td>固定40バイト</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h3 class="subsection-title">IPv6アドレスの表記ルール</h3>
+        <div class="card">
+            <h4 class="topic-title">省略ルール（2つのルール）</h4>
+            <ul>
+                <li><strong>ルール1：</strong>各グループの先頭ゼロは省略可。<code>0db8</code>→<code>db8</code></li>
+                <li><strong>ルール2：</strong>連続する0グループは「::」で1か所だけ省略可。<code>0000:0000:0000</code>→<code>::</code></li>
+            </ul>
+            <pre>完全形: 2001:0db8:0000:0000:0000:0000:0000:0001
+省略形: 2001:db8::1</pre>
+        </div>
+
+        <h3 class="subsection-title">IPv6アドレスの種別</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種別</th>
+                        <th>プレフィックス</th>
+                        <th>用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>グローバルユニキャスト</strong></td>
+                        <td>2000::/3</td>
+                        <td>インターネット上で一意。IPv4のパブリックIPに相当</td>
+                    </tr>
+                    <tr>
+                        <td><strong>リンクローカル</strong></td>
+                        <td>FE80::/10</td>
+                        <td>同一リンク内のみ有効。自動生成される</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ユニークローカル</strong></td>
+                        <td>FC00::/7</td>
+                        <td>プライベートネットワーク内。IPv4プライベートIPに相当</td>
+                    </tr>
+                    <tr>
+                        <td><strong>マルチキャスト</strong></td>
+                        <td>FF00::/8</td>
+                        <td>複数宛先への一括送信</td>
+                    </tr>
+                    <tr>
+                        <td><strong>エニーキャスト</strong></td>
+                        <td>ユニキャストと同じ</td>
+                        <td>最近傍ノードへ送信</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ループバック</strong></td>
+                        <td>::1/128</td>
+                        <td>自分自身（IPv4の127.0.0.1に相当）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">EUI-64によるインタフェースID生成</h3>
+        <div class="card">
+            <h4 class="topic-title">EUI-64の計算手順</h4>
+            <ol>
+                <li>MACアドレス（48ビット）を取得（例：AA:BB:CC:DD:EE:FF）</li>
+                <li>中央に「FFFE」を挿入→ AA:BB:CC:FF:FE:DD:EE:FF</li>
+                <li>先頭バイトの第7ビット（U/Lビット）を反転→ A8:BB:CC:FF:FE:DD:EE:FF</li>
+                <li>この64ビットをインタフェースIDとして使用</li>
+            </ol>
+            <pre>MAC:  AA:BB:CC:DD:EE:FF
+EUI-64インタフェースID: A8BB:CCFF:FEDD:EEFF</pre>
+        </div>
+
+        <div class="info-box note">
+            <div class="label">📌 試験ポイント</div>
+            リンクローカルアドレスはOSPFv3のネイバー確立など、同一リンク内通信に必ず使用される。show ipv6 interfaceで確認できる。
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-4">
+            <h3>✏️ 確認問題（第1-4章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. IPv6のリンクローカルアドレスのプレフィックスとして正しいものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 2000::/3</button></li>
+                    <li><button class="quiz-option">B. FC00::/7</button></li>
+                    <li><button class="quiz-option">C. FE80::/10</button></li>
+                    <li><button class="quiz-option">D. FF00::/8</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（FE80::/10）</strong><br>リンクローカルアドレスはFE80::/10のプレフィックスを持ち、同一リンク内通信にのみ使用されます。</div>
+            </div>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. IPv6でブロードキャストが廃止された代わりに使用されるものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ユニキャスト</button></li>
+                    <li><button class="quiz-option">B. マルチキャスト</button></li>
+                    <li><button class="quiz-option">C. エニーキャスト</button></li>
+                    <li><button class="quiz-option">D. ユニークローカル</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（マルチキャスト）</strong><br>IPv6ではブロードキャストが廃止され、マルチキャストがその役割を担います。例えば全ルータ宛のFF02::2などが使われます。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 1-5 TCP・UDP -->
+<div class="page" id="page-1-5">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-5 TCP・UDP・ポート番号</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> トランスポート層のプロトコルと主要ポート番号を覚える</p>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>TCP vs UDP</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>特徴</th>
+                        <th>TCP</th>
+                        <th>UDP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>接続確立</td>
+                        <td>3ウェイハンドシェイク（コネクション型）</td>
+                        <td>コネクションレス型</td>
+                    </tr>
+                    <tr>
+                        <td>信頼性</td>
+                        <td>高い（再送制御・順序制御）</td>
+                        <td>低い（再送なし）</td>
+                    </tr>
+                    <tr>
+                        <td>速度</td>
+                        <td>遅い（オーバーヘッドあり）</td>
+                        <td>速い</td>
+                    </tr>
+                    <tr>
+                        <td>フロー制御</td>
+                        <td>あり（ウィンドウサイズ）</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td>主な用途</td>
+                        <td>HTTP/S、FTP、SSH、SMTP</td>
+                        <td>DNS、DHCP、SNMP、VoIP、動画ストリーミング</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 class="topic-title">TCPの3ウェイハンドシェイク</h4>
+            <pre><span class="cmd-prompt">クライアント</span>          <span class="cmd-prompt">サーバー</span>
+   |── SYN ──────────→ |  (接続要求)
+   |← SYN-ACK ────── |  (受入+確認)
+   |── ACK ──────────→ |  (確認応答)
+   |                   |  (接続確立！)</pre>
+        </div>
+
+        <h3 class="subsection-title">主要ポート番号（必須暗記）</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ポート番号</th>
+                        <th>プロトコル</th>
+                        <th>説明</th>
+                        <th>TCP/UDP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>20, 21</strong></td>
+                        <td>FTP</td>
+                        <td>ファイル転送（20:データ、21:制御）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>22</strong></td>
+                        <td>SSH</td>
+                        <td>暗号化リモートアクセス</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>23</strong></td>
+                        <td>Telnet</td>
+                        <td>平文リモートアクセス（非推奨）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>25</strong></td>
+                        <td>SMTP</td>
+                        <td>メール送信</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>53</strong></td>
+                        <td>DNS</td>
+                        <td>ドメイン名解決</td>
+                        <td>UDP/TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>67, 68</strong></td>
+                        <td>DHCP</td>
+                        <td>IPアドレス自動割当（67:サーバー、68:クライアント）</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>69</strong></td>
+                        <td>TFTP</td>
+                        <td>簡易ファイル転送</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>80</strong></td>
+                        <td>HTTP</td>
+                        <td>Web通信（平文）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>110</strong></td>
+                        <td>POP3</td>
+                        <td>メール受信</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>123</strong></td>
+                        <td>NTP</td>
+                        <td>時刻同期</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>161, 162</strong></td>
+                        <td>SNMP</td>
+                        <td>ネットワーク管理（161:ポーリング、162:トラップ）</td>
+                        <td>UDP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>443</strong></td>
+                        <td>HTTPS</td>
+                        <td>Web通信（暗号化）</td>
+                        <td>TCP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>514</strong></td>
+                        <td>Syslog</td>
+                        <td>ログ転送</td>
+                        <td>UDP</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-5">
+            <h3>✏️ 確認問題（第1-5章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. TCPの「3ウェイハンドシェイク」で、サーバーが最初にクライアントへ返すパケットはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. SYN</button></li>
+                    <li><button class="quiz-option">B. SYN-ACK</button></li>
+                    <li><button class="quiz-option">C. ACK</button></li>
+                    <li><button class="quiz-option">D. FIN</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（SYN-ACK）</strong><br>クライアントがSYNを送り、サーバーがSYN-ACKで応答し、クライアントがACKを送って接続確立（SYN→SYN-ACK→ACK）。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. DHCPで使用されるポート番号として正しい組み合わせはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. サーバー:67、クライアント:68（UDP）</button></li>
+                    <li><button class="quiz-option">B. サーバー:53、クライアント:68（TCP）</button></li>
+                    <li><button class="quiz-option">C. サーバー:68、クライアント:67（UDP）</button></li>
+                    <li><button class="quiz-option">D. サーバー:80、クライアント:443（TCP）</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（67/68
+                        UDP）</strong><br>DHCPサーバーはポート67、クライアントはポート68を使用します。プロトコルはUDPです。</div>
+            </div>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q3. 次のうちUDPを使用するプロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. HTTP</button></li>
+                    <li><button class="quiz-option">B. SSH</button></li>
+                    <li><button class="quiz-option">C. SNMP</button></li>
+                    <li><button class="quiz-option">D. FTP</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（SNMP）</strong><br>SNMPはポート161/162でUDPを使用します。HTTP・SSH・FTPはTCPです。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 1-6 ケーブル -->
+<div class="page" id="page-1-6">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-6 ケーブル・物理インタフェース</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> ケーブルの種類・規格・PoEの基礎を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🔌</span>銅線ケーブル</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種別</th>
+                        <th>規格</th>
+                        <th>最大速度</th>
+                        <th>最大距離</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>UTP Cat5e</td>
+                        <td>1000BASE-T</td>
+                        <td>1Gbps</td>
+                        <td>100m</td>
+                    </tr>
+                    <tr>
+                        <td>UTP Cat6</td>
+                        <td>10GBASE-T</td>
+                        <td>10Gbps</td>
+                        <td>55m（37〜55m）</td>
+                    </tr>
+                    <tr>
+                        <td>UTP Cat6a</td>
+                        <td>10GBASE-T</td>
+                        <td>10Gbps</td>
+                        <td>100m</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="info-box note">
+            <div class="label">📌 ストレートケーブル vs クロスケーブル</div>
+            現代のスイッチはAuto-MDIX（自動判別）搭載のため基本的にどちらでもOK。試験ではストレート=異種機器間、クロス=同種機器間と覚える。
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">💡</span>光ファイバーケーブル</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種別</th>
+                        <th>コア径</th>
+                        <th>光源</th>
+                        <th>主な用途</th>
+                        <th>最大距離</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>シングルモード (SMF)</strong></td>
+                        <td>9μm</td>
+                        <td>レーザー</td>
+                        <td>長距離WAN</td>
+                        <td>〜100km以上</td>
+                    </tr>
+                    <tr>
+                        <td><strong>マルチモード (MMF)</strong></td>
+                        <td>50/62.5μm</td>
+                        <td>LED</td>
+                        <td>LAN・データセンター</td>
+                        <td>〜2km</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="chapter-title"><span class="icon">⚡</span>PoE（Power over Ethernet）</h2>
+        <div class="card">
+            <ul>
+                <li><strong>PoE（802.3af）：</strong>最大15.4W供給（APや小型IPカメラ向け）</li>
+                <li><strong>PoE+（802.3at）：</strong>最大30W供給（より高出力のAP向け）</li>
+                <li><strong>PoE++（802.3bt）：</strong>最大60/100W供給（PTZカメラ・小型PC向け）</li>
+            </ul>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-6">
+            <h3>✏️ 確認問題（第1-6章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. 長距離WAN接続に適した光ファイバーの種類はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. マルチモード光ファイバー</button></li>
+                    <li><button class="quiz-option">B. シングルモード光ファイバー</button></li>
+                    <li><button class="quiz-option">C. Cat6 UTP</button></li>
+                    <li><button class="quiz-option">D. 同軸ケーブル</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（シングルモード）</strong><br>SMFはレーザー光源を使い100km以上の長距離伝送が可能です。MMFはLAN内の短距離向けです。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 1-7 無線LAN基礎 -->
+<div class="page" id="page-1-7">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-7 無線LAN基礎</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> Wi-Fiの規格・チャネル・セキュリティを理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">📶</span>Wi-Fi規格</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>規格名</th>
+                        <th>IEEE標準</th>
+                        <th>周波数帯</th>
+                        <th>最大速度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Wi-Fi 4</td>
+                        <td>802.11n</td>
+                        <td>2.4/5GHz</td>
+                        <td>600Mbps</td>
+                    </tr>
+                    <tr>
+                        <td>Wi-Fi 5</td>
+                        <td>802.11ac</td>
+                        <td>5GHz</td>
+                        <td>6.9Gbps</td>
+                    </tr>
+                    <tr>
+                        <td>Wi-Fi 6</td>
+                        <td>802.11ax</td>
+                        <td>2.4/5/6GHz</td>
+                        <td>9.6Gbps</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">2.4GHz帯の非重複チャネル</h3>
+        <div class="info-box important">
+            <div class="label">🚨 最重要暗記事項</div>
+            2.4GHz帯の<strong>非重複チャネルは1・6・11（日本）</strong>の3チャネル。隣接するAPにはこの3つを割り当て干渉を防ぐ。5GHz帯は多数のチャネルがあるため干渉しにくい。
+        </div>
+
+        <h3 class="subsection-title">無線セキュリティ方式</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>方式</th>
+                        <th>暗号化</th>
+                        <th>安全性</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>WEP</td>
+                        <td>RC4（40/104bit）</td>
+                        <td>非常に低い（使用禁止）</td>
+                    </tr>
+                    <tr>
+                        <td>WPA</td>
+                        <td>TKIP</td>
+                        <td>低い（非推奨）</td>
+                    </tr>
+                    <tr>
+                        <td>WPA2</td>
+                        <td>AES-CCMP</td>
+                        <td>高い（現在の標準）</td>
+                    </tr>
+                    <tr>
+                        <td>WPA3</td>
+                        <td>AES-GCMP</td>
+                        <td>非常に高い（最新標準）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-7">
+            <h3>✏️ 確認問題（第1-7章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 2.4GHz帯における非重複チャネルの正しい組み合わせはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 1・2・3</button></li>
+                    <li><button class="quiz-option">B. 1・5・10</button></li>
+                    <li><button class="quiz-option">C. 1・6・11</button></li>
+                    <li><button class="quiz-option">D. 1・7・13</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（1・6・11）</strong><br>2.4GHz帯は各チャネルが重複するため、非重複チャネルは1・6・11の3つだけです。隣接するAPはこの3チャネルを使い分けて干渉を回避します。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 1-8 スイッチング基礎 -->
+<div class="page" id="page-1-8">
+    <div class="content-wrapper">
+        <h1 class="section-title">1-8 スイッチング基礎・MACアドレス</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> スイッチの動作原理とMACアドレステーブルを理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🔀</span>スイッチの転送動作</h2>
+        <div class="card">
+            <h4 class="topic-title">MACアドレステーブルの動作（4ステップ）</h4>
+            <ol>
+                <li><strong>学習（Learning）：</strong>受信フレームの送信元MACと受信ポートをテーブルに記録</li>
+                <li><strong>エージング（Aging）：</strong>一定時間（300秒）通信のないエントリを自動削除</li>
+                <li><strong>フィルタリング（Filtering）：</strong>送信元と宛先が同じポートならフレームを破棄</li>
+                <li><strong>フォワーディング/フラッディング：</strong>宛先MACがテーブルにあれば該当ポートへ転送、なければ全ポートへフラッド</li>
+            </ol>
+        </div>
+
+        <h3 class="subsection-title">フレームの転送方式</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>方式</th>
+                        <th>特徴</th>
+                        <th>遅延</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ストアアンドフォワード</strong></td>
+                        <td>フレーム全体受信後にFCSエラーチェックしてから転送。エラー検出あり</td>
+                        <td>最大</td>
+                    </tr>
+                    <tr>
+                        <td><strong>カットスルー</strong></td>
+                        <td>宛先MACアドレス（先頭6バイト）を読んだ時点で転送開始。エラー検出なし</td>
+                        <td>最小</td>
+                    </tr>
+                    <tr>
+                        <td><strong>フラグメントフリー</strong></td>
+                        <td>先頭64バイト受信後に転送。衝突による不正フレームを除去</td>
+                        <td>中間</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">重要なCiscoコマンド</h3>
+        <pre><span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show mac address-table</span>       <span class="cmd-comment"># MACアドレステーブル確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces</span>              <span class="cmd-comment"># インタフェース状態確認</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show interfaces status</span>        <span class="cmd-comment"># インタフェース一覧・速度・duplex</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">speed</span> <span class="cmd-value">100</span>       <span class="cmd-comment"># 速度設定（10/100/1000/auto）</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">duplex</span> <span class="cmd-value">full</span>     <span class="cmd-comment"># 全二重設定</span></pre>
+
+        <div class="info-box warning">
+            <div class="label">⚠️ デュプレックスミスマッチ</div>
+            一方がfull、他方がhalfだと遅延・エラーが多発する。両端を同じ設定にするか、両端ともautoに設定する。
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q1-8">
+            <h3>✏️ 確認問題（第1-8章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. スイッチが宛先MACアドレスをMACアドレステーブルで見つけられない場合、どのような動作をするか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 受信ポート以外の全ポートにフレームをフラッドする</button></li>
+                    <li><button class="quiz-option">B. フレームを破棄する</button></li>
+                    <li><button class="quiz-option">C. ルータに転送する</button></li>
+                    <li><button class="quiz-option">D. ARPリクエストを送信する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（フラッド）</strong><br>宛先MACが不明な場合、スイッチは受信ポート以外の全ポートへフレームをフラッド（送信）します。これをユニキャストフラッディングと呼びます。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. フレーム全体を受信してからFCSエラーチェックを行い転送するスイッチ方式はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ストアアンドフォワード</button></li>
+                    <li><button class="quiz-option">B. カットスルー</button></li>
+                    <li><button class="quiz-option">C. フラグメントフリー</button></li>
+                    <li><button class="quiz-option">D. ファストフォワード</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（ストアアンドフォワード）</strong><br>ストアアンドフォワード方式はフレーム全体を受信後にFCSエラーチェックを行います。信頼性が最も高いが遅延が最大です。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>

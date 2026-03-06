@@ -1,0 +1,415 @@
+<!-- 3-1 ルーティング基礎 -->
+<div class="page" id="page-3-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-1 ルーティング基礎・ルーティングテーブル</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span> ルータの転送判断とルーティングテーブルの読み方を理解する</p>
+
+        <h2 class="chapter-title"><span class="icon">🗺️</span>ルーティングテーブルの見方</h2>
+        <pre><span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route</span>
+Codes: C - connected, S - static, O - OSPF, R - RIP, * - candidate default
+
+     10.0.0.0/8 is variably subnetted, 2 subnets, 2 masks
+<span class="cmd-value">C</span>       10.1.1.0/24 is directly connected, GigabitEthernet0/0
+<span class="cmd-value">L</span>       10.1.1.1/32 is directly connected, GigabitEthernet0/0
+<span class="cmd-value">S</span>    192.168.2.0/24 [1/0] via 10.1.1.2
+<span class="cmd-value">O</span>    172.16.0.0/16 [110/2] via 10.1.1.2, 00:05:30, GigabitEthernet0/0
+<span class="cmd-value">S*</span>   0.0.0.0/0 [1/0] via 203.0.113.1</pre>
+
+        <div class="card">
+            <h4 class="topic-title">ルーティングテーブルのコード説明</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>コード</th>
+                            <th>意味</th>
+                            <th>AD値</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>C</strong></td>
+                            <td>Connected（直接接続）</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>L</strong></td>
+                            <td>Local（ルータ自身のアドレス）</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>S</strong></td>
+                            <td>Static（スタティックルート）</td>
+                            <td>1</td>
+                        </tr>
+                        <tr>
+                            <td><strong>O</strong></td>
+                            <td>OSPF</td>
+                            <td>110</td>
+                        </tr>
+                        <tr>
+                            <td><strong>R</strong></td>
+                            <td>RIP</td>
+                            <td>120</td>
+                        </tr>
+                        <tr>
+                            <td><strong>D</strong></td>
+                            <td>EIGRP</td>
+                            <td>90</td>
+                        </tr>
+                        <tr>
+                            <td><strong>S*</strong></td>
+                            <td>デフォルトルート（0.0.0.0/0）</td>
+                            <td>1</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h3 class="subsection-title">アドミニストレーティブディスタンス（AD値）</h3>
+        <p>同じ宛先ネットワークへの経路が複数ある場合、<strong>AD値が小さいほど優先</strong>されます。</p>
+        <div class="info-box important">
+            <div class="label">🚨 AD値の暗記（頻出）</div>
+            直接接続(0) ＞ スタティック(1) ＞ EIGRP(90) ＞ OSPF(110) ＞ RIP(120) ＞ 外部EIGRP(170)
+        </div>
+
+        <h3 class="subsection-title">ロンゲストマッチ（最長一致）</h3>
+        <div class="card">
+            <p>宛先IPに対して最も長い（詳細な）プレフィックスのルートが選択されます。</p>
+            <pre>例：宛先 192.168.1.100 へのパケット
+  ルータに以下のルートがある場合:
+  192.168.0.0/16 → が一致
+  192.168.1.0/24 → がより詳細に一致 ← こちらが選択される
+  192.168.1.96/28 → さらに詳細 ← もしあればこちらが選択</pre>
+        </div>
+
+        <div class="quiz-section" data-quiz-id="q3-1">
+            <h3>✏️ 確認問題（第3-1章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. ルーティングテーブルの「O 172.16.0.0/16 [110/2]」の「110」が表すものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. メトリック（コスト）</button></li>
+                    <li><button class="quiz-option">B. アドミニストレーティブディスタンス（AD値）</button></li>
+                    <li><button class="quiz-option">C. VLAN番号</button></li>
+                    <li><button class="quiz-option">D. ホップ数</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（AD値）</strong><br>[AD値/メトリック]の形式で表記されます。OSPFのAD値は110、この場合のメトリックは2です。</div>
+            </div>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. ルーティングテーブルに複数の経路がある場合、最終的に使用される経路の選択基準で最初に確認されるものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ロンゲストマッチ（プレフィックス長が最大のもの）</button></li>
+                    <li><button class="quiz-option">B. AD値が最小のもの</button></li>
+                    <li><button class="quiz-option">C. メトリックが最小のもの</button></li>
+                    <li><button class="quiz-option">D. 設定順が早いもの</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（ロンゲストマッチ）</strong><br>まずプレフィックス長が最長のルートが選ばれます。同じプレフィックス長が複数あればAD値、さらにメトリックで選択します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 3-2 スタティックルーティング -->
+<div class="page" id="page-3-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-2 スタティックルーティング</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span> 手動設定するスタティックルートの設定方法をマスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">✏️</span>スタティックルートの種類</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>説明</th>
+                        <th>設定例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ネットワークルート</strong></td>
+                        <td>特定のネットワーク宛のルート</td>
+                        <td>ip route 192.168.2.0 255.255.255.0 10.1.1.2</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ホストルート (/32)</strong></td>
+                        <td>特定の1ホスト宛のルート</td>
+                        <td>ip route 192.168.2.100 255.255.255.255 10.1.1.2</td>
+                    </tr>
+                    <tr>
+                        <td><strong>デフォルトルート</strong></td>
+                        <td>0.0.0.0/0。一致するルートがない場合に使用</td>
+                        <td>ip route 0.0.0.0 0.0.0.0 203.0.113.1</td>
+                    </tr>
+                    <tr>
+                        <td><strong>フローティングスタティック</strong></td>
+                        <td>AD値を大きくして通常ルートのバックアップとして使用</td>
+                        <td>ip route 192.168.2.0 255.255.255.0 10.2.2.2 200</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">スタティックルート設定コマンド</h3>
+        <pre><span class="cmd-comment"># ネクストホップIPアドレス指定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route</span> <span class="cmd-value">192.168.2.0 255.255.255.0 10.1.1.2</span>
+
+<span class="cmd-comment"># 出口インタフェース指定（P-to-Pリンク向け）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route</span> <span class="cmd-value">192.168.2.0 255.255.255.0 GigabitEthernet0/1</span>
+
+<span class="cmd-comment"># デフォルトルート</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip route 0.0.0.0 0.0.0.0</span> <span class="cmd-value">203.0.113.1</span>
+
+<span class="cmd-comment"># IPv6スタティックルート</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ipv6 route</span> <span class="cmd-value">2001:db8:2::/64 2001:db8:1::2</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ipv6 route ::/0</span> <span class="cmd-value">2001:db8:1::1</span>  <span class="cmd-comment"># IPv6デフォルト</span>
+
+<span class="cmd-comment"># 確認</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route static</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q3-2">
+            <h3>✏️ 確認問題（第3-2章）</h3>
+            <div class="quiz-item" data-answer="3">
+                <div class="quiz-question">Q1. デフォルトルートの設定として正しいコマンドはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ip route 255.255.255.255 0.0.0.0 10.1.1.1</button></li>
+                    <li><button class="quiz-option">B. ip route default 10.1.1.1</button></li>
+                    <li><button class="quiz-option">C. ip default-gateway 10.1.1.1</button></li>
+                    <li><button class="quiz-option">D. ip route 0.0.0.0 0.0.0.0 10.1.1.1</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：D</strong><br>デフォルトルートは「ip route 0.0.0.0 0.0.0.0
+                    ネクストホップ」で設定します。ip default-gatewayはルーティング機能を持たないスイッチで使用します。</div>
+            </div>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. フローティングスタティックルートの目的として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 最も速いパスを選択する</button></li>
+                    <li><button class="quiz-option">B. 等コストの経路を並列使用する</button></li>
+                    <li><button class="quiz-option">C. 通常ルートが消えた際のバックアップとして機能する</button></li>
+                    <li><button class="quiz-option">D. IPv6専用のルートを設定する</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C</strong><br>フローティングスタティックはAD値を大きく設定して通常は使用されず、メインルートが失われた時のみ有効になるバックアップルートです。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 3-3 OSPF -->
+<div class="page" id="page-3-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-3 OSPFv2（シングルエリア）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            CCNA最重要トピック。OSPFの動作・設定・確認をマスターする</p>
+
+        <h2 class="chapter-title"><span class="icon">🔄</span>OSPFの基本</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>内容</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>プロトコル</td>
+                        <td>リンクステート型プロトコル（アルゴリズム：Dijkstra SPF）</td>
+                    </tr>
+                    <tr>
+                        <td>AD値</td>
+                        <td>110</td>
+                    </tr>
+                    <tr>
+                        <td>メトリック</td>
+                        <td>コスト（= 参照帯域/インタフェース帯域）</td>
+                    </tr>
+                    <tr>
+                        <td>参照帯域</td>
+                        <td>デフォルト100Mbps（変更可能）</td>
+                    </tr>
+                    <tr>
+                        <td>ハローパケット</td>
+                        <td>10秒（P-to-P）、30秒（NBMA/broadcast）</td>
+                    </tr>
+                    <tr>
+                        <td>デッドタイム</td>
+                        <td>ハロー間隔×4（デフォルト40秒）</td>
+                    </tr>
+                    <tr>
+                        <td>マルチキャスト</td>
+                        <td>224.0.0.5（全OSPFルータ）、224.0.0.6（DR/BDR宛）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">OSPFネイバー関係の確立</h3>
+        <div class="card">
+            <h4 class="topic-title">ネイバー確立の条件（これが一致しないとネイバーにならない！）</h4>
+            <ul>
+                <li>同じエリアID</li>
+                <li>同じサブネット</li>
+                <li>同じハロー/デッドタイム</li>
+                <li>同じMTU</li>
+                <li>認証パスワード（設定している場合）</li>
+            </ul>
+        </div>
+
+        <h3 class="subsection-title">DR・BDR選出（ブロードキャストネットワーク）</h3>
+        <div class="card">
+            <h4 class="topic-title">DR/BDRの選出基準（優先順位）</h4>
+            <ol>
+                <li>最大の OSPF プライオリティ（デフォルト1、0にするとDR/BDRにならない）</li>
+                <li>プライオリティが同じ場合は最大のルータID</li>
+            </ol>
+            <p>ルータIDの決定：①明示的設定 → ②最大のループバックIP → ③最大のアクティブなIPアドレス</p>
+        </div>
+
+        <h3 class="subsection-title">OSPFv2の設定</h3>
+        <pre><span class="cmd-comment"># OSPF有効化</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">router ospf</span> <span class="cmd-value">1</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">router-id</span> <span class="cmd-value">1.1.1.1</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">network</span> <span class="cmd-value">10.1.1.0 0.0.0.255 area 0</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">network</span> <span class="cmd-value">192.168.1.0 0.0.0.255 area 0</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">passive-interface</span> <span class="cmd-value">GigabitEthernet0/1</span>  <span class="cmd-comment"># エンドユーザー向けIF</span>
+
+<span class="cmd-comment"># インタフェース単位での設定（代替方法）</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip ospf</span> <span class="cmd-value">1</span> <span class="cmd-keyword">area</span> <span class="cmd-value">0</span>
+
+<span class="cmd-comment"># コスト調整</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">router ospf 1</span>
+<span class="cmd-prompt">Router(config-router)#</span> <span class="cmd-keyword">auto-cost reference-bandwidth</span> <span class="cmd-value">10000</span>  <span class="cmd-comment"># 10Gbps基準</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip ospf cost</span> <span class="cmd-value">10</span>  <span class="cmd-comment"># 手動コスト設定</span>
+
+<span class="cmd-comment"># 確認コマンド（重要！）</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf neighbor</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf interface</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip route ospf</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip ospf database</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q3-3">
+            <h3>✏️ 確認問題（第3-3章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. OSPFのAD（アドミニストレーティブディスタンス）値はいくつか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 1</button></li>
+                    <li><button class="quiz-option">B. 90</button></li>
+                    <li><button class="quiz-option">C. 110</button></li>
+                    <li><button class="quiz-option">D. 120</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（110）</strong><br>OSPFのAD値は110です。EIGRP=90、RIP=120。AD値が小さいほど優先されます。</div>
+            </div>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q2. OSPFで全OSPFルータ宛のマルチキャストアドレスはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 224.0.0.5</button></li>
+                    <li><button class="quiz-option">B. 224.0.0.6</button></li>
+                    <li><button class="quiz-option">C. 224.0.0.9</button></li>
+                    <li><button class="quiz-option">D. 224.0.0.10</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（224.0.0.5）</strong><br>224.0.0.5は全OSPFルータ宛、224.0.0.6はDR/BDR宛のマルチキャストアドレスです。</div>
+            </div>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q3. OSPFネイバーが確立されない原因として考えられないものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. エリアIDが異なる</button></li>
+                    <li><button class="quiz-option">B. ルータIDが異なる</button></li>
+                    <li><button class="quiz-option">C. ハローとデッドタイムが異なる</button></li>
+                    <li><button class="quiz-option">D. サブネットが異なる</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（ルータIDが異なる）</strong><br>ルータIDは各ルータで固有である必要がありますが（同じIDだとエラー）、ネイバー確立の条件ではありません。異なるルータIDは正常です。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 3-4 FHRP -->
+<div class="page" id="page-3-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">3-4 FHRP（HSRP・VRRP）</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span> デフォルトゲートウェイの冗長化プロトコル</p>
+
+        <h2 class="chapter-title"><span class="icon">🛡️</span>FHRPとは</h2>
+        <p>FHRP（First Hop Redundancy
+            Protocol）は、エンドホストのデフォルトゲートウェイを冗長化するプロトコルです。仮想IPアドレスと仮想MACアドレスを使い、アクティブルータが障害時に自動で切り替わります。</p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>HSRP</th>
+                        <th>VRRP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>標準</td>
+                        <td>Cisco独自</td>
+                        <td>IEEE標準（RFC 5798）</td>
+                    </tr>
+                    <tr>
+                        <td>アクティブ呼称</td>
+                        <td>Active</td>
+                        <td>Master</td>
+                    </tr>
+                    <tr>
+                        <td>仮想MAC</td>
+                        <td>0000.0c07.acXX</td>
+                        <td>0000.5e00.01XX</td>
+                    </tr>
+                    <tr>
+                        <td>ハロー間隔</td>
+                        <td>3秒</td>
+                        <td>1秒</td>
+                    </tr>
+                    <tr>
+                        <td>ホールドタイム</td>
+                        <td>10秒</td>
+                        <td>3秒</td>
+                    </tr>
+                    <tr>
+                        <td>プリエンプション</td>
+                        <td>デフォルト無効</td>
+                        <td>デフォルト有効</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">HSRP設定（バージョン2）</h3>
+        <pre><span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">standby version</span> <span class="cmd-value">2</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">ip</span> <span class="cmd-value">192.168.1.254</span>        <span class="cmd-comment"># 仮想IP</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">priority</span> <span class="cmd-value">110</span>           <span class="cmd-comment"># 優先度（デフォルト100）</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">standby</span> <span class="cmd-value">1</span> <span class="cmd-keyword">preempt</span>               <span class="cmd-comment"># プリエンプション有効化</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show standby</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show standby brief</span></pre>
+
+        <div class="quiz-section" data-quiz-id="q3-4">
+            <h3>✏️ 確認問題（第3-4章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. HSRPはCiscoが開発したFHRPです。IEEEが標準化した同様のプロトコルはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. VRRP</button></li>
+                    <li><button class="quiz-option">B. GLBP</button></li>
+                    <li><button class="quiz-option">C. STP</button></li>
+                    <li><button class="quiz-option">D. CDP</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（VRRP）</strong><br>VRRPはIEEE/IETFが標準化（RFC
+                    5798）したFHRPで、マルチベンダー環境でも使用できます。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>

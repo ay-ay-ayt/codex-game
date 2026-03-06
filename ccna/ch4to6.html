@@ -1,0 +1,844 @@
+<!-- 4-1 NAT/PAT -->
+<div class="page" id="page-4-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-1 NAT・PAT</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span></p>
+        <h2 class="chapter-title"><span class="icon">🔁</span>NATの種類</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>スタティックNAT</strong></td>
+                        <td>プライベートIP ↔ グローバルIPを1対1で固定変換</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ダイナミックNAT</strong></td>
+                        <td>プールのグローバルIPを動的に割り当て（1対1）</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PAT（NATオーバーロード）</strong></td>
+                        <td>多数のプライベートIPを1つのグローバルIPとポート番号で変換。最も一般的</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h4 class="topic-title">NATの用語</h4>
+            <ul>
+                <li><strong>Inside Local：</strong>内部のプライベートIPアドレス</li>
+                <li><strong>Inside Global：</strong>外部から見た内部ホストのグローバルIP</li>
+                <li><strong>Outside Global：</strong>外部サーバーのグローバルIP</li>
+                <li><strong>Outside Local：</strong>内部から見た外部サーバーのIP（通常Outside Globalと同じ）</li>
+            </ul>
+        </div>
+        <h3 class="subsection-title">PAT設定（最も重要）</h3>
+        <pre><span class="cmd-comment"># インタフェース指定（よく使われる方法）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/0</span>  <span class="cmd-comment"># 内部</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip nat inside</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/1</span>  <span class="cmd-comment"># 外部</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip nat outside</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">access-list</span> <span class="cmd-value">1 permit 192.168.1.0 0.0.0.255</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip nat inside source list</span> <span class="cmd-value">1</span> <span class="cmd-keyword">interface</span> <span class="cmd-value">GigabitEthernet0/1</span> <span class="cmd-keyword">overload</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip nat translations</span></pre>
+        <div class="quiz-section" data-quiz-id="q4-1">
+            <h3>✏️ 確認問題（第4-1章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. 多数の内部ホストが1つのグローバルIPでインターネットに接続するNAT方式はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. スタティックNAT</button></li>
+                    <li><button class="quiz-option">B. ダイナミックNAT</button></li>
+                    <li><button class="quiz-option">C. PAT（NATオーバーロード）</button></li>
+                    <li><button class="quiz-option">D. ブリッジングNAT</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（PAT）</strong><br>PATはポート番号を使って多対1の変換を行い、1つのグローバルIPで多数の内部ホストがインターネット接続できます。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 4-2 DHCP/DNS -->
+<div class="page" id="page-4-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-2 DHCP・DNS</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span></p>
+        <h2 class="chapter-title"><span class="icon">📋</span>DHCP</h2>
+        <div class="card">
+            <h4 class="topic-title">DHCPの動作（DORA）</h4>
+            <ol>
+                <li><strong>Discover：</strong>クライアントがブロードキャストでDHCPサーバーを探す</li>
+                <li><strong>Offer：</strong>DHCPサーバーがIPアドレスを提案</li>
+                <li><strong>Request：</strong>クライアントが提案を承認</li>
+                <li><strong>Acknowledge：</strong>サーバーが確定通知を送信</li>
+            </ol>
+        </div>
+        <h3 class="subsection-title">CiscoルータをDHCPサーバーとして設定</h3>
+        <pre><span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip dhcp excluded-address</span> <span class="cmd-value">192.168.1.1 192.168.1.10</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip dhcp pool</span> <span class="cmd-value">MYPOOL</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">network</span> <span class="cmd-value">192.168.1.0 255.255.255.0</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">default-router</span> <span class="cmd-value">192.168.1.1</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">dns-server</span> <span class="cmd-value">8.8.8.8</span>
+<span class="cmd-prompt">Router(dhcp-config)#</span> <span class="cmd-keyword">lease</span> <span class="cmd-value">1</span>  <span class="cmd-comment"># リース期間1日</span>
+
+<span class="cmd-comment"># DHCPリレーエージェント（別セグメントへのDHCP転送）</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip helper-address</span> <span class="cmd-value">10.1.1.100</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip dhcp binding</span></pre>
+        <h2 class="chapter-title"><span class="icon">🌐</span>DNS</h2>
+        <p>DNS（Domain Name System）はFQDN（完全修飾ドメイン名）をIPアドレスに変換します。ポート53（UDP/TCP）を使用。再帰的クエリと反復的クエリがある。</p>
+        <div class="quiz-section" data-quiz-id="q4-2">
+            <h3>✏️ 確認問題（第4-2章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. DHCPのDORAプロセスでクライアントが最初に送信するメッセージはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Offer</button></li>
+                    <li><button class="quiz-option">B. Discover</button></li>
+                    <li><button class="quiz-option">C. Request</button></li>
+                    <li><button class="quiz-option">D. Acknowledge</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（Discover）</strong><br>DHCPはDiscover→Offer→Request→Acknowledgeの順（DORA）。最初にクライアントがDiscoverをブロードキャストします。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q2. 異なるサブネットのクライアントへDHCPを提供するために設定するのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. ip dhcp pool</button></li>
+                    <li><button class="quiz-option">B. ip dhcp excluded-address</button></li>
+                    <li><button class="quiz-option">C. ip helper-address</button></li>
+                    <li><button class="quiz-option">D. ip dhcp relay</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：C（ip helper-address）</strong><br>DHCPリレーエージェントとして「ip
+                    helper-address DHCPサーバーのIP」を設定することで、ブロードキャストを別セグメントのDHCPサーバーにユニキャストで転送します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 4-3 NTP/Syslog/SNMP -->
+<div class="page" id="page-4-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-3 NTP・Syslog・SNMP</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">⏱️</span>NTP（Network Time Protocol）</h2>
+        <p>ネットワーク機器の時刻を同期するプロトコル。ポート<strong>UDP 123</strong>を使用。</p>
+        <pre><span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ntp server</span> <span class="cmd-value">pool.ntp.org</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ntp status</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ntp associations</span></pre>
+        <h2 class="chapter-title"><span class="icon">📝</span>Syslog（ログ管理）</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>レベル</th>
+                        <th>名称</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>0</td>
+                        <td>Emergency</td>
+                        <td>システム使用不能</td>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>Alert</td>
+                        <td>即時対応が必要</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Critical</td>
+                        <td>重大な状況</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Error</td>
+                        <td>エラー状態</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Warning</td>
+                        <td>警告</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>Notice</td>
+                        <td>注意すべき正常な状態</td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td>Informational</td>
+                        <td>情報メッセージ</td>
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        <td>Debug</td>
+                        <td>デバッグメッセージ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="info-box note">
+            <div class="label">💡 覚え方</div>「<strong>Every Awful Crisis Ends With Notable Innovative
+                Decisions</strong>」（順番：0〜7）
+        </div>
+        <pre><span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">logging host</span> <span class="cmd-value">192.168.1.100</span>   <span class="cmd-comment"># Syslogサーバー指定（UDP 514）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">logging trap</span> <span class="cmd-value">informational</span>  <span class="cmd-comment"># レベル6以上を送信</span></pre>
+        <h2 class="chapter-title"><span class="icon">📊</span>SNMP</h2>
+        <div class="card">
+            <ul>
+                <li>ポート<strong>UDP 161</strong>（Get/Set）、<strong>UDP 162</strong>（Trap）</li>
+                <li><strong>Get：</strong>マネージャーがエージェントに情報を要求</li>
+                <li><strong>Trap：</strong>エージェントが異常をマネージャーへ自発的に通知</li>
+                <li><strong>SNMPv3：</strong>認証・暗号化あり（USM）→セキュリティに優れる</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q4-3">
+            <h3>✏️ 確認問題（第4-3章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. Syslogのログレベルで「3」が示すものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Warning</button></li>
+                    <li><button class="quiz-option">B. Critical</button></li>
+                    <li><button class="quiz-option">C. Error</button></li>
+                    <li><button class="quiz-option">D. Notice</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（Error）</strong><br>レベル0=Emergency、1=Alert、2=Critical、3=Error、4=Warning、5=Notice、6=Informational、7=Debug。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 4-4 QoS -->
+<div class="page" id="page-4-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">4-4 QoS・TFTP/FTP</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">📶</span>QoS（Quality of Service）</h2>
+        <div class="card">
+            <h4 class="topic-title">PHB（Per-Hop Behavior）の種類</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>種類</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>EF（Expedited Forwarding）</strong></td>
+                            <td>最優先転送。VoIPなどのリアルタイムトラフィック</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AF（Assured Forwarding）</strong></td>
+                            <td>4つのクラス（AF1〜4）各3レベルの廃棄優先度</td>
+                        </tr>
+                        <tr>
+                            <td><strong>BE（Best Effort）</strong></td>
+                            <td>デフォルト。優先なし</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <h2 class="chapter-title"><span class="icon">📁</span>TFTP・FTP・SFTP</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プロトコル</th>
+                        <th>ポート</th>
+                        <th>暗号化</th>
+                        <th>認証</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>TFTP</td>
+                        <td>UDP 69</td>
+                        <td>なし</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td>FTP</td>
+                        <td>TCP 20/21</td>
+                        <td>なし</td>
+                        <td>あり</td>
+                    </tr>
+                    <tr>
+                        <td>SFTP</td>
+                        <td>TCP 22</td>
+                        <td>SSH暗号化</td>
+                        <td>あり</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="quiz-section" data-quiz-id="q4-4">
+            <h3>✏️ 確認問題（第4-4章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. VoIPなどのリアルタイムトラフィックに最適なQoS PHBはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. EF（Expedited Forwarding）</button></li>
+                    <li><button class="quiz-option">B. AF（Assured Forwarding）</button></li>
+                    <li><button class="quiz-option">C. BE（Best Effort）</button></li>
+                    <li><button class="quiz-option">D. DSCP</button></li>
+                </ul>
+                <div class="quiz-explanation"><strong>正解：A（EF）</strong><br>EFは最優先転送で低遅延・低ジッターが必要なVoIPに最適です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-1 セキュリティ概念 -->
+<div class="page" id="page-5-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-1 セキュリティ概念・脅威</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">⚠️</span>主な脅威・攻撃の種類</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>攻撃</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DoS/DDoS</strong></td>
+                        <td>サービス妨害攻撃。大量パケットでリソースを枯渇</td>
+                    </tr>
+                    <tr>
+                        <td><strong>スプーフィング</strong></td>
+                        <td>送信元IPやMACを偽装</td>
+                    </tr>
+                    <tr>
+                        <td><strong>フィッシング</strong></td>
+                        <td>偽サイト・メールで認証情報を詐取</td>
+                    </tr>
+                    <tr>
+                        <td><strong>中間者攻撃（MitM）</strong></td>
+                        <td>通信の盗聴・改ざん</td>
+                    </tr>
+                    <tr>
+                        <td><strong>バッファオーバーフロー</strong></td>
+                        <td>メモリ境界を超えたデータで任意コード実行</td>
+                    </tr>
+                    <tr>
+                        <td><strong>パスワードアタック</strong></td>
+                        <td>ブルートフォース・辞書攻撃</td>
+                    </tr>
+                    <tr>
+                        <td><strong>マルウェア</strong></td>
+                        <td>ウィルス・ワーム・トロイの木馬・ランサムウェア</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <h3 class="subsection-title">CIAトライアド（情報セキュリティの3要素）</h3>
+        <div class="card">
+            <ul>
+                <li><strong>Confidentiality（機密性）：</strong>許可された者のみがアクセスできる</li>
+                <li><strong>Integrity（完全性）：</strong>データが正確で改ざんされていない</li>
+                <li><strong>Availability（可用性）：</strong>必要な時にシステムを利用できる</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q5-1">
+            <h3>✏️ 確認問題（第5-1章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. 情報セキュリティの「CIAトライアド」のIが意味するものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 識別（Identification）</button></li>
+                    <li><button class="quiz-option">B. 完全性（Integrity）</button></li>
+                    <li><button class="quiz-option">C. 実装（Implementation）</button></li>
+                    <li><button class="quiz-option">D. インフラ（Infrastructure）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（Integrity）</strong><br>CIAはConfidentiality（機密性）・Integrity（完全性）・Availability（可用性）の頭文字です。
+                </div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-2 ACL -->
+<div class="page" id="page-5-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-2 ACL（アクセスコントロールリスト）</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span></p>
+        <h2 class="chapter-title"><span class="icon">🚦</span>ACLの基礎</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>番号</th>
+                        <th>マッチ対象</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>標準ACL（Standard）</strong></td>
+                        <td>1〜99、1300〜1999</td>
+                        <td>送信元IPのみ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>拡張ACL（Extended）</strong></td>
+                        <td>100〜199、2000〜2699</td>
+                        <td>送信元IP、宛先IP、プロトコル、ポート番号</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="info-box important">
+            <div class="label">🚨 ACL配置の原則</div>
+            <ul>
+                <li><strong>標準ACL：</strong>宛先に近い場所に配置（送信元しか見ないため）</li>
+                <li><strong>拡張ACL：</strong>送信元に近い場所に配置（早期フィルタリング）</li>
+                <li>暗黙の<strong>deny any</strong>：全ACLの最後に自動追加される</li>
+            </ul>
+        </div>
+        <h3 class="subsection-title">ACL設定コマンド</h3>
+        <pre><span class="cmd-comment"># 標準ACL（番号形式）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">access-list</span> <span class="cmd-value">10 permit 192.168.1.0 0.0.0.255</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">access-list</span> <span class="cmd-value">10 deny any</span>
+
+<span class="cmd-comment"># 拡張ACL（名前形式・推奨）</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">ip access-list extended</span> <span class="cmd-value">BLOCK_HTTP</span>
+<span class="cmd-prompt">Router(config-ext-nacl)#</span> <span class="cmd-keyword">deny tcp 192.168.1.0 0.0.0.255 any eq</span> <span class="cmd-value">80</span>
+<span class="cmd-prompt">Router(config-ext-nacl)#</span> <span class="cmd-keyword">permit ip any any</span>
+
+<span class="cmd-comment"># インタフェースへ適用</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip access-group</span> <span class="cmd-value">BLOCK_HTTP</span> <span class="cmd-keyword">in</span>   <span class="cmd-comment"># inbound</span>
+<span class="cmd-prompt">Router(config-if)#</span> <span class="cmd-keyword">ip access-group</span> <span class="cmd-value">10</span> <span class="cmd-keyword">out</span>            <span class="cmd-comment"># outbound</span>
+<span class="cmd-prompt">Router#</span> <span class="cmd-keyword">show ip access-lists</span></pre>
+        <div class="quiz-section" data-quiz-id="q5-2">
+            <h3>✏️ 確認問題（第5-2章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. 標準ACLはどこに配置するのが推奨されるか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 宛先に最も近いインタフェース</button></li>
+                    <li><button class="quiz-option">B. 送信元に最も近いインタフェース</button></li>
+                    <li><button class="quiz-option">C. ネットワークの中央</button></li>
+                    <li><button class="quiz-option">D. コアスイッチ</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（宛先に近い場所）</strong><br>標準ACLは送信元IPのみでフィルタリングするため、宛先近くに置かないと意図しないトラフィックもブロックする恐れがあります。
+                </div>
+            </div>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q2. 拡張ACLの番号範囲として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. 1〜99</button></li>
+                    <li><button class="quiz-option">B. 100〜199</button></li>
+                    <li><button class="quiz-option">C. 200〜299</button></li>
+                    <li><button class="quiz-option">D. 1000〜1099</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（100〜199）</strong><br>標準ACL=1〜99（および1300〜1999）、拡張ACL=100〜199（および2000〜2699）です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-3 デバイスアクセス制御 -->
+<div class="page" id="page-5-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-3 デバイスアクセス制御・パスワード</h1>
+        <p class="section-subtitle"><span class="tag tag-config">設定</span></p>
+        <h2 class="chapter-title"><span class="icon">🔑</span>基本的なデバイスセキュリティ設定</h2>
+        <pre><span class="cmd-comment"># ホスト名設定</span>
+<span class="cmd-prompt">Router(config)#</span> <span class="cmd-keyword">hostname</span> <span class="cmd-value">R1</span>
+
+<span class="cmd-comment"># 特権EXECモードのパスワード（暗号化）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">enable secret</span> <span class="cmd-value">Cisco1234!</span>
+
+<span class="cmd-comment"># コンソールパスワード</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">line console 0</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">password</span> <span class="cmd-value">console123</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">login</span>
+
+<span class="cmd-comment"># SSH設定（推奨）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">ip domain-name</span> <span class="cmd-value">example.com</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">crypto key generate rsa modulus</span> <span class="cmd-value">2048</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">ip ssh version</span> <span class="cmd-value">2</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">username admin secret</span> <span class="cmd-value">Admin123!</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">line vty 0 4</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">transport input ssh</span>
+<span class="cmd-prompt">R1(config-line)#</span> <span class="cmd-keyword">login local</span>
+
+<span class="cmd-comment"># パスワードの暗号化（全平文パスワードを暗号化）</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">service password-encryption</span>
+
+<span class="cmd-comment"># バナーメッセージ</span>
+<span class="cmd-prompt">R1(config)#</span> <span class="cmd-keyword">banner motd</span> <span class="cmd-value"># 無許可アクセス禁止 #</span></pre>
+        <div class="quiz-section" data-quiz-id="q5-3">
+            <h3>✏️ 確認問題（第5-3章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. Ciscoデバイスでリモートアクセスに使用するプロトコルとして、セキュリティ上最も推奨されるものはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Telnet</button></li>
+                    <li><button class="quiz-option">B. SSH</button></li>
+                    <li><button class="quiz-option">C. HTTP</button></li>
+                    <li><button class="quiz-option">D. FTP</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（SSH）</strong><br>SSHは通信を暗号化します。Telnetは平文のため盗聴リスクがあり、CCNAではSSHの使用が推奨されます。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-4 L2セキュリティ -->
+<div class="page" id="page-5-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-4 L2セキュリティ</h1>
+        <p class="section-subtitle"><span class="tag tag-exam">頻出</span><span class="tag tag-config">設定</span>
+            DHCPスヌーピング・DAI・ポートセキュリティ</p>
+        <h2 class="chapter-title"><span class="icon">🛡️</span>DHCPスヌーピング</h2>
+        <p>不正なDHCPサーバーからの応答をブロック。<strong>Trusted/Untrustedポート</strong>で制御。</p>
+        <pre><span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">ip dhcp snooping</span>
+<span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">ip dhcp snooping vlan</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">ip dhcp snooping trust</span>  <span class="cmd-comment"># 上位スイッチ/DHCPサーバー向けポート</span></pre>
+        <h2 class="chapter-title"><span class="icon">🔒</span>DAI（Dynamic ARP Inspection）</h2>
+        <p>ARPスプーフィングを防ぐ。DHCPスヌーピングバインディングテーブルでARP検証。</p>
+        <pre><span class="cmd-prompt">Switch(config)#</span> <span class="cmd-keyword">ip arp inspection vlan</span> <span class="cmd-value">10</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">ip arp inspection trust</span>  <span class="cmd-comment"># 信頼できるポート</span></pre>
+        <h2 class="chapter-title"><span class="icon">🔐</span>ポートセキュリティ（Port Security）</h2>
+        <pre><span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport mode access</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security maximum</span> <span class="cmd-value">2</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security violation</span> <span class="cmd-value">restrict</span>
+<span class="cmd-prompt">Switch(config-if)#</span> <span class="cmd-keyword">switchport port-security mac-address sticky</span>
+<span class="cmd-prompt">Switch#</span> <span class="cmd-keyword">show port-security interface</span> <span class="cmd-value">Gi0/1</span></pre>
+        <div class="card">
+            <h4 class="topic-title">違反アクション（Violation Mode）</h4>
+            <ul>
+                <li><strong>Protect：</strong>違反フレーム破棄、ログなし</li>
+                <li><strong>Restrict：</strong>違反フレーム破棄、ログ・SNMPトラップ送信</li>
+                <li><strong>Shutdown（デフォルト）：</strong>ポートをerr-disabledにシャットダウン</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q5-4">
+            <h3>✏️ 確認問題（第5-4章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. ポートセキュリティのデフォルトの違反アクションはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Protect</button></li>
+                    <li><button class="quiz-option">B. Restrict</button></li>
+                    <li><button class="quiz-option">C. Shutdown</button></li>
+                    <li><button class="quiz-option">D. Drop</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（Shutdown）</strong><br>デフォルトはShutdownで、違反が発生するとポートがerr-disabled状態になります。err-disabledからの復旧はshutdown→no
+                    shutdownが必要です。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-5 VPN/AAA -->
+<div class="page" id="page-5-5">
+    <div class="content-wrapper">
+        <h1 class="section-title">5-5 VPN・AAA</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">🔒</span>VPN（Virtual Private Network）</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>種類</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>サイト間VPN</strong></td>
+                        <td>拠点間の常時接続。IPsecトンネルで暗号化</td>
+                    </tr>
+                    <tr>
+                        <td><strong>リモートアクセスVPN</strong></td>
+                        <td>個人ユーザーが社内ネットワークにアクセス（SSL VPN / IPsec）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <h2 class="chapter-title"><span class="icon">🔐</span>AAA（認証・認可・アカウンティング）</h2>
+        <div class="card">
+            <ul>
+                <li><strong>Authentication（認証）：</strong>誰か？を確認（ユーザー名・パスワード）</li>
+                <li><strong>Authorization（認可）：</strong>何をしてよいか？を制御</li>
+                <li><strong>Accounting（アカウンティング）：</strong>何をしたか？を記録</li>
+            </ul>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>プロトコル</th>
+                        <th>ポート</th>
+                        <th>暗号化</th>
+                        <th>特徴</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>RADIUS</strong></td>
+                        <td>UDP 1812/1813</td>
+                        <td>パスワードのみ</td>
+                        <td>IEEE標準。主にネットワークアクセス認証</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TACACS+</strong></td>
+                        <td>TCP 49</td>
+                        <td>全パケット</td>
+                        <td>Cisco独自。管理者アクセス制御に優れる</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="quiz-section" data-quiz-id="q5-5">
+            <h3>✏️ 確認問題（第5-5章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. AAAの「A」のうち、「ユーザーが何をしてよいか制御する」機能はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Authentication（認証）</button></li>
+                    <li><button class="quiz-option">B. Authorization（認可）</button></li>
+                    <li><button class="quiz-option">C. Accounting（アカウンティング）</button></li>
+                    <li><button class="quiz-option">D. Access（アクセス）</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（Authorization）</strong><br>AuthorizationはACLやコマンド制御でユーザーが実行できる操作を制御します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 6-1 自動化概要 -->
+<div class="page" id="page-6-1">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-1 ネットワーク自動化概要</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">🤖</span>従来型 vs コントローラベース</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>従来型ネットワーク</th>
+                        <th>コントローラベース（SDN）</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>設定管理</td>
+                        <td>機器ごとに個別CLI設定</td>
+                        <td>中央コントローラから一括設定</td>
+                    </tr>
+                    <tr>
+                        <td>スケーラビリティ</td>
+                        <td>低い（機器増加で管理複雑化）</td>
+                        <td>高い（自動プロビジョニング）</td>
+                    </tr>
+                    <tr>
+                        <td>柔軟性</td>
+                        <td>低い</td>
+                        <td>高い（プログラム可能）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <h3 class="subsection-title">SDNの3層アーキテクチャ</h3>
+        <div class="card">
+            <ul>
+                <li><strong>アプリケーション層：</strong>ビジネスアプリ・ネットワーク管理ツール</li>
+                <li><strong>コントロール層：</strong>SDNコントローラ（Cisco APIC等）。ネットワーク全体を把握</li>
+                <li><strong>インフラ層：</strong>物理スイッチ・ルータ。コントローラの指示に従い転送</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q6-1">
+            <h3>✏️ 確認問題（第6-1章）</h3>
+            <div class="quiz-item" data-answer="1">
+                <div class="quiz-question">Q1. SDNアーキテクチャで、物理スイッチ・ルータが存在する層はどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. アプリケーション層</button></li>
+                    <li><button class="quiz-option">B. インフラ層</button></li>
+                    <li><button class="quiz-option">C. コントロール層</button></li>
+                    <li><button class="quiz-option">D. マネジメント層</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：B（インフラ層）</strong><br>SDNの3層：アプリケーション層（アプリ）→コントロール層（コントローラ）→インフラ層（物理機器）。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 6-2 REST API/JSON -->
+<div class="page" id="page-6-2">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-2 REST API・JSON</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">🔌</span>REST API</h2>
+        <div class="card">
+            <h4 class="topic-title">REST APIの特徴</h4>
+            <ul>
+                <li><strong>HTTP動詞：</strong>GET（取得）、POST（作成）、PUT（更新）、DELETE（削除）、PATCH（一部更新）</li>
+                <li><strong>ステートレス：</strong>各リクエストは独立（セッション状態を保持しない）</li>
+                <li><strong>データ形式：</strong>主にJSONまたはXML</li>
+            </ul>
+        </div>
+        <h2 class="chapter-title"><span class="icon">📄</span>JSON（JavaScript Object Notation）</h2>
+        <pre>{
+  "device": {
+    "hostname": "R1",
+    "interfaces": [
+      {"name": "GigabitEthernet0/0", "ip": "10.1.1.1", "mask": "255.255.255.0"},
+      {"name": "GigabitEthernet0/1", "ip": "192.168.1.1", "mask": "255.255.255.0"}
+    ],
+    "ospf_enabled": true
+  }
+}</pre>
+        <div class="quiz-section" data-quiz-id="q6-2">
+            <h3>✏️ 確認問題（第6-2章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. REST APIでリソースの情報を取得する際に使用するHTTPメソッドはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. GET</button></li>
+                    <li><button class="quiz-option">B. POST</button></li>
+                    <li><button class="quiz-option">C. DELETE</button></li>
+                    <li><button class="quiz-option">D. PUT</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（GET）</strong><br>GET=取得、POST=作成、PUT=更新（全体）、PATCH=更新（一部）、DELETE=削除。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 6-3 Ansible -->
+<div class="page" id="page-6-3">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-3 Ansible・Puppet・Chef</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">⚙️</span>設定管理ツールの比較</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>Ansible</th>
+                        <th>Puppet</th>
+                        <th>Chef</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>アーキテクチャ</td>
+                        <td>エージェントレス</td>
+                        <td>エージェント型</td>
+                        <td>エージェント型</td>
+                    </tr>
+                    <tr>
+                        <td>設定言語</td>
+                        <td>YAML（Playbook）</td>
+                        <td>Puppet DSL (Ruby系)</td>
+                        <td>Ruby (Cookbook)</td>
+                    </tr>
+                    <tr>
+                        <td>通信</td>
+                        <td>SSH/NETCONF</td>
+                        <td>HTTPS (8140)</td>
+                        <td>HTTPS</td>
+                    </tr>
+                    <tr>
+                        <td>学習コスト</td>
+                        <td>低い</td>
+                        <td>中程度</td>
+                        <td>高い</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="info-box note">
+            <div class="label">📌 試験ポイント</div>
+            Ansibleはエージェントレスでシンプル（YAMLのPlaybook）。PuppetとChefはエージェントが必要。CCNAではAnsibleが最も出題されやすい。
+        </div>
+        <div class="quiz-section" data-quiz-id="q6-3">
+            <h3>✏️ 確認問題（第6-3章）</h3>
+            <div class="quiz-item" data-answer="0">
+                <div class="quiz-question">Q1. エージェントレスで動作し、YAMLのPlaybookを使う設定管理ツールはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. Ansible</button></li>
+                    <li><button class="quiz-option">B. Puppet</button></li>
+                    <li><button class="quiz-option">C. Chef</button></li>
+                    <li><button class="quiz-option">D. Salt</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：A（Ansible）</strong><br>AnsibleはSSHを使いエージェント不要で動作します。設定はYAML形式のPlaybookで記述します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- 6-4 DNA Center/SDN -->
+<div class="page" id="page-6-4">
+    <div class="content-wrapper">
+        <h1 class="section-title">6-4 Cisco DNA Center・SDN</h1>
+        <p class="section-subtitle"><span class="tag tag-concept">概念</span></p>
+        <h2 class="chapter-title"><span class="icon">🏗️</span>Cisco DNA Center</h2>
+        <div class="card">
+            <h4 class="topic-title">主な機能</h4>
+            <ul>
+                <li><strong>デザイン：</strong>ネットワークの設計・階層的サイト管理</li>
+                <li><strong>ポリシー：</strong>セグメンテーション・QoSポリシーの一元管理</li>
+                <li><strong>プロビジョニング：</strong>デバイスへの自動設定配布（PnP対応）</li>
+                <li><strong>アシュアランス：</strong>AIを活用したネットワーク分析・問題検出</li>
+            </ul>
+        </div>
+        <h3 class="subsection-title">Cisco SD-Access（ソフトウェア定義アクセス）</h3>
+        <div class="card">
+            <ul>
+                <li><strong>ファブリック：</strong>VXLANオーバーレイネットワーク</li>
+                <li><strong>コントロールプレーン：</strong>LISP（Locator/ID Separation Protocol）</li>
+                <li><strong>ポリシープレーン：</strong>ユーザーID（SGT）に基づくセグメンテーション</li>
+            </ul>
+        </div>
+        <div class="quiz-section" data-quiz-id="q6-4">
+            <h3>✏️ 確認問題（第6-4章）</h3>
+            <div class="quiz-item" data-answer="2">
+                <div class="quiz-question">Q1. Cisco DNA Centerの「Assurance」機能の説明として正しいのはどれか？</div>
+                <ul class="quiz-options">
+                    <li><button class="quiz-option">A. デバイスへの設定を自動配布する</button></li>
+                    <li><button class="quiz-option">B. ネットワークのセグメンテーションポリシーを管理する</button></li>
+                    <li><button class="quiz-option">C. AIを活用してネットワークの問題を分析・検出する</button></li>
+                    <li><button class="quiz-option">D. ネットワーク機器のデザインを行う</button></li>
+                </ul>
+                <div class="quiz-explanation">
+                    <strong>正解：C（アシュアランス）</strong><br>アシュアランスはAI/MLを活用してネットワークの状態を継続的に監視・分析し、問題を自動検出します。</div>
+            </div>
+            <div class="quiz-actions"><button class="btn btn-outline btn-reset-quiz">リセット</button></div>
+        </div>
+    </div>
+</div>
