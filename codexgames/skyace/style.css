@@ -1,9 +1,10 @@
-﻿:root {
+:root {
   --glass: rgba(6, 15, 28, 0.58);
   --line: rgba(173, 232, 255, 0.42);
-  --gunsight-center-y: 43.9%;
   --gunsight-x: 50%;
   --gunsight-y: 43.9%;
+  --crosshair-x: 50%;
+  --crosshair-y: 50%;
   --gunsight-width: min(12vw, 118px);
   --gunsight-height: calc(var(--gunsight-width) * 1.44);
 }
@@ -39,6 +40,127 @@ body {
   width: 100vw;
   height: 100dvh;
   display: block;
+}
+
+body.start-menu-active #hud,
+body.start-menu-active #mobileControls,
+body.start-menu-active #crosshair,
+body.start-menu-active #cockpitOverlay,
+body.start-menu-active #lockOnCue,
+body.start-menu-active #missileWarning,
+body.start-menu-active #menuPanel {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#startMenuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at top, rgba(125, 206, 255, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(4, 12, 24, 0.84), rgba(3, 9, 17, 0.92));
+}
+
+#startMenuOverlay[hidden] {
+  display: none;
+}
+
+#startSoloWrap[hidden],
+#startTeamWrap[hidden] {
+  display: none !important;
+}
+
+.start-menu-card {
+  width: min(100%, 720px);
+  display: grid;
+  gap: 14px;
+  padding: 24px 22px;
+  border-radius: 22px;
+  border: 1px solid rgba(166, 226, 255, 0.34);
+  background: linear-gradient(180deg, rgba(8, 22, 38, 0.94), rgba(6, 15, 28, 0.92));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(210, 240, 255, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.start-menu-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  color: #87d8ff;
+}
+
+.start-menu-title {
+  margin: 0;
+  font-size: clamp(32px, 6vw, 52px);
+  line-height: 0.94;
+  letter-spacing: 0.04em;
+}
+
+.start-menu-copy {
+  margin: 0;
+  color: rgba(220, 242, 255, 0.8);
+  font-size: 14px;
+}
+
+.start-menu-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.start-control {
+  padding: 10px 12px;
+  background: rgba(8, 20, 34, 0.74);
+}
+
+.start-team-wrap {
+  display: grid;
+  gap: 10px;
+}
+
+#startMode,
+#startMapType {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#startSoloBotCount,
+#startTeamEnemyCount {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+#startTeamAllyCount {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#startMenuNote {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(125, 205, 255, 0.2);
+  background: rgba(8, 28, 45, 0.56);
+  color: rgba(214, 239, 255, 0.84);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#startMatchBtn {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid rgba(210, 242, 255, 0.8);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(74, 176, 255, 0.96), rgba(34, 107, 178, 0.96));
+  color: #f7fbff;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  box-shadow: 0 14px 28px rgba(27, 92, 145, 0.28);
+}
+
+#startMatchBtn:active {
+  transform: translateY(1px);
 }
 
 #hud {
@@ -180,7 +302,8 @@ body {
 #cockpitOverlay {
   position: fixed;
   inset: 0;
-  --cockpit-scale: 0.9;
+  --cockpit-scale: 0.86;
+  --cockpit-offset-y: 22px;
   z-index: 9;
   pointer-events: none;
   opacity: 0;
@@ -195,7 +318,8 @@ body {
 
 @media (pointer: coarse) {
   #cockpitOverlay {
-    --cockpit-scale: 0.84;
+    --cockpit-scale: 0.8;
+    --cockpit-offset-y: 16px;
   }
 }
 
@@ -204,7 +328,7 @@ body {
   height: 100%;
   object-fit: contain;
   object-position: center bottom;
-  transform: scale(var(--cockpit-scale));
+  transform: translateY(var(--cockpit-offset-y)) scale(var(--cockpit-scale));
   transform-origin: center bottom;
   display: block;
   image-rendering: -webkit-optimize-contrast;
@@ -242,6 +366,15 @@ body {
   border-color: rgba(214, 245, 255, 0.9);
   color: #f8fdff;
   box-shadow: 0 0 10px rgba(122, 209, 255, 0.32);
+}
+
+.tap-btn:disabled {
+  opacity: 0.34;
+  border-color: rgba(147, 178, 198, 0.28);
+  color: rgba(193, 216, 229, 0.45);
+  background: rgba(9, 25, 39, 0.36);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 #title {
@@ -291,6 +424,29 @@ body {
 
 .hp-row.is-locked .hp-track {
   border-color: rgba(255, 196, 114, 0.9);
+}
+
+.hp-row.is-player .hp-name,
+.hp-row.is-player .hp-val {
+  color: #dff6ff;
+}
+
+.hp-row.is-ally .hp-name,
+.hp-row.is-ally .hp-val {
+  color: #9feeff;
+}
+
+.hp-row.is-ally .hp-track {
+  border-color: rgba(110, 216, 255, 0.72);
+}
+
+.hp-row.is-enemy .hp-name,
+.hp-row.is-enemy .hp-val {
+  color: #ffd7af;
+}
+
+.hp-row.is-enemy .hp-track {
+  border-color: rgba(255, 180, 113, 0.62);
 }
 
 
@@ -346,8 +502,8 @@ body {
 }
 
 body.cockpit-active #crosshair {
-  top: var(--gunsight-y);
-  left: var(--gunsight-x);
+  top: var(--crosshair-y);
+  left: var(--crosshair-x);
 }
 
 #crosshair.hit {
@@ -651,6 +807,9 @@ body.cockpit-active #crosshair {
   pointer-events: auto;
   cursor: pointer;
 }
+
+
+
 
 
 

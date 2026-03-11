@@ -1,6 +1,16 @@
 import * as THREE from "../../vendor/three.module.min.js";
 
 const canvas = document.getElementById("game");
+const startMenuOverlayEl = document.getElementById("startMenuOverlay");
+const startModeEl = document.getElementById("startMode");
+const startSoloWrapEl = document.getElementById("startSoloWrap");
+const startSoloBotCountEl = document.getElementById("startSoloBotCount");
+const startTeamWrapEl = document.getElementById("startTeamWrap");
+const startTeamAllyCountEl = document.getElementById("startTeamAllyCount");
+const startTeamEnemyCountEl = document.getElementById("startTeamEnemyCount");
+const startMapTypeEl = document.getElementById("startMapType");
+const startMatchBtn = document.getElementById("startMatchBtn");
+const startMenuNoteEl = document.getElementById("startMenuNote");
 const healthEl = document.getElementById("health");
 const ammoEl = document.getElementById("ammo");
 const boostStatEl = document.getElementById("boostStat");
@@ -11,9 +21,23 @@ const menuBtn = document.getElementById("menuBtn");
 const zoomSliderEl = document.getElementById("zoomSlider");
 const botCountButtons = Array.from(botCountEl.querySelectorAll(".tap-btn[data-bot-count]"));
 const mapTypeButtons = Array.from(mapTypeEl.querySelectorAll(".tap-btn[data-map-type]"));
+const startModeButtons = startModeEl ? Array.from(startModeEl.querySelectorAll(".tap-btn[data-match-mode]")) : [];
+const startSoloBotButtons = startSoloBotCountEl ? Array.from(startSoloBotCountEl.querySelectorAll(".tap-btn[data-solo-bot-count]")) : [];
+const startTeamAllyButtons = startTeamAllyCountEl ? Array.from(startTeamAllyCountEl.querySelectorAll(".tap-btn[data-team-allies]")) : [];
+const startTeamEnemyButtons = startTeamEnemyCountEl ? Array.from(startTeamEnemyCountEl.querySelectorAll(".tap-btn[data-team-enemies]")) : [];
+const startMapButtons = startMapTypeEl ? Array.from(startMapTypeEl.querySelectorAll(".tap-btn[data-start-map-type]")) : [];
 
-let selectedBotCount = Number(botCountButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.botCount || 2);
-let selectedMapType = mapTypeButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.mapType || "city";
+const MATCH_MODE_FFA = "ffa";
+const MATCH_MODE_TEAM = "team";
+const MAX_MATCH_BOTS = 5;
+
+let selectedMatchMode = startModeButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.matchMode || MATCH_MODE_FFA;
+let selectedBotCount = Number(startSoloBotButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.soloBotCount || 2);
+let selectedTeamAllyCount = Number(startTeamAllyButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.teamAllies || 1);
+let selectedTeamEnemyCount = Number(startTeamEnemyButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.teamEnemies || 3);
+let selectedMapType = startMapButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.startMapType
+  || mapTypeButtons.find((btn) => btn.classList.contains("is-active"))?.dataset.mapType
+  || "city";
 const menuPanel = document.getElementById("menuPanel");
 menuPanel.hidden = true;
 menuBtn.setAttribute("aria-expanded", "false");
@@ -30,10 +54,52 @@ const buildDebugEl = document.getElementById("buildDebug");
 const cockpitOverlayEl = document.getElementById("cockpitOverlay");
 const cockpitFrameEl = document.getElementById("cockpitFrame");
 const gunsightGlassEl = document.getElementById("gunsightGlass");
+
+function showBootstrapError(err, scope = "bootstrap") {
+  console.error(`[skyace:${scope}]`, err);
+  if (!messageEl) return;
+  const text = String(err?.message || err || "unknown error");
+  messageEl.hidden = false;
+  messageEl.textContent = `Initialization error (${scope}): ${text}`;
+}
+
 let hpPanelReady = false;
+const hudCache = {
+  healthSignature: null,
+  ammoText: null,
+  boostText: null,
+  missileButtonText: null,
+  lockCueText: null,
+  lockCueHidden: null,
+  lockCancelText: null,
+  lockCancelHidden: null,
+};
+
+function invalidateHudCache() {
+  hudCache.healthSignature = null;
+  hudCache.ammoText = null;
+  hudCache.boostText = null;
+  hudCache.missileButtonText = null;
+  hudCache.lockCueText = null;
+  hudCache.lockCueHidden = null;
+  hudCache.lockCancelText = null;
+  hudCache.lockCancelHidden = null;
+}
+
+function setHudTextIfChanged(el, cacheKey, nextText) {
+  if (!el || hudCache[cacheKey] === nextText) return;
+  hudCache[cacheKey] = nextText;
+  el.textContent = nextText;
+}
+
+function setHudHiddenIfChanged(el, cacheKey, hidden) {
+  if (!el || hudCache[cacheKey] === hidden) return;
+  hudCache[cacheKey] = hidden;
+  el.hidden = hidden;
+}
 
 // DEBUG_BUILD_NUMBER block: remove this block to hide the temporary build marker.
-const DEBUG_BUILD_NUMBER = 254;
+const DEBUG_BUILD_NUMBER = 316;
 if (buildDebugEl) buildDebugEl.textContent = `BUILD ${DEBUG_BUILD_NUMBER}`;
 
 function mapZoomSliderToTarget(raw) {
@@ -69,6 +135,13 @@ const DEFAULT_COCKPIT_MARKER_RATIOS = Object.freeze({
   width: 0.154,
   height: 0.194,
 });
+const COCKPIT_VIRTUAL_SHOT_FORWARD = 18.0;
+const COCKPIT_VIRTUAL_SHOT_SCREEN_DROP_RATIO = 0.42;
+const COCKPIT_VIRTUAL_SHOT_SCREEN_DROP_FALLBACK = 48;
+const COCKPIT_CROSSHAIR_CENTER_BLEND_Y = 0.38;
+const COCKPIT_CROSSHAIR_DOWN_BIAS_RATIO = 0.04;
+const COCKPIT_VIRTUAL_SHOT_SIDE_OFFSET = 0.48;
+const COCKPIT_VIRTUAL_SHOT_DOWN_OFFSET = 0.58;
 
 function isValidCockpitRatios(r) {
   if (!r) return false;
@@ -91,8 +164,19 @@ if (zoomSliderEl) {
 }
 
 if (cockpitFrameEl) {
-  prepareCockpitOverlay(cockpitFrameEl, cockpitOverlayEl);
-  cockpitFrameEl.addEventListener("load", () => updateCockpitOverlayLayout());
+  try {
+    prepareCockpitOverlay(cockpitFrameEl, cockpitOverlayEl);
+  } catch (err) {
+    showBootstrapError(err, "cockpit-mask");
+    cockpitOverlayEl?.removeAttribute("data-mask-ready");
+  }
+  cockpitFrameEl.addEventListener("load", () => {
+    try {
+      updateCockpitOverlayLayout();
+    } catch (err) {
+      showBootstrapError(err, "cockpit-layout");
+    }
+  });
 }
 
 function getCockpitFrameContentRect() {
@@ -146,11 +230,16 @@ function updateCockpitOverlayLayout() {
   const y = rect.top + rect.height * marker.centerY;
   const w = rect.width * marker.width;
   const h = rect.height * marker.height;
+  const screenRect = getScreenSpaceRect();
+  const screenCenterY = screenRect.top + screenRect.height * 0.5;
+  const crosshairY = THREE.MathUtils.lerp(y, screenCenterY, COCKPIT_CROSSHAIR_CENTER_BLEND_Y) + h * COCKPIT_CROSSHAIR_DOWN_BIAS_RATIO;
 
   document.documentElement.style.setProperty("--gunsight-x", `${x}px`);
   document.documentElement.style.setProperty("--gunsight-y", `${y}px`);
   document.documentElement.style.setProperty("--gunsight-width", `${w}px`);
   document.documentElement.style.setProperty("--gunsight-height", `${h}px`);
+  document.documentElement.style.setProperty("--crosshair-x", `${x}px`);
+  document.documentElement.style.setProperty("--crosshair-y", `${crosshairY}px`);
 }
 
 const isMobile = window.matchMedia?.("(pointer: coarse)")?.matches
@@ -165,6 +254,7 @@ if (isMobile) {
 function setupHudHealthPanel() {
   healthEl.innerHTML = "";
   hpPanelReady = true;
+  invalidateHudCache();
 }
 
 function hpBarClass(ratio) {
@@ -173,10 +263,10 @@ function hpBarClass(ratio) {
   return "danger";
 }
 
-function hpRowMarkup(label, hp, locked = false) {
+function hpRowMarkup(label, hp, locked = false, tone = "enemy") {
   const hpInt = Math.max(0, Math.round(hp));
   const ratio = clamp(hpInt / 100, 0, 1);
-  const sizeClass = `hp-row${locked ? " is-locked" : ""}`;
+  const sizeClass = `hp-row is-${tone}${locked ? " is-locked" : ""}`;
   return `
     <div class="${sizeClass}">
       <span class="hp-name">${label}</span>
@@ -189,11 +279,20 @@ function hpRowMarkup(label, hp, locked = false) {
 function updateHudHealthPanel() {
   if (!hpPanelReady || !game.player) return;
 
-  const rows = [hpRowMarkup("YOU", game.player.hp, false)];
-  game.bots.forEach((b, i) => {
-    rows.push(hpRowMarkup(`EN${i + 1}`, b.hp, b === game.missileLockTarget));
-  });
-  healthEl.innerHTML = rows.join("");
+  let signature = `p:${Math.max(0, Math.round(game.player.hp))}`;
+  for (const bot of game.bots) {
+    signature += `|${bot.callsign || "bot"}:${Math.max(0, Math.round(bot.hp))}:${bot === game.missileLockTarget ? 1 : 0}:${getPlaneHudTone(bot)}`;
+  }
+
+  if (hudCache.healthSignature === signature) return;
+
+  let rows = hpRowMarkup(game.player.callsign || "YOU", game.player.hp, false, getPlaneHudTone(game.player));
+  for (const bot of game.bots) {
+    rows += hpRowMarkup(bot.callsign || "EN", bot.hp, bot === game.missileLockTarget, getPlaneHudTone(bot));
+  }
+
+  hudCache.healthSignature = signature;
+  healthEl.innerHTML = rows;
 }
 
 function createRenderer() {
@@ -271,48 +370,103 @@ const scene = new THREE.Scene();
 
 const textureLoader = new THREE.TextureLoader();
 const textureAnisotropy = rendererReady ? Math.min(8, renderer.capabilities.getMaxAnisotropy()) : 1;
+const textureCache = new Map();
+const FIGHTER_TEXTURE_KEYS = Object.freeze([
+  "bodyColor",
+  "bodyNormal",
+  "bodyRoughness",
+  "bodyMetalness",
+  "trimColor",
+  "trimNormal",
+  "trimRoughness",
+]);
+const WORLD_TEXTURE_KEYS = Object.freeze({
+  city: [
+    "cityGroundColor",
+    "cityGroundNormal",
+    "cityGroundRoughness",
+    "cityRoadColor",
+    "cityRoadNormal",
+    "cityRoadRoughness",
+    "cityBuildingColor",
+    "cityBuildingNormal",
+    "cityBuildingRoughness",
+  ],
+  forest: [
+    "forestGroundColor",
+    "forestGroundNormal",
+    "forestGroundRoughness",
+    "rockColor",
+    "rockNormal",
+    "rockRoughness",
+    "trunkColor",
+    "trunkNormal",
+    "trunkRoughness",
+  ],
+});
+const TEXTURE_SLOTS = Object.freeze({
+  bodyColor: { basePath: "../../assets/polyhaven/textures/metal_plate/metal_plate_diff", repeat: [3.2, 1.1], colorSpace: THREE.SRGBColorSpace, allow1k: false },
+  bodyNormal: { basePath: "../../assets/polyhaven/textures/metal_plate/metal_plate_nor_gl", repeat: [3.2, 1.1], allow1k: false },
+  bodyRoughness: { basePath: "../../assets/polyhaven/textures/metal_plate/metal_plate_rough", repeat: [3.2, 1.1], allow1k: false },
+  bodyMetalness: { basePath: "../../assets/polyhaven/textures/metal_plate/metal_plate_metal", repeat: [3.2, 1.1], allow1k: false },
+  trimColor: { basePath: "../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_diff", repeat: [1.8, 1], colorSpace: THREE.SRGBColorSpace, allow1k: false },
+  trimNormal: { basePath: "../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_nor_gl", repeat: [1.8, 1], allow1k: false },
+  trimRoughness: { basePath: "../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough", repeat: [1.8, 1], allow1k: false },
+  cityGroundColor: { basePath: "../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_diff", repeat: [26, 26], colorSpace: THREE.SRGBColorSpace, allow1k: false },
+  cityGroundNormal: { basePath: "../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl", repeat: [26, 26], allow1k: true },
+  cityGroundRoughness: { basePath: "../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough", repeat: [26, 26], allow1k: true },
+  cityRoadColor: { basePath: "../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff", repeat: [20, 8], colorSpace: THREE.SRGBColorSpace, allow1k: false },
+  cityRoadNormal: { basePath: "../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl", repeat: [20, 8], allow1k: true },
+  cityRoadRoughness: { basePath: "../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough", repeat: [20, 8], allow1k: true },
+  cityBuildingColor: { basePath: "../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff", repeat: [2.4, 3.4], colorSpace: THREE.SRGBColorSpace, allow1k: false },
+  cityBuildingNormal: { basePath: "../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl", repeat: [2.4, 3.4], allow1k: true },
+  cityBuildingRoughness: { basePath: "../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough", repeat: [2.4, 3.4], allow1k: true },
+  forestGroundColor: { basePath: "../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff", repeat: [18, 18], colorSpace: THREE.SRGBColorSpace, allow1k: false },
+  forestGroundNormal: { basePath: "../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl", repeat: [18, 18], allow1k: true },
+  forestGroundRoughness: { basePath: "../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough", repeat: [18, 18], allow1k: true },
+  rockColor: { basePath: "../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_diff", repeat: [1.4, 1.4], colorSpace: THREE.SRGBColorSpace, allow1k: false },
+  rockNormal: { basePath: "../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl", repeat: [1.4, 1.4], allow1k: true },
+  rockRoughness: { basePath: "../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough", repeat: [1.4, 1.4], allow1k: true },
+  trunkColor: { basePath: "../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_diff", repeat: [1.1, 3.2], colorSpace: THREE.SRGBColorSpace, allow1k: false },
+  trunkNormal: { basePath: "../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_nor_gl", repeat: [1.1, 3.2], allow1k: true },
+  trunkRoughness: { basePath: "../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough", repeat: [1.1, 3.2], allow1k: true },
+});
 
-function loadTiledTexture(path, repeat = [1, 1], colorSpace = THREE.NoColorSpace) {
-  const tex = textureLoader.load(path);
+function loadManagedTexture(def) {
+  const variant = def.allow1k ? "1k" : "2k";
+  const tex = textureLoader.load(`${def.basePath}_${variant}.jpg`);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(repeat[0], repeat[1]);
-  tex.colorSpace = colorSpace;
+  tex.repeat.set(def.repeat[0], def.repeat[1]);
+  tex.colorSpace = def.colorSpace ?? THREE.NoColorSpace;
   tex.anisotropy = textureAnisotropy;
   return tex;
 }
 
-const fighterTextures = {
-  bodyColor: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_diff_2k.jpg", [3.2, 1.1], THREE.SRGBColorSpace),
-  bodyNormal: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_nor_gl_2k.jpg", [3.2, 1.1]),
-  bodyRoughness: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_rough_2k.jpg", [3.2, 1.1]),
-  bodyMetalness: loadTiledTexture("../../assets/polyhaven/textures/metal_plate/metal_plate_metal_2k.jpg", [3.2, 1.1]),
-  trimColor: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_diff_2k.jpg", [1.8, 1], THREE.SRGBColorSpace),
-  trimNormal: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_nor_gl_2k.jpg", [1.8, 1]),
-  trimRoughness: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough_2k.jpg", [1.8, 1]),
-};
+function getTextureSlot(slotName) {
+  const def = TEXTURE_SLOTS[slotName];
+  if (!def) return null;
+  if (!textureCache.has(slotName)) {
+    textureCache.set(slotName, loadManagedTexture(def));
+  }
+  return textureCache.get(slotName);
+}
 
-const worldTextures = {
-  cityGroundColor: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_diff_2k.jpg", [26, 26], THREE.SRGBColorSpace),
-  cityGroundNormal: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_2k.jpg", [26, 26]),
-  cityGroundRoughness: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough_2k.jpg", [26, 26]),
-  cityRoadColor: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff_2k.jpg", [20, 8], THREE.SRGBColorSpace),
-  cityRoadNormal: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl_2k.jpg", [20, 8]),
-  cityRoadRoughness: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough_2k.jpg", [20, 8]),
-  cityBuildingColor: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff_2k.jpg", [2.4, 3.4], THREE.SRGBColorSpace),
-  cityBuildingNormal: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl_2k.jpg", [2.4, 3.4]),
-  cityBuildingRoughness: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough_2k.jpg", [2.4, 3.4]),
-  forestGroundColor: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_diff_2k.jpg", [18, 18], THREE.SRGBColorSpace),
-  forestGroundNormal: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_nor_gl_2k.jpg", [18, 18]),
-  forestGroundRoughness: loadTiledTexture("../../assets/polyhaven/textures/brushed_concrete/brushed_concrete_rough_2k.jpg", [18, 18]),
-  rockColor: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_diff_2k.jpg", [1.4, 1.4], THREE.SRGBColorSpace),
-  rockNormal: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_2k.jpg", [1.4, 1.4]),
-  rockRoughness: loadTiledTexture("../../assets/polyhaven/textures/concrete_floor_worn_001/concrete_floor_worn_001_rough_2k.jpg", [1.4, 1.4]),
-  trunkColor: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_diff_2k.jpg", [1.1, 3.2], THREE.SRGBColorSpace),
-  trunkNormal: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_nor_gl_2k.jpg", [1.1, 3.2]),
-  trunkRoughness: loadTiledTexture("../../assets/polyhaven/textures/corrugated_iron/corrugated_iron_rough_2k.jpg", [1.1, 3.2]),
-};
+function getFighterTextureSet() {
+  const set = {};
+  FIGHTER_TEXTURE_KEYS.forEach((slotName) => {
+    set[slotName] = getTextureSlot(slotName);
+  });
+  return set;
+}
 
+function getWorldTextureSet(mapType) {
+  const set = {};
+  for (const slotName of WORLD_TEXTURE_KEYS[mapType] || []) {
+    set[slotName] = getTextureSlot(slotName);
+  }
+  return set;
+}
 const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 8000);
 const CAMERA_DEFAULT_FOV = 72;
 const CAMERA_COCKPIT_FOV = 58;
@@ -320,6 +474,8 @@ const CAMERA_DEFAULT_NEAR = 0.1;
 const CAMERA_COCKPIT_NEAR = 0.03;
 const CAMERA_THIRD_PERSON_OFFSET = new THREE.Vector3(-72, 25, 0);
 const CAMERA_COCKPIT_OFFSET = new THREE.Vector3(2.8, 2.45, 0);
+const MENU_CAMERA_POSITION = new THREE.Vector3(-360, 290, 240);
+const MENU_CAMERA_LOOK_AT = new THREE.Vector3(0, 280, 0);
 
 const GUN_ZERO_DISTANCE_FALLBACK = 1200;
 const GUN_ZERO_DISTANCE_MIN = 320;
@@ -329,16 +485,14 @@ const GUN_BARREL_RADIUS = 0.082;
 const GUN_MUZZLE_LOCAL_LEFT = new THREE.Vector3(13.88, 1.22, 0.86);
 const GUN_MUZZLE_LOCAL_RIGHT = new THREE.Vector3(13.88, 1.22, -0.86);
 
-const TRACER_SPEED = 1350;
-const TRACER_LENGTH = 15.2;
-const TRACER_RADIUS_FRONT = 0.24;
-const TRACER_RADIUS_REAR = 0.42;
+const TRACER_SPEED = 1950;
+const TRACER_LENGTH = 18.4;
+const TRACER_RADIUS_FRONT = 0.32;
+const TRACER_RADIUS_REAR = 0.58;
 const MUZZLE_FLASH_LIFE = 0.095;
 const MUZZLE_FLASH_SCALE_RATE = 9;
 const MUZZLE_FLASH_FORWARD_OFFSET = 1.06;
 const MUZZLE_FLASH_BASE_OPACITY = 1.0;
-const COCKPIT_GUN_DROP = 0.16;
-const COCKPIT_GUN_FORWARD_BIAS = 0.22;
 
 const camForwardVec = new THREE.Vector3();
 const camUpVec = new THREE.Vector3();
@@ -358,6 +512,21 @@ scene.add(sun);
 const world = new THREE.Group();
 scene.add(world);
 
+const backdropFollowers = [];
+
+function trackBackdropMesh(mesh) {
+  if (!mesh) return mesh;
+  backdropFollowers.push({ mesh, offset: mesh.position.clone() });
+  return mesh;
+}
+
+function updateBackdropFollowers(anchor) {
+  if (!anchor || backdropFollowers.length === 0) return;
+  for (const entry of backdropFollowers) {
+    entry.mesh.position.copy(anchor).add(entry.offset);
+  }
+}
+
 const staticObstacles = [];
 const staticObstacleMeshes = [];
 const tmpBox = new THREE.Box3();
@@ -372,25 +541,79 @@ const bulletMuzzlePos = new THREE.Vector3();
 const bulletConvergencePos = new THREE.Vector3();
 const bulletFlightDir = new THREE.Vector3();
 const bulletMuzzleForwardDir = new THREE.Vector3();
+const playerReticleScreen = new THREE.Vector2();
+const playerReticleRayOrigin = new THREE.Vector3();
+const playerCockpitShotProbe = new THREE.Vector3();
+const playerCockpitShotDir = new THREE.Vector3();
+const playerShotOrigin = new THREE.Vector3();
+const playerForwardVec = new THREE.Vector3();
+const playerLockAimForwardVec = new THREE.Vector3();
+const obstacleThreatProbe = new THREE.Vector3();
+const lockAimForwardVec = new THREE.Vector3();
+const lockToTargetVec = new THREE.Vector3();
+const missileLaunchPos = new THREE.Vector3();
+const missileLaunchForward = new THREE.Vector3();
+const botToTargetVec = new THREE.Vector3();
+const botForwardVec = new THREE.Vector3();
+const botLeadVec = new THREE.Vector3();
+const botDesiredVec = new THREE.Vector3();
+const botAvoidVec = new THREE.Vector3();
+const botWallAvoidVec = new THREE.Vector3();
+const botCombinedAvoidVec = new THREE.Vector3();
+const botSteerVec = new THREE.Vector3();
+const botYawCrossVec = new THREE.Vector3();
+const botNewForwardVec = new THREE.Vector3();
+const botTargetForwardVec = new THREE.Vector3();
+const botTargetRightVec = new THREE.Vector3();
+const botTargetUpVec = new THREE.Vector3();
+const botAimPointVec = new THREE.Vector3();
+const botAimDirVec = new THREE.Vector3();
+const botRecoveryVec = new THREE.Vector3();
+const botProbeSideVec = new THREE.Vector3();
+const botProbeUpVec = new THREE.Vector3();
+const botProbePointVec = new THREE.Vector3();
+const botProgressVec = new THREE.Vector3();
+const botCenterBiasVec = new THREE.Vector3();
+const botArenaLeashVec = new THREE.Vector3();
+const botWallTurnPlan = { wallUnsafe: false, clearance: Infinity, timeToWall: Infinity, timeNeeded: 0, planarSpeed: 0, wallNormal: new THREE.Vector3(), avoidDir: new THREE.Vector3(), faceId: null };
+const botTargetWallPlan = { wallUnsafe: false, clearance: Infinity, timeToWall: Infinity, timeNeeded: 0, planarSpeed: 0, wallNormal: new THREE.Vector3(), avoidDir: new THREE.Vector3(), faceId: null };
+const botControlState = { roll: 0, pitch: 0, throttle: 0, boostLevel: 0, autoLevel: false };
+const playerControlState = { roll: 0, pitch: 0, throttle: 0, boostLevel: 0, autoLevel: true };
+const missileTargetCenterVec = new THREE.Vector3();
+const missileToTargetVec = new THREE.Vector3();
+const missileAimPointVec = new THREE.Vector3();
+const missileDesiredDirVec = new THREE.Vector3();
+const missileCurrentDirVec = new THREE.Vector3();
+const missileToPlayerVec = new THREE.Vector3();
+const OBSTACLE_THREAT_DISTANCES = Object.freeze([70, 120, 180]);
+const OBSTACLE_THREAT_MAX_DISTANCE = 180;
+const WALL_THREAT_DISTANCES = Object.freeze([180, 360, 560]);
+const WALL_THREAT_MARGIN = 620;
+const WALL_AVOID_MARGIN = 700;
+const WALL_CONTACT_COOLDOWN = 0.22;
 
 const bulletTracerGeometry = new THREE.CylinderGeometry(TRACER_RADIUS_FRONT, TRACER_RADIUS_REAR, TRACER_LENGTH, 12, 1, false);
 bulletTracerGeometry.rotateZ(-Math.PI * 0.5);
 bulletTracerGeometry.translate(TRACER_LENGTH * 0.5, 0, 0);
 const bulletTracerMaterialPlayer = new THREE.MeshBasicMaterial({
-  color: 0xfff4cd,
+  color: 0xf3fdff,
   transparent: true,
   opacity: 1,
   blending: THREE.AdditiveBlending,
   depthWrite: false,
   depthTest: false,
+  toneMapped: false,
+  fog: false,
 });
 const bulletTracerMaterialBot = new THREE.MeshBasicMaterial({
-  color: 0xff975e,
+  color: 0xffddb3,
   transparent: true,
-  opacity: 0.95,
+  opacity: 1,
   blending: THREE.AdditiveBlending,
   depthWrite: false,
-  depthTest: true,
+  depthTest: false,
+  toneMapped: false,
+  fog: false,
 });
 const muzzleFlashCoreGeometry = new THREE.ConeGeometry(0.34, 1.45, 10, 1, true);
 muzzleFlashCoreGeometry.rotateZ(-Math.PI * 0.5);
@@ -401,63 +624,114 @@ const muzzleFlashStreakGeometry = new THREE.PlaneGeometry(1.45, 0.16);
 const muzzleFlashMaterials = {
   player: {
     core: new THREE.MeshBasicMaterial({
-      color: 0xffc8aa,
+      color: 0xfff0e3,
       transparent: true,
-      opacity: MUZZLE_FLASH_BASE_OPACITY,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 1.34,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,
       depthTest: true,
+      toneMapped: false,
+      fog: false,
     }),
     ring: new THREE.MeshBasicMaterial({
-      color: 0xff5a3a,
+      color: 0xff9e78,
       transparent: true,
-      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.78,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 1.08,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,
       depthTest: true,
+      toneMapped: false,
+      fog: false,
     }),
     streak: new THREE.MeshBasicMaterial({
-      color: 0xffb6a6,
+      color: 0xfff2ea,
       transparent: true,
-      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.7,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.98,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,
       depthTest: true,
+      toneMapped: false,
+      fog: false,
     }),
   },
   bot: {
     core: new THREE.MeshBasicMaterial({
-      color: 0xffb58f,
+      color: 0xffead1,
       transparent: true,
-      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.88,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 1.2,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,
       depthTest: true,
+      toneMapped: false,
+      fog: false,
     }),
     ring: new THREE.MeshBasicMaterial({
-      color: 0xff4a32,
+      color: 0xff916c,
       transparent: true,
-      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.66,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.94,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,
       depthTest: true,
+      toneMapped: false,
+      fog: false,
     }),
     streak: new THREE.MeshBasicMaterial({
-      color: 0xffa79a,
+      color: 0xffeee3,
       transparent: true,
-      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.6,
+      opacity: MUZZLE_FLASH_BASE_OPACITY * 0.86,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,
       depthTest: true,
+      toneMapped: false,
+      fog: false,
     }),
   },
 };
+
+const impactFxGeometry = new THREE.SphereGeometry(2.2, 10, 8);
+const missileExplosionFlashGeometry = new THREE.SphereGeometry(5, 14, 12);
+const missileExplosionSmokeGeometry = new THREE.SphereGeometry(4.2, 10, 8);
+const missileTrailJetGeometry = new THREE.SphereGeometry(0.62, 10, 8);
+const missileTrailSmokeGeometry = new THREE.SphereGeometry(0.9, 10, 8);
+const effectPools = {
+  muzzle: { player: [], bot: [] },
+  impact: [],
+  explosionFlash: [],
+  explosionSmoke: [],
+  missileJet: [],
+  missileSmoke: [],
+};
+
+function acquirePooledEffect(pool, factory) {
+  const fx = pool.pop() || factory();
+  fx.mesh.visible = true;
+  fx.mesh.scale.setScalar(fx.spawnScale ?? 1);
+  world.add(fx.mesh);
+  return fx;
+}
+
+function releaseEffect(fx) {
+  if (!fx) return;
+  world.remove(fx.mesh);
+  fx.mesh.visible = false;
+  fx.mesh.scale.setScalar(1);
+  fx.followOwner = null;
+  fx.hasFollowLocal = false;
+  fx.pool.push(fx);
+}
+
+function clearActiveEffects() {
+  for (let i = game.effects.length - 1; i >= 0; i--) {
+    releaseEffect(game.effects[i]);
+  }
+  game.effects = [];
+}
 
 const losRaycaster = new THREE.Raycaster();
 const bulletRaycaster = new THREE.Raycaster();
@@ -471,24 +745,30 @@ const worldDetail = isMobile
     cloudBands: 16,
     hills: 52,
     forestCenters: 7,
-    forestDenseTrees: 76,
-    forestSparseTrees: 420,
+    forestDenseTrees: 61,
+    forestSparseTrees: 336,
+    forestGrassClusters: 140,
     forestRocks: 170,
     forestShrubs: 240,
     cityBuildings: 380,
     cityWindowBands: 1,
+    cityFacadeChance: 0.34,
+    cityFacadeMinHeight: 250,
   }
   : {
     clouds: 220,
     cloudBands: 34,
     hills: 120,
     forestCenters: 12,
-    forestDenseTrees: 140,
-    forestSparseTrees: 1050,
+    forestDenseTrees: 112,
+    forestSparseTrees: 840,
+    forestGrassClusters: 360,
     forestRocks: 420,
     forestShrubs: 520,
     cityBuildings: 520,
     cityWindowBands: 2,
+    cityFacadeChance: 0.58,
+    cityFacadeMinHeight: 190,
   };
 const MAX_BANK = THREE.MathUtils.degToRad(55);
 const MAX_PITCH = THREE.MathUtils.degToRad(35);
@@ -544,7 +824,8 @@ const game = {
   score: 0,
   over: false,
   initialBots: 0,
-  ammo: 60,
+  initialEnemyCount: 0,
+  ammo: 100,
   boostFuel: BOOST_FUEL_MAX,
   effects: [],
   playerHitTimer: 0,
@@ -559,7 +840,79 @@ const game = {
   missileLaunchTapQueuedCount: 0,
   matchElapsed: 0,
   playerBoostWasActive: false,
+  phase: "menu",
+  pendingMatchConfig: null,
+  activeMatchConfig: null,
 };
+
+function getPendingMatchConfig() {
+  return selectedMatchMode === MATCH_MODE_TEAM
+    ? {
+      mode: MATCH_MODE_TEAM,
+      allyBotCount: selectedTeamAllyCount,
+      enemyBotCount: selectedTeamEnemyCount,
+      totalBotCount: selectedTeamAllyCount + selectedTeamEnemyCount,
+      mapType: selectedMapType,
+    }
+    : {
+      mode: MATCH_MODE_FFA,
+      botCount: selectedBotCount,
+      totalBotCount: selectedBotCount,
+      mapType: selectedMapType,
+    };
+}
+
+function syncPendingMatchConfig() {
+  game.pendingMatchConfig = getPendingMatchConfig();
+  return game.pendingMatchConfig;
+}
+
+function getAllPlanes(includePlayer = true) {
+  const planes = [];
+  if (includePlayer && game.player) planes.push(game.player);
+  for (const bot of game.bots) planes.push(bot);
+  return planes;
+}
+
+function isSameTeam(a, b) {
+  if (!a || !b) return false;
+  return a.teamId !== null && a.teamId !== undefined && a.teamId === b.teamId;
+}
+
+function isHostilePlane(viewer, target) {
+  return Boolean(viewer && target && viewer !== target && !isSameTeam(viewer, target));
+}
+
+function isPlayerFriendly(plane) {
+  return Boolean(game.player && plane && plane !== game.player && isSameTeam(game.player, plane));
+}
+
+function isPlayerHostile(plane) {
+  return Boolean(game.player && plane && plane !== game.player && !isSameTeam(game.player, plane));
+}
+
+function getHostilePlanes(owner, aliveOnly = true) {
+  return getAllPlanes(true).filter((plane) => plane && plane !== owner && (!aliveOnly || plane.alive) && !isSameTeam(owner, plane));
+}
+
+function getLockCandidates(owner) {
+  return getHostilePlanes(owner, true);
+}
+
+function getDamageablePlanes(owner) {
+  return getAllPlanes(true).filter((plane) => plane && plane !== owner && plane.alive);
+}
+
+function getPlaneHudTone(plane) {
+  if (!plane) return "enemy";
+  if (plane.isPlayer) return "player";
+  return isPlayerFriendly(plane) ? "ally" : "enemy";
+}
+
+function getAliveHostileCountForPlayer() {
+  if (!game.player) return 0;
+  return getHostilePlanes(game.player, true).length;
+}
 
 let lastHitVibeAt = 0;
 
@@ -571,6 +924,51 @@ const MISSILE_LOCK_DOT = 0.58;
 const MISSILE_LOCK_DROP_RANGE = 2000;
 const MISSILE_LOCK_DROP_DOT = 0.42;
 const MISSILE_BODY_COLLISION_RADIUS = 0.5;
+const BOT_MODE_INTERCEPT = "intercept";
+const BOT_MODE_PURSUIT = "pursuit";
+const BOT_MODE_REPOSITION = "reposition";
+const BOT_MODE_RECOVER = "recover";
+const BOT_MODE_WALL_RETURN = "wallReturn";
+const BOT_MODE_REGROUP = "regroup";
+const BOT_TARGET_HOLD_TIME = 1.2;
+const BOT_COMBAT_RING_SOFT = ARENA * 0.52;
+const BOT_COMBAT_RING_HARD = ARENA * 0.64;
+const BOT_TARGET_WALL_REJECT = ARENA * 0.7;
+const BOT_REGROUP_MIN_TIME = 0.45;
+const BOT_REGROUP_MAX_TIME = 0.75;
+const BOT_WALL_TARGET_DROP_TIME = 0.35;
+const BOT_WALL_RETURN_MIN_TIME = 1.1;
+const BOT_WALL_RETURN_MAX_TIME = 1.75;
+const BOT_POST_WALL_REGROUP_TIME = 0.28;
+const BOT_WALL_UNSAFE_HOLD_TIME = 0.12;
+const BOT_WALL_SAFE_EXIT_HOLD_TIME = 0.25;
+const BOT_WALL_EXIT_CLEARANCE = 420;
+const BOT_WALL_RETURN_RING_INNER = ARENA * 0.24;
+const BOT_WALL_RETURN_RING_OUTER = ARENA * 0.32;
+const BOT_OBSTACLE_BOUNCE_TRIGGER = 5;
+const BOT_OBSTACLE_BOUNCE_WINDOW = 1.15;
+const BOT_OBSTACLE_CLIMB_TIME = 0.9;
+const BOT_INTERCEPT_RANGE = 1700;
+const BOT_HARD_INTERCEPT_RANGE = 2200;
+const BOT_PREFERRED_RANGE_MIN = 260;
+const BOT_PREFERRED_RANGE_MAX = 700;
+const BOT_REPOSITION_STALE_TIME = 1.5;
+const BOT_REPOSITION_MIN_TIME = 0.6;
+const BOT_REPOSITION_MAX_TIME = 0.9;
+const BOT_RECOVER_MIN_TIME = 0.68;
+const BOT_RECOVER_MAX_TIME = 0.92;
+const BOT_GUN_MIN_RANGE = 160;
+const BOT_GUN_MAX_RANGE = 1050;
+const BOT_ATTACK_ALIGN_RANGE = 2200;
+const BOT_ATTACK_WINDOW_BUILD = 0.12;
+const BOT_ATTACK_WINDOW_DECAY = 1.45;
+const BOT_BURST_MIN_TIME = 0.3;
+const BOT_BURST_MAX_TIME = 0.52;
+const BOT_MISSILE_MIN_RANGE = 520;
+const BOT_MISSILE_MAX_RANGE = 1600;
+const BOT_MISSILE_LOCK_HOLD_MIN = 0.25;
+const BOT_MISSILE_LOCK_HOLD_MAX = 0.45;
+const BOT_STUCK_PROGRESS_RATIO = 0.28;
 
 
 function clamp(v, a, b) {
@@ -910,36 +1308,800 @@ function intersectsObstacle(position, radius = 0) {
 }
 
 
-function obstacleThreat(position, forward, distances = [70, 120, 180], radius = 26) {
-  const probe = new THREE.Vector3();
+function obstacleThreat(position, forward, distances = OBSTACLE_THREAT_DISTANCES, radius = 26) {
+  const maxDistance = distances === OBSTACLE_THREAT_DISTANCES
+    ? OBSTACLE_THREAT_MAX_DISTANCE
+    : Math.max(1, distances[distances.length - 1] || 0);
+
   for (const d of distances) {
-    probe.copy(forward).multiplyScalar(d).add(position);
-    if (intersectsObstacle(probe, radius)) return 1 - (d / Math.max(...distances));
+    obstacleThreatProbe.copy(forward).multiplyScalar(d).add(position);
+    if (intersectsObstacle(obstacleThreatProbe, radius)) return 1 - (d / maxDistance);
   }
   return 0;
 }
 
-function obstacleAvoidance(position, forward, lookAhead = 140) {
-  const probe = tmpVecA.copy(forward).multiplyScalar(lookAhead).add(position);
+function obstacleAvoidance(position, forward, lookAhead = 140, sideDir = null, upDir = AXIS_Y) {
+  const probeSide = sideDir && sideDir.lengthSq() > 1e-4 ? sideDir : AXIS_Z;
+  const probeUp = upDir && upDir.lengthSq() > 1e-4 ? upDir : AXIS_Y;
   const avoid = tmpVecB.set(0, 0, 0);
   let weight = 0;
 
-  for (const box of staticObstacles) {
-    const d = box.distanceToPoint(probe);
-    if (d > 120) continue;
+  const sampleProbe = (sideOffset, upOffset, scale) => {
+    botProbePointVec.copy(forward).multiplyScalar(lookAhead).add(position);
+    if (sideOffset !== 0) botProbePointVec.addScaledVector(probeSide, sideOffset);
+    if (upOffset !== 0) botProbePointVec.addScaledVector(probeUp, upOffset);
 
-    box.getCenter(tmpVecC);
-    const away = tmpVecC.subVectors(probe, tmpVecC);
-    const lenSq = away.lengthSq();
-    if (lenSq < 1e-4) continue;
+    for (const box of staticObstacles) {
+      const d = box.distanceToPoint(botProbePointVec);
+      if (d > 132) continue;
 
-    away.multiplyScalar(1 / Math.sqrt(lenSq));
-    avoid.addScaledVector(away, (120 - d) / 120);
-    weight += 1;
-  }
+      box.getCenter(tmpVecC);
+      const away = tmpVecD.subVectors(botProbePointVec, tmpVecC);
+      const lenSq = away.lengthSq();
+      if (lenSq < 1e-4) continue;
+
+      away.multiplyScalar(1 / Math.sqrt(lenSq));
+      const sampleWeight = ((132 - d) / 132) * scale;
+      avoid.addScaledVector(away, sampleWeight);
+      weight += sampleWeight;
+    }
+  };
+
+  sampleProbe(0, 0, 1.2);
+  sampleProbe(56, 0, 0.95);
+  sampleProbe(-56, 0, 0.95);
+  sampleProbe(0, 34, 0.65);
+  sampleProbe(0, -20, 0.55);
 
   if (weight > 0) avoid.multiplyScalar(1 / weight);
   return avoid;
+}
+
+function wallThreat(position, forward, distances = WALL_THREAT_DISTANCES, margin = WALL_THREAT_MARGIN) {
+  let best = 0;
+  const maxDistance = distances === WALL_THREAT_DISTANCES
+    ? WALL_THREAT_DISTANCES[WALL_THREAT_DISTANCES.length - 1]
+    : Math.max(1, distances[distances.length - 1] || 0);
+
+  const sampleThreat = (point, scale) => {
+    const checkFace = (clearance, heading) => {
+      if (clearance >= margin) return;
+      const closeness = (margin - clearance) / margin;
+      const approach = clamp((heading + 0.2) / 1.2, 0, 1);
+      best = Math.max(best, closeness * scale * (0.24 + approach * 0.76));
+    };
+
+    checkFace(ARENA - point.x, forward.x);
+    checkFace(point.x + ARENA, -forward.x);
+    checkFace(ARENA - point.z, forward.z);
+    checkFace(point.z + ARENA, -forward.z);
+  };
+
+  sampleThreat(position, 0.72);
+  for (const d of distances) {
+    botProbePointVec.copy(forward).multiplyScalar(d).add(position);
+    const rangeScale = clamp(1 - d / (maxDistance + margin * 0.35), 0.28, 1);
+    sampleThreat(botProbePointVec, rangeScale);
+  }
+
+  return clamp(best, 0, 1);
+}
+
+function wallAvoidance(position, forward, lookAhead = 260, sideDir = null, out = tmpVecA) {
+  const probeSide = sideDir && sideDir.lengthSq() > 1e-4 ? sideDir : AXIS_Z;
+  const avoid = out.set(0, 0, 0);
+  let weight = 0;
+
+  const addWallInfluence = (clearance, inwardX, inwardZ, heading, scale) => {
+    if (clearance >= WALL_AVOID_MARGIN) return;
+    const closeness = (WALL_AVOID_MARGIN - clearance) / WALL_AVOID_MARGIN;
+    const approach = clamp((heading + 0.22) / 1.22, 0, 1);
+    const sampleWeight = closeness * scale * (0.34 + approach * 0.78);
+    avoid.x += inwardX * sampleWeight;
+    avoid.z += inwardZ * sampleWeight;
+    weight += sampleWeight;
+  };
+
+  const addWallProximity = (clearance, inwardX, inwardZ, scale) => {
+    const proximityMargin = WALL_AVOID_MARGIN * 0.82;
+    if (clearance >= proximityMargin) return;
+    const closeness = (proximityMargin - clearance) / proximityMargin;
+    const sampleWeight = closeness * scale;
+    avoid.x += inwardX * sampleWeight;
+    avoid.z += inwardZ * sampleWeight;
+    weight += sampleWeight;
+  };
+
+  const samplePoint = (distance, sideOffset, scale) => {
+    botProbePointVec.copy(position).addScaledVector(forward, distance);
+    if (sideOffset !== 0) botProbePointVec.addScaledVector(probeSide, sideOffset);
+
+    addWallInfluence(ARENA - botProbePointVec.x, -1, 0, forward.x, scale);
+    addWallInfluence(botProbePointVec.x + ARENA, 1, 0, -forward.x, scale);
+    addWallInfluence(ARENA - botProbePointVec.z, 0, -1, forward.z, scale);
+    addWallInfluence(botProbePointVec.z + ARENA, 0, 1, -forward.z, scale);
+  };
+
+  samplePoint(lookAhead * 0.45, 0, 0.82);
+  samplePoint(lookAhead, 0, 1.18);
+  samplePoint(lookAhead * 0.82, 84, 0.96);
+  samplePoint(lookAhead * 0.82, -84, 0.96);
+  samplePoint(lookAhead * 0.58, 148, 0.58);
+  samplePoint(lookAhead * 0.58, -148, 0.58);
+
+  addWallProximity(ARENA - position.x, -1, 0, 0.92);
+  addWallProximity(position.x + ARENA, 1, 0, 0.92);
+  addWallProximity(ARENA - position.z, 0, -1, 0.92);
+  addWallProximity(position.z + ARENA, 0, 1, 0.92);
+
+  if (weight > 0) avoid.multiplyScalar(1 / weight);
+  return avoid;
+}
+
+function getPlaneTravelForward(plane, out = tmpVecA) {
+  if (plane?.velocity?.lengthSq?.() > 25) {
+    return out.copy(plane.velocity).normalize();
+  }
+  return out.set(1, 0, 0).applyQuaternion(plane.mesh.quaternion).normalize();
+}
+
+function getArenaEdgeDistance(position) {
+  return Math.max(Math.abs(position.x), Math.abs(position.z));
+}
+
+function getBotSafeAnchor(out = tmpVecA) {
+  const angle = rand(0, Math.PI * 2);
+  const radius = rand(BOT_COMBAT_RING_SOFT * 0.7, BOT_COMBAT_RING_SOFT * 0.9);
+  return out.set(Math.cos(angle) * radius, rand(245, 330), Math.sin(angle) * radius);
+}
+
+function getBotAnchorDirection(bot, out = botCenterBiasVec) {
+  if (!bot?.mesh?.position) return out.set(0, 0, 0);
+  out.set(-bot.mesh.position.x, clamp((290 - bot.mesh.position.y) / 220, -0.2, 0.2), -bot.mesh.position.z);
+  if (out.lengthSq() <= 1e-4) return out.set(1, 0, 0);
+  return out.normalize();
+}
+
+function pickWallReturnSide(bot, wallNormal = null) {
+  if (!bot?.mesh?.position) return Math.random() < 0.5 ? -1 : 1;
+  getBotAnchorDirection(bot, tmpVecA);
+  if (wallNormal?.lengthSq?.() > 1e-4) {
+    tmpVecB.crossVectors(AXIS_Y, wallNormal);
+    if (tmpVecB.lengthSq() < 1e-4) tmpVecB.set(wallNormal.z, 0, -wallNormal.x);
+    else tmpVecB.normalize();
+    tmpVecC.copy(tmpVecB).multiplyScalar(-1);
+    return tmpVecB.dot(tmpVecA) >= tmpVecC.dot(tmpVecA) ? 1 : -1;
+  }
+  tmpVecB.set(-tmpVecA.z, 0, tmpVecA.x);
+  return tmpVecB.dot(getPlaneTravelForward(bot, tmpVecC).setY(0).normalize()) >= 0 ? 1 : -1;
+}
+
+function getBotWallReturnAnchor(bot, out = tmpVecA) {
+  if (!bot?.mesh?.position) return out.set(0, 280, 0);
+  getBotAnchorDirection(bot, tmpVecB);
+  tmpVecB.y = 0;
+  if (tmpVecB.lengthSq() < 1e-4) tmpVecB.set(1, 0, 0);
+  else tmpVecB.normalize();
+  const baseAngle = Math.atan2(tmpVecB.z, tmpVecB.x);
+  const offsetAngle = (bot.wallReturnSide || 1) * 0.28;
+  const radius = (BOT_WALL_RETURN_RING_INNER + BOT_WALL_RETURN_RING_OUTER) * 0.5;
+  out.set(Math.cos(baseAngle + offsetAngle) * radius, 280, Math.sin(baseAngle + offsetAngle) * radius);
+  return out;
+}
+
+function getWallClearance(position) {
+  return ARENA - getArenaEdgeDistance(position);
+}
+
+function getWallFaceId(position, threshold = 6) {
+  const hitPosX = position.x >= ARENA - threshold;
+  const hitNegX = position.x <= -ARENA + threshold;
+  const hitPosZ = position.z >= ARENA - threshold;
+  const hitNegZ = position.z <= -ARENA + threshold;
+  const hitCount = Number(hitPosX) + Number(hitNegX) + Number(hitPosZ) + Number(hitNegZ);
+  if (hitCount >= 2) return "corner";
+  if (hitPosX) return "posX";
+  if (hitNegX) return "negX";
+  if (hitPosZ) return "posZ";
+  if (hitNegZ) return "negZ";
+  return null;
+}
+
+function getRequiredWallClearance(speed) {
+  return Math.max(260, speed / Math.max(0.001, TURN_RATE) * 1.45 + 120);
+}
+
+function chooseWallAvoidDir(bot, wallNormal, desiredDir, out = tmpVecA) {
+  tmpVecB.crossVectors(AXIS_Y, wallNormal);
+  if (tmpVecB.lengthSq() < 1e-4) tmpVecB.set(wallNormal.z, 0, -wallNormal.x);
+  else tmpVecB.normalize();
+
+  tmpVecC.copy(tmpVecB).multiplyScalar(-1);
+  getBotAnchorDirection(bot, tmpVecD);
+  tmpVecD.y = 0;
+  if (tmpVecD.lengthSq() < 1e-4) tmpVecD.set(1, 0, 0);
+  else tmpVecD.normalize();
+
+  out.copy(tmpVecB.dot(tmpVecD) >= tmpVecC.dot(tmpVecD) ? tmpVecB : tmpVecC).addScaledVector(wallNormal, 0.45);
+  if (out.lengthSq() < 1e-4) out.copy(wallNormal);
+  out.y = Math.max(out.y, 0);
+  return out.normalize();
+}
+
+function computeWallDanger(bot, out = botWallTurnPlan) {
+  const pos = bot?.mesh?.position;
+  if (!pos) {
+    out.wallUnsafe = false;
+    out.clearance = Infinity;
+    out.timeToWall = Infinity;
+    out.timeNeeded = 0;
+    out.planarSpeed = 0;
+    out.wallNormal.set(0, 0, 0);
+    out.avoidDir.set(0, 0, 0);
+    out.faceId = null;
+    return out;
+  }
+
+  const planarSpeed = Math.max(150, Math.hypot(bot.velocity?.x || 0, bot.velocity?.z || 0), bot.speed || 0);
+  getPlaneTravelForward(bot, tmpVecA);
+  tmpVecA.y = 0;
+  if (tmpVecA.lengthSq() < 1e-4) tmpVecA.set(1, 0, 0);
+  else tmpVecA.normalize();
+
+  const timeToFullBank = Math.max(0, (MAX_BANK - Math.abs(bot.roll || 0)) / Math.max(0.001, BANK_RATE));
+  const timeNeeded = timeToFullBank + 0.9 + 0.18;
+  let bestTimeToWall = Infinity;
+  let bestClearance = Infinity;
+  let bestNormalX = 0;
+  let bestNormalZ = 0;
+  let bestFaceId = null;
+
+  const considerFace = (clearance, inwardX, inwardZ, faceId) => {
+    tmpVecB.set(inwardX, 0, inwardZ);
+    const closingSpeed = Math.max(0, -tmpVecA.dot(tmpVecB)) * planarSpeed;
+    if (closingSpeed <= 1) return;
+    const timeToWall = clearance / Math.max(1, closingSpeed);
+    if (timeToWall >= bestTimeToWall) return;
+    bestTimeToWall = timeToWall;
+    bestClearance = clearance;
+    bestNormalX = inwardX;
+    bestNormalZ = inwardZ;
+    bestFaceId = faceId;
+  };
+
+  considerFace(ARENA - pos.x, -1, 0, "posX");
+  considerFace(pos.x + ARENA, 1, 0, "negX");
+  considerFace(ARENA - pos.z, 0, -1, "posZ");
+  considerFace(pos.z + ARENA, 0, 1, "negZ");
+
+  out.wallUnsafe = bestTimeToWall <= timeNeeded;
+  out.clearance = bestClearance;
+  out.timeToWall = bestTimeToWall;
+  out.timeNeeded = timeNeeded;
+  out.planarSpeed = planarSpeed;
+  out.wallNormal.set(bestNormalX, 0, bestNormalZ);
+  out.faceId = bestFaceId;
+  if (bestTimeToWall < Infinity && out.wallNormal.lengthSq() > 1e-4) chooseWallAvoidDir(bot, out.wallNormal, tmpVecA, out.avoidDir);
+  else out.avoidDir.copy(tmpVecA);
+  return out;
+}
+
+function getWallTurnPlan(bot, desiredDir, out = botWallTurnPlan) {
+  return computeWallDanger(bot, out);
+}
+
+function isTargetTooCloseToWall(target, bot = null) {
+  if (target?.mesh?.position) {
+    return computeWallDanger(target, botTargetWallPlan).wallUnsafe;
+  }
+  const pos = target?.mesh?.position || target;
+  if (!pos) return false;
+  const speed = Math.max(bot?.speed || 0, 240);
+  return getWallClearance(pos) <= Math.max(260, speed * 0.85 + 140);
+}
+
+function getArenaLeash(bot, out = tmpVecA) {
+  const anchor = bot?.safeAnchor;
+  if (!bot?.mesh?.position || !anchor) return out.set(0, 0, 0);
+  const pos = bot.mesh.position;
+  const flatDistance = Math.hypot(pos.x, pos.z);
+  const leashStart = BOT_COMBAT_RING_HARD * 0.94;
+  const leashEnd = BOT_TARGET_WALL_REJECT;
+  const t = clamp((flatDistance - leashStart) / Math.max(1, leashEnd - leashStart), 0, 1);
+  if (t <= 0) return out.set(0, 0, 0);
+  const strength = t * t * (3 - 2 * t);
+  out.copy(anchor).sub(pos);
+  out.y = clamp(out.y / 260, -0.16, 0.16);
+  if (out.lengthSq() <= 1e-4) out.set(-pos.x, 0, -pos.z);
+  return out.normalize().multiplyScalar(strength);
+}
+
+function projectPointIntoCombatRing(point, radius = BOT_COMBAT_RING_HARD, out = point) {
+  out.copy(point);
+  const flatLength = Math.hypot(out.x, out.z);
+  if (flatLength > radius && flatLength > 1e-4) {
+    const overshoot = flatLength - radius;
+    const outerLimit = Math.max(radius, BOT_TARGET_WALL_REJECT * 0.98);
+    const compressedRadius = Math.min(outerLimit, radius + overshoot * 0.38);
+    const scale = compressedRadius / flatLength;
+    out.x *= scale;
+    out.z *= scale;
+  }
+  out.y = clamp(out.y, FLOOR_Y + 120, 880);
+  return out;
+}
+
+function orientBotTowardDirection(bot, direction, blend = 0.72) {
+  if (!bot || bot.isPlayer || !direction?.lengthSq?.() || direction.lengthSq() <= 1e-4) return;
+  tmpVecC.copy(direction).normalize();
+  const flat = Math.hypot(tmpVecC.x, tmpVecC.z);
+  if (flat > 1e-4) {
+    const yawTarget = Math.atan2(-tmpVecC.z, tmpVecC.x);
+    bot.yaw = THREE.MathUtils.lerp(bot.yaw, yawTarget, blend);
+  }
+  const pitchTarget = clamp(Math.atan2(tmpVecC.y, Math.max(1e-4, flat)), -MAX_PITCH * 0.82, MAX_PITCH * 0.82);
+  bot.pitch = THREE.MathUtils.lerp(bot.pitch, pitchTarget, blend);
+  bot.roll = THREE.MathUtils.lerp(bot.roll, 0, Math.min(1, blend * 1.2));
+}
+
+function pickBotRepositionSide(bot, targetForward, toTargetDir) {
+  if (!bot?.mesh?.position) return Math.random() < 0.5 ? -1 : 1;
+
+  tmpVecC.copy(targetForward);
+  if (tmpVecC.lengthSq() < 1e-4) tmpVecC.set(1, 0, 0);
+  else tmpVecC.normalize();
+
+  tmpVecD.crossVectors(tmpVecC, AXIS_Y);
+  if (tmpVecD.lengthSq() < 1e-4) tmpVecD.set(0, 0, 1);
+  else tmpVecD.normalize();
+
+  tmpVecB.set(-bot.mesh.position.x, 0, -bot.mesh.position.z);
+  if (tmpVecB.lengthSq() > 1e-4) {
+    tmpVecB.normalize();
+    const inwardSide = tmpVecD.dot(tmpVecB);
+    if (Math.abs(inwardSide) > 0.1) return inwardSide >= 0 ? 1 : -1;
+  }
+
+  tmpVecB.copy(toTargetDir);
+  tmpVecB.y = 0;
+  if (tmpVecB.lengthSq() > 1e-4) {
+    tmpVecB.normalize();
+    const relativeSide = tmpVecD.dot(tmpVecB);
+    if (Math.abs(relativeSide) > 0.08) return relativeSide >= 0 ? 1 : -1;
+  }
+
+  return Math.random() < 0.5 ? -1 : 1;
+}
+
+function getWallEscapeDirection(position, velocity = null, out = tmpVecA) {
+  out.set(0, 0, 0);
+
+  if (position.x >= ARENA - 2) out.x -= 1;
+  else if (position.x <= -ARENA + 2) out.x += 1;
+
+  if (position.z >= ARENA - 2) out.z -= 1;
+  else if (position.z <= -ARENA + 2) out.z += 1;
+
+  if (out.lengthSq() < 1e-4 && velocity?.lengthSq?.() > 1e-4) {
+    if (Math.abs(position.x) > ARENA - 44) out.x = -(Math.sign(velocity.x) || Math.sign(position.x) || 1);
+    if (Math.abs(position.z) > ARENA - 44) out.z = -(Math.sign(velocity.z) || Math.sign(position.z) || 1);
+  }
+
+  if (out.lengthSq() < 1e-4) {
+    if (Math.abs(position.x) >= Math.abs(position.z)) out.x = -(Math.sign(position.x) || 1);
+    else out.z = -(Math.sign(position.z) || 1);
+  }
+
+  out.y = Math.max(out.y, 0.14);
+  return out.normalize();
+}
+
+function getWallSlideDirection(position, velocity = null, out = tmpVecA) {
+  getWallEscapeDirection(position, velocity, out);
+
+  tmpVecB.set(-position.x, 0, -position.z);
+  tmpVecB.addScaledVector(out, -tmpVecB.dot(out));
+  if (tmpVecB.lengthSq() < 1e-4 && velocity?.lengthSq?.() > 1e-4) {
+    tmpVecB.copy(velocity);
+    tmpVecB.y = 0;
+    tmpVecB.addScaledVector(out, -tmpVecB.dot(out));
+  }
+  if (tmpVecB.lengthSq() < 1e-4) {
+    if (Math.abs(out.x) >= Math.abs(out.z)) tmpVecB.set(0, 0, Math.sign(position.z || 1) || 1);
+    else tmpVecB.set(Math.sign(position.x || 1) || 1, 0, 0);
+  }
+
+  tmpVecB.normalize();
+  out.multiplyScalar(1.28).addScaledVector(tmpVecB, 0.52);
+  out.y = Math.max(out.y, 0.14);
+  return out.normalize();
+}
+
+function getObstacleEscapeDirection(position, out = tmpVecA) {
+  let closestBox = null;
+  let closestDist = Infinity;
+  for (const box of staticObstacles) {
+    const d = box.distanceToPoint(position);
+    if (d < closestDist) {
+      closestDist = d;
+      closestBox = box;
+    }
+  }
+
+  if (!closestBox) return out.set(0, 0, 0);
+
+  const candidates = [
+    { dist: Math.abs(position.x - closestBox.min.x), x: -1, y: 0, z: 0 },
+    { dist: Math.abs(closestBox.max.x - position.x), x: 1, y: 0, z: 0 },
+    { dist: Math.abs(position.z - closestBox.min.z), x: 0, y: 0, z: -1 },
+    { dist: Math.abs(closestBox.max.z - position.z), x: 0, y: 0, z: 1 },
+    { dist: Math.abs(position.y - closestBox.min.y), x: 0, y: -1, z: 0 },
+    { dist: Math.abs(closestBox.max.y - position.y), x: 0, y: 1, z: 0 },
+  ];
+
+  let best = candidates[0];
+  for (let i = 1; i < candidates.length; i++) {
+    if (candidates[i].dist < best.dist) best = candidates[i];
+  }
+
+  return out.set(best.x, best.y, best.z);
+}
+
+function resolveObstacleSlide(plane, obstacle, previousPosition, outNormal = tmpVecA) {
+  tmpVecB.copy(plane.mesh.position);
+  const slideNormal = getObstacleEscapeDirection(tmpVecB, outNormal);
+  slideNormal.y = Math.max(slideNormal.y, 0);
+  if (slideNormal.lengthSq() < 1e-4) {
+    obstacle.getCenter(tmpVecC);
+    slideNormal.subVectors(tmpVecB, tmpVecC);
+    slideNormal.y = Math.max(slideNormal.y, 0);
+  }
+  if (slideNormal.lengthSq() < 1e-4) {
+    slideNormal.set(Math.random() < 0.5 ? 1 : -1, 0, Math.random() < 0.5 ? 1 : -1);
+  }
+  slideNormal.normalize();
+
+  tmpVecD.copy(plane.velocity);
+  if (tmpVecD.lengthSq() < 25) tmpVecD.copy(getPlaneTravelForward(plane, tmpVecC));
+  tmpVecD.addScaledVector(slideNormal, -tmpVecD.dot(slideNormal));
+  if (tmpVecD.lengthSq() < 1e-4) tmpVecD.set(-slideNormal.z, 0, slideNormal.x);
+  if (tmpVecD.lengthSq() < 1e-4) tmpVecD.crossVectors(slideNormal, AXIS_Y);
+  if (tmpVecD.lengthSq() < 1e-4) tmpVecD.set(1, 0, 0);
+  tmpVecD.normalize();
+
+  plane.mesh.position.copy(previousPosition);
+  if (intersectsObstacle(plane.mesh.position, 12)) {
+    plane.mesh.position.copy(tmpVecB);
+  }
+
+  for (let i = 0; i < 4 && intersectsObstacle(plane.mesh.position, 12); i++) {
+    plane.mesh.position.addScaledVector(slideNormal, 24);
+  }
+  plane.mesh.position.addScaledVector(slideNormal, 16);
+
+  const slideSpeed = Math.max(110, plane.speed * 0.56);
+  plane.velocity.copy(tmpVecD).multiplyScalar(slideSpeed);
+  plane.velocity.addScaledVector(slideNormal, 56);
+  plane.velocity.y = Math.max(plane.velocity.y, 12);
+
+  return slideNormal;
+}
+
+function setBotMode(bot, mode) {
+  if (!bot || bot.engagementMode === mode) return;
+  bot.engagementMode = mode;
+  bot.engagementTimer = 0;
+}
+
+function beginBotReposition(bot, side = 0) {
+  if (!bot || bot.isPlayer) return;
+  bot.repositionSide = side || bot.repositionSide || (Math.random() < 0.5 ? -1 : 1);
+  bot.repositionTimer = rand(BOT_REPOSITION_MIN_TIME, BOT_REPOSITION_MAX_TIME);
+  bot.attackWindowTimer = 0;
+  bot.burstTimer = 0;
+  bot.missileTarget = null;
+  bot.missileLockHoldTimer = 0;
+  bot.missileLockHoldDuration = rand(BOT_MISSILE_LOCK_HOLD_MIN, BOT_MISSILE_LOCK_HOLD_MAX);
+  setBotMode(bot, BOT_MODE_REPOSITION);
+}
+
+function enterBotWallReturn(bot, source = "near_wall", wallPlan = null, duration = rand(BOT_WALL_RETURN_MIN_TIME, BOT_WALL_RETURN_MAX_TIME)) {
+  if (!bot || bot.isPlayer) return;
+  const faceId = wallPlan?.faceId || bot.wallFaceId || null;
+  if (source !== "hit" && bot.wallState !== "none" && faceId && bot.wallFaceId === faceId) return;
+
+  bot.wallState = source === "hit" ? "postBounce" : "preAvoid";
+  bot.wallFaceId = faceId;
+  bot.wallUnsafeHoldTimer = 0;
+  bot.wallReturnTimer = Math.max(bot.wallReturnTimer || 0, duration);
+  bot.wallPostReturnTimer = 0;
+  bot.target = null;
+  bot.targetHoldTimer = 0;
+  bot.wallTargetTimer = 0;
+  bot.repositionTimer = 0;
+  bot.engagementTimer = 0;
+  resetBotAttackState(bot);
+  bot.missileTarget = null;
+  bot.missileLockHoldTimer = 0;
+  bot.wallContactCooldown = Math.max(bot.wallContactCooldown || 0, source === "hit" ? 0.34 : WALL_CONTACT_COOLDOWN);
+
+  if (wallPlan?.wallNormal?.lengthSq?.() > 1e-4) {
+    chooseWallAvoidDir(bot, wallPlan.wallNormal, getBotAnchorDirection(bot, tmpVecA), bot.wallEscapeDir);
+  } else {
+    getBotAnchorDirection(bot, bot.wallEscapeDir);
+  }
+
+  bot.wallReturnSide = pickWallReturnSide(bot, wallPlan?.wallNormal || null);
+  getBotWallReturnAnchor(bot, bot.wallReturnAnchor);
+  setBotMode(bot, BOT_MODE_WALL_RETURN);
+}
+
+function startBotWallReturn(bot, source = "near_wall", wallNormal = null, duration = rand(BOT_WALL_RETURN_MIN_TIME, BOT_WALL_RETURN_MAX_TIME)) {
+  const faceId = wallNormal?.x < 0 ? "posX" : wallNormal?.x > 0 ? "negX" : wallNormal?.z < 0 ? "posZ" : wallNormal?.z > 0 ? "negZ" : null;
+  botWallTurnPlan.wallNormal.copy(wallNormal || AXIS_X);
+  botWallTurnPlan.faceId = faceId;
+  enterBotWallReturn(bot, source, botWallTurnPlan, duration);
+}
+
+function beginBotRecovery(bot, away, duration = rand(BOT_RECOVER_MIN_TIME, BOT_RECOVER_MAX_TIME)) {
+  if (!bot || bot.isPlayer) return;
+
+  if (away?.lengthSq?.() > 1e-4) botRecoveryVec.copy(away);
+  else getWallSlideDirection(bot.mesh.position, bot.velocity, botRecoveryVec);
+
+  botRecoveryVec.y = Math.max(botRecoveryVec.y, 0.12);
+  if (botRecoveryVec.lengthSq() < 1e-4) botRecoveryVec.set(Math.random() < 0.5 ? 1 : -1, 0.18, Math.random() < 0.5 ? 1 : -1);
+  botRecoveryVec.normalize();
+
+  bot.wallEscapeDir.copy(botRecoveryVec);
+  bot.wallRecoverTimer = Math.max(bot.wallRecoverTimer || 0, duration);
+  bot.wallContactCooldown = Math.max(bot.wallContactCooldown || 0, Math.max(WALL_CONTACT_COOLDOWN, duration * 0.55));
+  botWallTurnPlan.wallNormal.copy(botRecoveryVec);
+  botWallTurnPlan.faceId = bot.wallFaceId;
+  enterBotWallReturn(bot, "near_wall", botWallTurnPlan, Math.max(BOT_WALL_RETURN_MIN_TIME, duration * 1.1));
+  bot.stuckTimer = 0;
+
+  const velocityMag = Math.max(bot.speed, bot.velocity.length(), 170);
+  if (bot.velocity.lengthSq() > 25) tmpVecC.copy(bot.velocity).normalize().lerp(botRecoveryVec, 0.32).normalize();
+  else tmpVecC.copy(botRecoveryVec);
+  bot.velocity.copy(tmpVecC).multiplyScalar(velocityMag);
+  bot.velocity.y = Math.max(bot.velocity.y, 12);
+  setBotMode(bot, BOT_MODE_WALL_RETURN);
+}
+
+function registerBotObstacleBounce(bot, slideNormal) {
+  if (!bot || bot.isPlayer) return;
+
+  if ((bot.obstacleBounceWindow || 0) > 0) {
+    bot.obstacleBounceCount = (bot.obstacleBounceCount || 0) + 1;
+  } else {
+    bot.obstacleBounceCount = 1;
+  }
+  bot.obstacleBounceWindow = BOT_OBSTACLE_BOUNCE_WINDOW;
+
+  if (bot.obstacleBounceCount < BOT_OBSTACLE_BOUNCE_TRIGGER) return;
+
+  bot.obstacleBounceCount = 0;
+  bot.obstacleBounceWindow = 0;
+  bot.obstacleClimbTimer = Math.max(bot.obstacleClimbTimer || 0, BOT_OBSTACLE_CLIMB_TIME);
+  bot.attackWindowTimer = 0;
+  bot.burstTimer = 0;
+
+  tmpVecB.copy(slideNormal);
+  tmpVecB.y = 0;
+  if (tmpVecB.lengthSq() < 1e-4) tmpVecB.copy(getPlaneTravelForward(bot, tmpVecC));
+  else tmpVecB.normalize();
+
+  bot.velocity.addScaledVector(tmpVecB, 36);
+  bot.velocity.y = Math.max(bot.velocity.y, 185);
+  bot.speed = Math.max(210, bot.speed * 0.88);
+}
+
+function snapBotTowardDirection(bot, direction) {
+  if (!bot || bot.isPlayer || !direction?.lengthSq?.() || direction.lengthSq() <= 1e-4) return;
+  tmpVecC.copy(direction).normalize();
+  const flat = Math.hypot(tmpVecC.x, tmpVecC.z);
+  if (flat > 1e-4) bot.yaw = Math.atan2(-tmpVecC.z, tmpVecC.x);
+  bot.pitch = clamp(Math.atan2(tmpVecC.y, Math.max(1e-4, flat)), -MAX_PITCH * 0.82, MAX_PITCH * 0.82);
+  bot.roll = 0;
+}
+
+function bounceBotOffWall(bot, inwardNormal, faceId = null) {
+  if (!bot || bot.isPlayer) return;
+
+  tmpVecB.copy(bot.velocity);
+  if (tmpVecB.lengthSq() < 25) getPlaneTravelForward(bot, tmpVecB).multiplyScalar(Math.max(bot.speed, 220));
+  if (tmpVecB.dot(inwardNormal) < 0) tmpVecB.reflect(inwardNormal);
+
+  const bounceSpeed = clamp(Math.max(bot.speed, tmpVecB.length()), 150, 560);
+  tmpVecB.normalize().multiplyScalar(bounceSpeed);
+  const inwardSpeed = tmpVecB.dot(inwardNormal);
+  if (inwardSpeed < bounceSpeed * 0.6) tmpVecB.addScaledVector(inwardNormal, bounceSpeed * 0.6 - inwardSpeed);
+
+  bot.wallFaceId = faceId || bot.wallFaceId;
+  bot.wallUnsafeHoldTimer = 0;
+  bot.wallReturnSide = pickWallReturnSide(bot, inwardNormal);
+  getBotWallReturnAnchor(bot, bot.wallReturnAnchor);
+  if (bot.wallReturnAnchor.lengthSq() > 1e-4) {
+    tmpVecC.copy(bot.wallReturnAnchor).sub(bot.mesh.position);
+    if (tmpVecC.lengthSq() > 1e-4) tmpVecB.lerp(tmpVecC.normalize().multiplyScalar(bounceSpeed), 0.25);
+  }
+
+  tmpVecB.y = Math.max(tmpVecB.y, 18);
+  bot.velocity.copy(tmpVecB.normalize().multiplyScalar(bounceSpeed));
+  bot.speed = bounceSpeed;
+  snapBotTowardDirection(bot, bot.velocity);
+  bot.roll = 0;
+  bot.wallEscapeDir.copy(bot.velocity).normalize();
+  bot.wallRecoverTimer = Math.max(bot.wallRecoverTimer || 0, 0.46);
+  bot.wallContactCooldown = Math.max(bot.wallContactCooldown || 0, 0.34);
+  botWallTurnPlan.wallNormal.copy(inwardNormal);
+  botWallTurnPlan.faceId = bot.wallFaceId;
+  enterBotWallReturn(bot, "hit", botWallTurnPlan, BOT_WALL_RETURN_MAX_TIME);
+  setBotMode(bot, BOT_MODE_WALL_RETURN);
+}
+
+const worldGeometryCache = new Map();
+const worldPatternTextureCache = new Map();
+const FOREST_TRUNK_TAPER_BUCKETS = Object.freeze([0.48, 0.58, 0.68, 0.78]);
+const CITY_ANTENNA_TAPER_BUCKETS = Object.freeze([0.65, 0.85, 1.05, 1.25, 1.45]);
+
+function getClosestBucket(value, buckets) {
+  let closest = buckets[0];
+  let bestDelta = Infinity;
+  for (const bucket of buckets) {
+    const delta = Math.abs(bucket - value);
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      closest = bucket;
+    }
+  }
+  return closest;
+}
+
+function getSharedWorldGeometry(key, factory) {
+  if (!worldGeometryCache.has(key)) {
+    const geometry = factory();
+    geometry.userData = {
+      ...(geometry.userData || {}),
+      sharedWorldGeometry: true,
+    };
+    worldGeometryCache.set(key, geometry);
+  }
+  return worldGeometryCache.get(key);
+}
+
+function getSharedWorldPatternTexture(key, factory) {
+  if (!worldPatternTextureCache.has(key)) {
+    const texture = factory();
+    texture.userData = {
+      ...(texture.userData || {}),
+      sharedWorldPatternTexture: true,
+    };
+    worldPatternTextureCache.set(key, texture);
+  }
+  return worldPatternTextureCache.get(key);
+}
+
+function createCanvasPatternTexture(key, width, height, drawPattern) {
+  return getSharedWorldPatternTexture(key, () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      const texture = new THREE.Texture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+    drawPattern(ctx, width, height);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.needsUpdate = true;
+    return texture;
+  });
+}
+
+function getCityFacadeTexture(variant = "grid") {
+  return createCanvasPatternTexture("cityFacade:" + variant, 128, 128, (ctx, width, height) => {
+    const windowFill = "rgba(255,255,255,0.82)";
+    const warmFill = "rgba(255,246,228,0.78)";
+    const coolFill = "rgba(214,235,255,0.74)";
+
+    if (variant === "bands") {
+      for (let row = 0; row < 9; row++) {
+        const top = 10 + row * 13;
+        const lit = row % 3 !== 1;
+        ctx.fillStyle = lit ? (row % 4 === 0 ? warmFill : coolFill) : "rgba(255,255,255,0.18)";
+        ctx.fillRect(8, top, width - 16, 7);
+        for (let x = 18; x < width - 14; x += 18) {
+          ctx.clearRect(x, top, 4, 7);
+        }
+      }
+      return;
+    }
+
+    if (variant === "slits") {
+      for (let col = 0; col < 7; col++) {
+        const left = 11 + col * 16;
+        const lit = col % 3 !== 0;
+        ctx.fillStyle = lit ? (col % 2 === 0 ? coolFill : warmFill) : "rgba(255,255,255,0.16)";
+        ctx.fillRect(left, 8, 7, height - 16);
+        for (let y = 18; y < height - 14; y += 18) {
+          ctx.clearRect(left, y, 7, 5);
+        }
+      }
+      return;
+    }
+
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 6; col++) {
+        if ((row * 5 + col * 3) % 7 === 0) continue;
+        const left = 10 + col * 18;
+        const top = 10 + row * 14;
+        ctx.fillStyle = row < 2
+          ? warmFill
+          : ((row + col) % 4 === 0 ? coolFill : windowFill);
+        ctx.fillRect(left, top, 11, 8);
+      }
+    }
+  });
+}
+
+function getGrassClusterTexture() {
+  return createCanvasPatternTexture("forestGrassCluster", 96, 96, (ctx, width, height) => {
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    const blades = [
+      { x: 18, sway: -10, top: 16, width: 6, alpha: 0.9 },
+      { x: 32, sway: -4, top: 10, width: 7, alpha: 0.94 },
+      { x: 46, sway: 2, top: 7, width: 8, alpha: 0.98 },
+      { x: 60, sway: 8, top: 12, width: 7, alpha: 0.9 },
+      { x: 76, sway: 14, top: 20, width: 5, alpha: 0.82 },
+    ];
+
+    for (const blade of blades) {
+      ctx.strokeStyle = `rgba(255,255,255,${blade.alpha})`;
+      ctx.lineWidth = blade.width;
+      ctx.beginPath();
+      ctx.moveTo(blade.x, height - 4);
+      ctx.quadraticCurveTo(blade.x + blade.sway * 0.35, height * 0.56, blade.x + blade.sway, blade.top);
+      ctx.stroke();
+    }
+  });
+}
+
+function getSharedUnitSphereGeometry(key, widthSegments = 12, heightSegments = 10) {
+  return getSharedWorldGeometry("sphere:" + key + ":" + widthSegments + ":" + heightSegments, () => new THREE.SphereGeometry(1, widthSegments, heightSegments));
+}
+
+function getSharedUnitPlaneGeometry(key) {
+  return getSharedWorldGeometry("plane:" + key, () => new THREE.PlaneGeometry(1, 1));
+}
+
+function getSharedUnitBoxGeometry(key) {
+  return getSharedWorldGeometry("box:" + key, () => new THREE.BoxGeometry(1, 1, 1));
+}
+
+function getSharedUnitDodecahedronGeometry(key) {
+  return getSharedWorldGeometry("dodecahedron:" + key, () => new THREE.DodecahedronGeometry(1, 0));
+}
+
+function getSharedUnitConeGeometry(key, radialSegments = 9) {
+  return getSharedWorldGeometry("cone:" + key + ":" + radialSegments, () => new THREE.ConeGeometry(1, 1, radialSegments));
+}
+
+function getSharedTaperedCylinderGeometry(keyPrefix, taperRatio, radialSegments = 8, buckets = FOREST_TRUNK_TAPER_BUCKETS) {
+  const bucket = getClosestBucket(taperRatio, buckets);
+  return getSharedWorldGeometry(
+    "cylinder:" + keyPrefix + ":" + bucket.toFixed(2) + ":" + radialSegments,
+    () => new THREE.CylinderGeometry(bucket, 1, 1, radialSegments)
+  );
 }
 
 function buildArenaBoundary() {
@@ -951,40 +2113,257 @@ function buildArenaBoundary() {
     new THREE.Vector3(-ARENA, FLOOR_Y + 60, -ARENA),
   ];
   const line = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(points),
+    getSharedWorldGeometry("arenaBoundaryLine", () => new THREE.BufferGeometry().setFromPoints(points)),
     new THREE.LineBasicMaterial({ color: 0x9ed6ff, transparent: true, opacity: 0.45 })
   );
   world.add(line);
 }
 
-function fitViewport() {
-  const width = Math.max(1, window.visualViewport?.width || window.innerWidth);
-  const height = Math.max(1, window.visualViewport?.height || window.innerHeight);
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-  renderer.setPixelRatio(getRenderPixelRatio());
-  renderer.setSize(width, height, false);
+function getSharedSkyDomeGeometry(key, topColor, horizonColor, nadirColor) {
+  return getSharedWorldGeometry("skyDome:" + key, () => {
+    const geometry = new THREE.SphereGeometry(1, 28, 18);
+    const position = geometry.attributes.position;
+    const colors = new Float32Array(position.count * 3);
+    const top = new THREE.Color(topColor);
+    const horizon = new THREE.Color(horizonColor);
+    const nadir = new THREE.Color(nadirColor);
+    const sample = new THREE.Color();
+
+    for (let i = 0; i < position.count; i++) {
+      const t = clamp((position.getY(i) + 1) * 0.5, 0, 1);
+      if (t >= 0.58) {
+        sample.copy(horizon).lerp(top, (t - 0.58) / 0.42);
+      } else {
+        sample.copy(nadir).lerp(horizon, t / 0.58);
+      }
+      const base = i * 3;
+      colors[base] = sample.r;
+      colors[base + 1] = sample.g;
+      colors[base + 2] = sample.b;
+    }
+
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    return geometry;
+  });
 }
 
+function buildHazeRing(color, opacity, y, radius, width, height, segments = 10) {
+  const planeGeometry = getSharedUnitPlaneGeometry("backdropHazePlane");
+  const hazeMaterial = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    fog: false,
+    side: THREE.DoubleSide,
+  });
 
-function updateMenuPanelPosition() {
-  const menuRect = menuBtn.getBoundingClientRect();
-  const menuBottom = Math.ceil(menuRect.bottom);
-  document.documentElement.style.setProperty("--menu-bottom", `${menuBottom}px`);
+  for (let i = 0; i < segments; i++) {
+    const angle = (i / segments) * Math.PI * 2;
+    const panel = new THREE.Mesh(planeGeometry, hazeMaterial);
+    panel.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+    panel.scale.set(width, height, 1);
+    panel.lookAt(0, y, 0);
+    world.add(trackBackdropMesh(panel));
+  }
+}
+
+function buildSkyBackdrop(mapType) {
+  const isForest = mapType === "forest";
+  const palette = isForest
+    ? {
+      key: "forest",
+      top: 0x88adb8,
+      horizon: 0xd4e0d4,
+      nadir: 0x456754,
+      haze: 0xcfe0d5,
+      hazeOpacity: 0.055,
+      sun: 0xe3ead4,
+      sunOpacity: 0.5,
+      halo: 0xd0e1d8,
+      haloOpacity: 0.065,
+    }
+    : {
+      key: "city",
+      top: 0x5ea7ff,
+      horizon: 0xcae6ff,
+      nadir: 0x2957ba,
+      haze: 0x8fc0f6,
+      hazeOpacity: 0.012,
+      sun: 0xf4fbff,
+      sunOpacity: 0.24,
+      halo: 0xaed5ff,
+      haloOpacity: 0.018,
+    };
+
+  const sky = new THREE.Mesh(
+    getSharedSkyDomeGeometry(palette.key, palette.top, palette.horizon, palette.nadir),
+    new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, depthWrite: false, fog: false })
+  );
+  sky.position.set(0, FLOOR_Y + 940, 0);
+  sky.scale.setScalar(7200);
+  world.add(trackBackdropMesh(sky));
+
+  buildHazeRing(palette.haze, palette.hazeOpacity, FLOOR_Y + (isForest ? 540 : 620), ARENA * 1.55, 2400, isForest ? 720 : 840, isForest ? 9 : 10);
+
+  const sun = new THREE.Mesh(
+    getSharedUnitSphereGeometry("backdropSun", 18, 14),
+    new THREE.MeshBasicMaterial({
+      color: palette.sun,
+      transparent: true,
+      opacity: palette.sunOpacity,
+      depthWrite: false,
+      fog: false,
+    })
+  );
+  sun.position.set(isForest ? -2000 : -1600, isForest ? 1500 : 1640, isForest ? -2550 : -3000);
+  sun.scale.setScalar(isForest ? 120 : 144);
+  world.add(sun);
+
+  const halo = new THREE.Mesh(
+    getSharedUnitSphereGeometry("backdropSunHalo", 18, 14),
+    new THREE.MeshBasicMaterial({
+      color: palette.halo,
+      transparent: true,
+      opacity: palette.haloOpacity,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      fog: false,
+    })
+  );
+  halo.position.copy(sun.position);
+  halo.scale.setScalar(isForest ? 320 : 380);
+  world.add(halo);
+}
+
+function buildCityBackdrop(unitBoxGeometry) {
+  const baseMaterial = new THREE.MeshBasicMaterial({ color: 0x4d6176, transparent: true, opacity: 0.86 });
+  const towerMaterial = new THREE.MeshBasicMaterial({ color: 0x748aa1, transparent: true, opacity: 0.68 });
+  const baseCount = isMobile ? 12 : 24;
+  const towerCount = isMobile ? 4 : 10;
+
+  for (let i = 0; i < baseCount; i++) {
+    const angle = (i / baseCount) * Math.PI * 2 + rand(-0.08, 0.08);
+    const radius = ARENA * 1.46 + rand(-140, 180);
+    const width = rand(160, 340);
+    const depth = rand(120, 240);
+    const height = rand(180, 380);
+    const block = new THREE.Mesh(unitBoxGeometry, baseMaterial);
+    block.scale.set(width, height, depth);
+    block.position.set(Math.cos(angle) * radius, FLOOR_Y + height / 2, Math.sin(angle) * radius);
+    block.rotation.y = angle + Math.PI * 0.5 + rand(-0.14, 0.14);
+    world.add(block);
+  }
+
+  for (let i = 0; i < towerCount; i++) {
+    const angle = (i / towerCount) * Math.PI * 2 + rand(-0.12, 0.12);
+    const radius = ARENA * 1.36 + rand(-120, 140);
+    const width = rand(90, 180);
+    const depth = rand(90, 180);
+    const height = rand(320, 620);
+    const tower = new THREE.Mesh(unitBoxGeometry, towerMaterial);
+    tower.scale.set(width, height, depth);
+    tower.position.set(Math.cos(angle) * radius, FLOOR_Y + height / 2, Math.sin(angle) * radius);
+    tower.rotation.y = angle + Math.PI * 0.5 + rand(-0.2, 0.2);
+    world.add(tower);
+  }
+}
+
+function buildForestBackdrop(hillGeometry) {
+  const nearMaterial = new THREE.MeshBasicMaterial({ color: 0x566d58, transparent: true, opacity: 0.96 });
+  const farMaterial = new THREE.MeshBasicMaterial({ color: 0x738672, transparent: true, opacity: 0.78 });
+  const nearCount = isMobile ? 10 : 18;
+  const farCount = isMobile ? 6 : 12;
+
+  for (let i = 0; i < nearCount; i++) {
+    const angle = (i / nearCount) * Math.PI * 2 + rand(-0.08, 0.08);
+    const radius = ARENA * 1.42 + rand(-120, 180);
+    const width = rand(300, 760);
+    const depth = width * rand(1.0, 1.45);
+    const height = width * rand(0.14, 0.28);
+    const ridge = new THREE.Mesh(hillGeometry, nearMaterial);
+    ridge.scale.set(width, height, depth);
+    ridge.position.set(Math.cos(angle) * radius, FLOOR_Y + rand(70, 130), Math.sin(angle) * radius);
+    world.add(ridge);
+  }
+
+  for (let i = 0; i < farCount; i++) {
+    const angle = (i / farCount) * Math.PI * 2 + rand(-0.1, 0.1);
+    const radius = ARENA * 1.62 + rand(-140, 220);
+    const width = rand(480, 980);
+    const depth = width * rand(1.1, 1.55);
+    const height = width * rand(0.12, 0.24);
+    const ridge = new THREE.Mesh(hillGeometry, farMaterial);
+    ridge.scale.set(width, height, depth);
+    ridge.position.set(Math.cos(angle) * radius, FLOOR_Y + rand(130, 220), Math.sin(angle) * radius);
+    world.add(ridge);
+  }
+}
+
+function createGrassCluster(grassPlaneGeometry, grassMaterials, size = 18, planeCount = 2) {
+  const cluster = new THREE.Group();
+  const chosenPlanes = Math.max(2, planeCount | 0);
+
+  for (let i = 0; i < chosenPlanes; i++) {
+    const blade = new THREE.Mesh(
+      grassPlaneGeometry,
+      grassMaterials[(Math.random() * grassMaterials.length) | 0]
+    );
+    const width = size * rand(0.34, 0.58);
+    const height = size * rand(0.95, 1.45);
+    blade.position.y = height * 0.5;
+    blade.scale.set(width, height, 1);
+    blade.rotation.y = (Math.PI / chosenPlanes) * i + rand(-0.24, 0.24);
+    blade.rotation.z = rand(-0.08, 0.08);
+    cluster.add(blade);
+  }
+
+  return cluster;
+}
+function disposeWorldNodes() {
+  const geometries = new Set();
+  const materials = new Set();
+
+  world.children.forEach((node) => {
+    node.traverse((child) => {
+      if (child.geometry && !child.geometry.userData?.sharedWorldGeometry) geometries.add(child.geometry);
+      if (Array.isArray(child.material)) child.material.forEach((mat) => mat && materials.add(mat));
+      else if (child.material) materials.add(child.material);
+    });
+  });
+
+  world.clear();
+  geometries.forEach((geometry) => geometry?.dispose?.());
+  materials.forEach((material) => material?.dispose?.());
+  staticObstacles.length = 0;
+  staticObstacleMeshes.length = 0;
+  backdropFollowers.length = 0;
 }
 
 function buildWorld(mapType) {
-  world.clear();
-  staticObstacles.length = 0;
-  staticObstacleMeshes.length = 0;
+  disposeWorldNodes();
+
+  const worldTextures = getWorldTextureSet(mapType);
+  const groundPlaneGeometry = getSharedUnitPlaneGeometry("worldGroundPlane");
+  const cloudGeometry = getSharedUnitSphereGeometry("cloudSphere", 12, 10);
+  const cirrusGeometry = getSharedUnitPlaneGeometry("cirrusBandPlane");
+  const hillGeometry = getSharedUnitSphereGeometry("forestHillSphere", 16, 12);
+  const rockGeometry = getSharedUnitDodecahedronGeometry("forestRockDodecahedron");
+  const shrubGeometry = getSharedUnitSphereGeometry("forestShrubSphere", 10, 8);
+  const crownGeometry = getSharedUnitConeGeometry("forestTreeCrown", 9);
+  const unitBoxGeometry = getSharedUnitBoxGeometry("worldUnitBox");
+  const grassPlaneGeometry = getSharedUnitPlaneGeometry("forestGrassBladePlane");
 
   const isForest = mapType === "forest";
-  const skyColor = isForest ? 0x89b992 : 0x7594ba;
+  const skyColor = isForest ? 0x97ba9e : 0x8d9db6;
   scene.background = new THREE.Color(skyColor);
   scene.fog = isForest
-    ? new THREE.FogExp2(skyColor, 0.0001)
-    : new THREE.FogExp2(skyColor, 0.000075);
+    ? new THREE.FogExp2(skyColor, 0.000095)
+    : new THREE.FogExp2(skyColor, 0.00007);
 
+  buildSkyBackdrop(mapType);
+  if (isForest) buildForestBackdrop(hillGeometry);
+  else buildCityBackdrop(unitBoxGeometry);
   buildArenaBoundary();
 
   const cloudMat = new THREE.MeshBasicMaterial({
@@ -995,8 +2374,9 @@ function buildWorld(mapType) {
     fog: false,
   });
   for (let i = 0; i < worldDetail.clouds; i++) {
-    const cloud = new THREE.Mesh(new THREE.SphereGeometry(rand(26, 68), 12, 10), cloudMat);
-    cloud.scale.set(rand(2.5, 5.3), rand(0.38, 0.72), rand(1.4, 3.0));
+    const cloudRadius = rand(26, 68);
+    const cloud = new THREE.Mesh(cloudGeometry, cloudMat);
+    cloud.scale.set(cloudRadius * rand(2.5, 5.3), cloudRadius * rand(0.38, 0.72), cloudRadius * rand(1.4, 3.0));
     cloud.position.set(rand(-ARENA * 1.2, ARENA * 1.2), rand(640, 1250), rand(-ARENA * 1.2, ARENA * 1.2));
     world.add(cloud);
   }
@@ -1009,7 +2389,8 @@ function buildWorld(mapType) {
     fog: false,
   });
   for (let i = 0; i < worldDetail.cloudBands; i++) {
-    const band = new THREE.Mesh(new THREE.PlaneGeometry(rand(420, 860), rand(58, 120)), cirrusMat);
+    const band = new THREE.Mesh(cirrusGeometry, cirrusMat);
+    band.scale.set(rand(420, 860), rand(58, 120), 1);
     band.rotation.x = -Math.PI / 2;
     band.rotation.z = rand(-0.45, 0.45);
     band.position.set(rand(-ARENA * 1.25, ARENA * 1.25), rand(780, 1320), rand(-ARENA * 1.25, ARENA * 1.25));
@@ -1017,8 +2398,10 @@ function buildWorld(mapType) {
   }
 
   if (isForest) {
+    const hillAnchors = [];
+    const grassAnchors = [];
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
+      groundPlaneGeometry,
       new THREE.MeshStandardMaterial({
         color: 0x5f8550,
         map: worldTextures.forestGroundColor,
@@ -1028,6 +2411,7 @@ function buildWorld(mapType) {
         metalness: 0.02,
       })
     );
+    ground.scale.set(ARENA * 3.2, ARENA * 3.2, 1);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = FLOOR_Y;
     ground.receiveShadow = true;
@@ -1042,11 +2426,14 @@ function buildWorld(mapType) {
       metalness: 0.03,
     });
     for (let i = 0; i < worldDetail.hills; i++) {
-      const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(90, 260), 16, 12), hillMat);
-      hill.scale.y = rand(0.24, 0.55);
+      const hillRadius = rand(90, 260);
+      const hill = new THREE.Mesh(hillGeometry, hillMat);
+      hill.scale.set(hillRadius, hillRadius * rand(0.24, 0.55), hillRadius);
       hill.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(8, 32), rand(-ARENA * 1.2, ARENA * 1.2));
       hill.receiveShadow = true;
       world.add(hill);
+      hillAnchors.push({ x: hill.position.x, z: hill.position.z, radius: hillRadius * 0.45 });
+      grassAnchors.push({ x: hill.position.x, z: hill.position.z, radius: hillRadius * 0.34 });
     }
 
     const rockMat = new THREE.MeshStandardMaterial({
@@ -1058,8 +2445,9 @@ function buildWorld(mapType) {
       metalness: 0.04,
     });
     for (let i = 0; i < worldDetail.forestRocks; i++) {
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(8, 26), 0), rockMat);
-      rock.scale.y = rand(0.45, 1.0);
+      const rockRadius = rand(8, 26);
+      const rock = new THREE.Mesh(rockGeometry, rockMat);
+      rock.scale.set(rockRadius, rockRadius * rand(0.45, 1.0), rockRadius);
       rock.rotation.set(rand(-0.3, 0.3), rand(0, Math.PI), rand(-0.2, 0.2));
       rock.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(4, 15), rand(-ARENA * 1.2, ARENA * 1.2));
       rock.castShadow = true;
@@ -1068,13 +2456,22 @@ function buildWorld(mapType) {
       addObstacle(rock, 2);
     }
 
-    const shrubMat = new THREE.MeshStandardMaterial({ color: 0x567a48, roughness: 0.94 });
+    const shrubMaterials = [
+      new THREE.MeshStandardMaterial({ color: 0x567a48, roughness: 0.94 }),
+      new THREE.MeshStandardMaterial({ color: 0x628653, roughness: 0.95 }),
+      new THREE.MeshStandardMaterial({ color: 0x496d3d, roughness: 0.93 }),
+    ];
     for (let i = 0; i < worldDetail.forestShrubs; i++) {
-      const shrub = new THREE.Mesh(new THREE.SphereGeometry(rand(10, 24), 10, 8), shrubMat);
-      shrub.scale.y = rand(0.3, 0.7);
+      const shrubRadius = rand(10, 24);
+      const shrub = new THREE.Mesh(
+        shrubGeometry,
+        shrubMaterials[(Math.random() * shrubMaterials.length) | 0]
+      );
+      shrub.scale.set(shrubRadius, shrubRadius * rand(0.3, 0.7), shrubRadius);
       shrub.position.set(rand(-ARENA * 1.2, ARENA * 1.2), FLOOR_Y + rand(4, 10), rand(-ARENA * 1.2, ARENA * 1.2));
       shrub.receiveShadow = true;
       world.add(shrub);
+      if (Math.random() > 0.28) grassAnchors.push({ x: shrub.position.x, z: shrub.position.z, radius: shrubRadius * 2.1 });
     }
 
     const trunkMat = new THREE.MeshStandardMaterial({
@@ -1086,27 +2483,52 @@ function buildWorld(mapType) {
       metalness: 0.05,
     });
     const leafPalette = [0x2f6f3b, 0x3e8048, 0x4f9259, 0x2d5d37];
+    const leafMaterials = leafPalette.map((color) => new THREE.MeshStandardMaterial({ color, roughness: 0.95 }));
     const forestCenters = Array.from({ length: worldDetail.forestCenters }, () => new THREE.Vector2(rand(-ARENA * 0.95, ARENA * 0.95), rand(-ARENA * 0.95, ARENA * 0.95)));
+    const pickTrunkProfile = (dense) => {
+      const roll = Math.random();
+      if (dense) {
+        if (roll < 0.2) return { top: [3.2, 4.8], base: [4.6, 6.8] };
+        if (roll < 0.75) return { top: [4.3, 6.6], base: [6.4, 9.2] };
+        return { top: [5.8, 8.8], base: [8.4, 12.2] };
+      }
+      if (roll < 0.25) return { top: [2.6, 3.8], base: [3.6, 5.2] };
+      if (roll < 0.75) return { top: [3.5, 5.3], base: [5.0, 7.5] };
+      return { top: [4.8, 7.0], base: [6.8, 10.0] };
+    };
 
     const placeTree = (px, pz, dense = false) => {
       if (Math.abs(px) < 160 && Math.abs(pz) < 160) return;
       const h = dense ? rand(110, 280) : rand(75, 190);
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(dense ? rand(2.8, 5.4) : rand(2.2, 4.2), dense ? rand(4.1, 6.6) : rand(3.1, 5.2), h, 8), trunkMat);
+      const trunkProfile = pickTrunkProfile(dense);
+      const trunkTopRadius = rand(trunkProfile.top[0], trunkProfile.top[1]);
+      const trunkBaseRadius = rand(trunkProfile.base[0], trunkProfile.base[1]);
+      const trunk = new THREE.Mesh(
+        getSharedTaperedCylinderGeometry("forestTreeTrunk", trunkTopRadius / trunkBaseRadius, 8, FOREST_TRUNK_TAPER_BUCKETS),
+        trunkMat
+      );
+      trunk.scale.set(trunkBaseRadius, h, trunkBaseRadius);
       trunk.position.set(px, FLOOR_Y + h / 2, pz);
       trunk.castShadow = true;
       trunk.receiveShadow = true;
       world.add(trunk);
       addObstacle(trunk, 5);
 
+      const crownRadius = dense ? rand(30, 56) : rand(20, 38);
+      const crownHeight = dense ? rand(80, 150) : rand(52, 100);
       const crown = new THREE.Mesh(
-        new THREE.ConeGeometry(dense ? rand(30, 56) : rand(20, 38), dense ? rand(80, 150) : rand(52, 100), 9),
-        new THREE.MeshStandardMaterial({ color: leafPalette[(Math.random() * leafPalette.length) | 0], roughness: 0.95 })
+        crownGeometry,
+        leafMaterials[(Math.random() * leafMaterials.length) | 0]
       );
-      crown.position.set(px, FLOOR_Y + h + crown.geometry.parameters.height * 0.42, pz);
+      crown.scale.set(crownRadius, crownHeight, crownRadius);
+      crown.position.set(px, FLOOR_Y + h + crownHeight * 0.42, pz);
       crown.castShadow = true;
       crown.receiveShadow = true;
       world.add(crown);
       addObstacle(crown, 2);
+      if (dense || Math.random() > 0.38) {
+        grassAnchors.push({ x: px, z: pz, radius: dense ? 52 : 36 });
+      }
     };
 
     for (const center of forestCenters) {
@@ -1120,11 +2542,77 @@ function buildWorld(mapType) {
     for (let i = 0; i < worldDetail.forestSparseTrees; i++) {
       placeTree(rand(-ARENA * 1.2, ARENA * 1.2), rand(-ARENA * 1.2, ARENA * 1.2), false);
     }
+
+    const grassMaterials = [
+      new THREE.MeshBasicMaterial({
+        color: 0x6e9957,
+        map: getGrassClusterTexture(),
+        transparent: true,
+        opacity: 0.9,
+        alphaTest: 0.12,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+      new THREE.MeshBasicMaterial({
+        color: 0x7cae63,
+        map: getGrassClusterTexture(),
+        transparent: true,
+        opacity: 0.82,
+        alphaTest: 0.12,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+    ];
+    const grassProbePoint = new THREE.Vector3();
+    const placeGrassCluster = (px, pz, dense = false) => {
+      if (Math.abs(px) < 190 && Math.abs(pz) < 190) return false;
+      grassProbePoint.set(px, FLOOR_Y + 6, pz);
+      if (intersectsObstacle(grassProbePoint, dense ? 3.5 : 2.2)) return false;
+      const cluster = createGrassCluster(
+        grassPlaneGeometry,
+        grassMaterials,
+        dense ? rand(18, 30) : rand(12, 22),
+        isMobile ? 2 : (dense ? 3 : 2)
+      );
+      cluster.position.set(px, FLOOR_Y + rand(0.4, 1.6), pz);
+      cluster.rotation.y = rand(0, Math.PI);
+      world.add(cluster);
+      return true;
+    };
+
+    let placedGrass = 0;
+    let grassAttempts = 0;
+    const maxGrassAttempts = worldDetail.forestGrassClusters * 6;
+    while (placedGrass < worldDetail.forestGrassClusters && grassAttempts < maxGrassAttempts) {
+      grassAttempts += 1;
+      let px;
+      let pz;
+      let dense = false;
+      if (grassAnchors.length > 0 && Math.random() > 0.16) {
+        const anchor = grassAnchors[(Math.random() * grassAnchors.length) | 0];
+        const radius = anchor.radius * rand(0.45, 1.2);
+        const angle = Math.random() * Math.PI * 2;
+        px = anchor.x + Math.cos(angle) * radius;
+        pz = anchor.z + Math.sin(angle) * radius;
+        dense = radius < 44 || Math.random() > 0.58;
+      } else if (hillAnchors.length > 0 && Math.random() > 0.45) {
+        const hill = hillAnchors[(Math.random() * hillAnchors.length) | 0];
+        const radius = hill.radius * rand(0.35, 1.0);
+        const angle = Math.random() * Math.PI * 2;
+        px = hill.x + Math.cos(angle) * radius;
+        pz = hill.z + Math.sin(angle) * radius;
+      } else {
+        px = rand(-ARENA * 1.12, ARENA * 1.12);
+        pz = rand(-ARENA * 1.12, ARENA * 1.12);
+      }
+
+      if (placeGrassCluster(px, pz, dense)) placedGrass += 1;
+    }
     return;
   }
 
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(ARENA * 3.2, ARENA * 3.2),
+    groundPlaneGeometry,
     new THREE.MeshStandardMaterial({
       color: 0x89909a,
       map: worldTextures.cityGroundColor,
@@ -1134,6 +2622,7 @@ function buildWorld(mapType) {
       metalness: 0.08,
     })
   );
+  ground.scale.set(ARENA * 3.2, ARENA * 3.2, 1);
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = FLOOR_Y;
   ground.receiveShadow = true;
@@ -1149,30 +2638,94 @@ function buildWorld(mapType) {
   });
   const laneMat = new THREE.MeshStandardMaterial({ color: 0xa8aeb6, roughness: 0.85 });
   for (let i = -8; i <= 8; i++) {
-    const roadX = new THREE.Mesh(new THREE.BoxGeometry(ARENA * 2.7, 0.2, 42), roadMat);
+    const roadX = new THREE.Mesh(unitBoxGeometry, roadMat);
+    roadX.scale.set(ARENA * 2.7, 0.2, 42);
     roadX.position.set(0, FLOOR_Y + 0.1, i * 430);
     roadX.receiveShadow = true;
     world.add(roadX);
 
-    const roadZ = new THREE.Mesh(new THREE.BoxGeometry(42, 0.2, ARENA * 2.7), roadMat);
+    const roadZ = new THREE.Mesh(unitBoxGeometry, roadMat);
+    roadZ.scale.set(42, 0.2, ARENA * 2.7);
     roadZ.position.set(i * 430, FLOOR_Y + 0.1, 0);
     roadZ.receiveShadow = true;
     world.add(roadZ);
 
-    const laneX = new THREE.Mesh(new THREE.BoxGeometry(ARENA * 2.7, 0.22, 4), laneMat);
+    const laneX = new THREE.Mesh(unitBoxGeometry, laneMat);
+    laneX.scale.set(ARENA * 2.7, 0.22, 4);
     laneX.position.set(0, FLOOR_Y + 0.14, i * 430);
     world.add(laneX);
 
-    const laneZ = new THREE.Mesh(new THREE.BoxGeometry(4, 0.22, ARENA * 2.7), laneMat);
+    const laneZ = new THREE.Mesh(unitBoxGeometry, laneMat);
+    laneZ.scale.set(4, 0.22, ARENA * 2.7);
     laneZ.position.set(i * 430, FLOOR_Y + 0.14, 0);
     world.add(laneZ);
   }
 
   const buildingPalette = [0x7f8b98, 0x8e97a5, 0x646f7d, 0x5a6370, 0x9ba4b4];
+  const cityTowerMaterials = new Map();
+  const roofMat = new THREE.MeshStandardMaterial({ color: 0xcad2dd, roughness: 0.65 });
+  const antennaMat = new THREE.MeshStandardMaterial({ color: 0xb9c4d1, roughness: 0.48, metalness: 0.5 });
+  const cityWindowBandMaterials = [
+    new THREE.MeshBasicMaterial({ color: 0xcde6ff, transparent: true, opacity: 0.16 }),
+    new THREE.MeshBasicMaterial({ color: 0xdce9ff, transparent: true, opacity: 0.22 }),
+  ];
+  const cityFacadeMaterials = [
+    new THREE.MeshBasicMaterial({
+      color: 0xdcecff,
+      map: getCityFacadeTexture("grid"),
+      transparent: true,
+      opacity: 0.86,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+    new THREE.MeshBasicMaterial({
+      color: 0xe8f3ff,
+      map: getCityFacadeTexture("bands"),
+      transparent: true,
+      opacity: 0.8,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+    new THREE.MeshBasicMaterial({
+      color: 0xc7deff,
+      map: getCityFacadeTexture("slits"),
+      transparent: true,
+      opacity: 0.76,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  ];
+  const citySparseZones = [
+    { x: ARENA * 0.45, z: ARENA * 0.24, radius: 430, keepChance: 0.7 },
+    { x: -ARENA * 0.4, z: -ARENA * 0.3, radius: 520, keepChance: 0.7 },
+    { x: ARENA * 0.2, z: -ARENA * 0.47, radius: 460, keepChance: 0.7 },
+  ];
+
+  const getCityTowerMaterial = (baseColor) => {
+    const key = String(baseColor);
+    if (!cityTowerMaterials.has(key)) {
+      cityTowerMaterials.set(key, new THREE.MeshStandardMaterial({
+        color: new THREE.Color(baseColor).lerp(new THREE.Color(0xbcc5ce), 0.2),
+        map: worldTextures.cityBuildingColor,
+        normalMap: worldTextures.cityBuildingNormal,
+        roughnessMap: worldTextures.cityBuildingRoughness,
+        roughness: 0.72,
+        metalness: 0.12,
+      }));
+    }
+    return cityTowerMaterials.get(key);
+  };
+
   for (let i = 0; i < worldDetail.cityBuildings; i++) {
     const px = rand(-ARENA * 1.15, ARENA * 1.15);
     const pz = rand(-ARENA * 1.15, ARENA * 1.15);
     if (Math.abs(px) < 260 && Math.abs(pz) < 260) continue;
+    const inCentralLane =
+      (Math.abs(px) < 240 && Math.abs(pz) < 1500) ||
+      (Math.abs(pz) < 240 && Math.abs(px) < 1500);
+    if (inCentralLane && Math.random() > 0.4) continue;
+    const sparseZone = citySparseZones.find(({ x, z, radius }) => (px - x) ** 2 + (pz - z) ** 2 < radius ** 2);
+    if (sparseZone && Math.random() > sparseZone.keepChance) continue;
 
     const w = rand(45, 135);
     const d = rand(45, 135);
@@ -1180,49 +2733,64 @@ function buildWorld(mapType) {
     const baseColor = buildingPalette[(Math.random() * buildingPalette.length) | 0];
 
     const tower = new THREE.Mesh(
-      new THREE.BoxGeometry(w, h, d),
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color(baseColor).lerp(new THREE.Color(0xbcc5ce), 0.2),
-        map: worldTextures.cityBuildingColor,
-        normalMap: worldTextures.cityBuildingNormal,
-        roughnessMap: worldTextures.cityBuildingRoughness,
-        roughness: 0.72,
-        metalness: 0.12,
-      })
+      unitBoxGeometry,
+      getCityTowerMaterial(baseColor)
     );
+    tower.scale.set(w, h, d);
     tower.position.set(px, FLOOR_Y + h / 2, pz);
     tower.castShadow = true;
     tower.receiveShadow = true;
     world.add(tower);
     addObstacle(tower, 3);
 
+    if (h >= worldDetail.cityFacadeMinHeight && Math.random() <= worldDetail.cityFacadeChance) {
+      let facadeMaterial = cityFacadeMaterials[0];
+      if (h < worldDetail.cityFacadeMinHeight * 1.22) facadeMaterial = cityFacadeMaterials[1];
+      else if (Math.max(w, d) < 76 || Math.random() > 0.68) facadeMaterial = cityFacadeMaterials[2];
+      const facade = new THREE.Mesh(unitBoxGeometry, facadeMaterial);
+      const facadeInset = Math.max(2, Math.min(w, d) * 0.024);
+      facade.scale.set(w + facadeInset, h + 2.4, d + facadeInset);
+      facade.position.copy(tower.position);
+      facade.renderOrder = 2;
+      world.add(facade);
+    }
+
     for (let j = 0; j < worldDetail.cityWindowBands; j++) {
       if (h < 140 && j > 0) continue;
+      const bandHeight = rand(2.2, 4.6);
       const bandY = FLOOR_Y + h * rand(0.25, 0.86);
       const band = new THREE.Mesh(
-        new THREE.BoxGeometry(w * 1.01, rand(2.2, 4.6), d * 1.01),
-        new THREE.MeshBasicMaterial({ color: 0xcde6ff, transparent: true, opacity: rand(0.14, 0.24) })
+        unitBoxGeometry,
+        cityWindowBandMaterials[(Math.random() * cityWindowBandMaterials.length) | 0]
       );
+      band.scale.set(w * 1.01, bandHeight, d * 1.01);
       band.position.set(px, bandY, pz);
       world.add(band);
     }
 
     if (Math.random() > 0.55) {
-      const roof = new THREE.Mesh(
-        new THREE.BoxGeometry(w * 0.7, rand(12, 28), d * 0.7),
-        new THREE.MeshStandardMaterial({ color: 0xcad2dd, roughness: 0.65 })
-      );
-      roof.position.set(px, FLOOR_Y + h + roof.geometry.parameters.height / 2, pz);
+      const roofHeight = rand(12, 28);
+      const roof = new THREE.Mesh(unitBoxGeometry, roofMat);
+      roof.scale.set(w * 0.7, roofHeight, d * 0.7);
+      roof.position.set(px, FLOOR_Y + h + roofHeight / 2, pz);
       roof.castShadow = true;
       world.add(roof);
       addObstacle(roof, 2);
 
       if (Math.random() > 0.5) {
+        const antennaTopRadius = rand(0.6, 1.2);
+        const antennaBaseRadius = rand(0.8, 1.4);
+        const antennaHeight = rand(18, 42);
         const antenna = new THREE.Mesh(
-          new THREE.CylinderGeometry(rand(0.6, 1.2), rand(0.8, 1.4), rand(18, 42), 8),
-          new THREE.MeshStandardMaterial({ color: 0xb9c4d1, roughness: 0.48, metalness: 0.5 })
+          getSharedTaperedCylinderGeometry("cityAntenna", antennaTopRadius / antennaBaseRadius, 8, CITY_ANTENNA_TAPER_BUCKETS),
+          antennaMat
         );
-        antenna.position.set(px + rand(-w * 0.18, w * 0.18), FLOOR_Y + h + roof.geometry.parameters.height + antenna.geometry.parameters.height / 2, pz + rand(-d * 0.18, d * 0.18));
+        antenna.scale.set(antennaBaseRadius, antennaHeight, antennaBaseRadius);
+        antenna.position.set(
+          px + rand(-w * 0.18, w * 0.18),
+          FLOOR_Y + h + roofHeight + antennaHeight / 2,
+          pz + rand(-d * 0.18, d * 0.18)
+        );
         world.add(antenna);
       }
     }
@@ -1231,6 +2799,7 @@ function buildWorld(mapType) {
 
 function createFighter(colorOrPalette, isPlayer = false) {
   const g = new THREE.Group();
+  const fighterTextures = getFighterTextureSet();
 
   function buildSurface(points, thickness = 0.24) {
     const shape = new THREE.Shape();
@@ -1527,7 +3096,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   mainWingR.add(wingPatternR);
 
 
-  // Tail section rebuilt from scratch (主翼はそ�Eまま): horizontal tailplanes + vertical stabilizers + jet units
+  // Tail section rebuilt from scratch (髣匁E���E�繝ｻ・�E�鬩怜遜・�E�・�E�驍ｵ・�E�繝ｻ・�E�驍ｵ・�E�隴擾�E��E�郢晢�E��E�驍ｵ・�E�繝ｻ・�E�驍ｵ・�E�繝ｻ・�E�): horizontal tailplanes + vertical stabilizers + jet units
   // Horizontal tail is defined independently, but keeps exactly the same shape as the main wing (uniform scale only).
   const tailplaneBaseShape = [
     [8.6, 0.7],
@@ -1551,7 +3120,7 @@ function createFighter(colorOrPalette, isPlayer = false) {
   tailplaneR.position.set(tailplaneX, 1.15, -2.2);
   tailplaneR.rotation.set(0, 0, 0);
 
-  // Vertical fin: trapezoid planform with a forward-sliding leading edge (前方が前に滑る台形)
+  // Vertical fin: trapezoid planform with a forward-sliding leading edge (髯�E�鬘後＊陝・�E�驍ｵ・�E�隰疲�E��E�竏夐し・�E�繝ｻ・�E�髮玖ｴ具�E��E�・�E�繝ｻ邁E��╂繝ｻ・�E�髯溷私�E�E�・�E�)
   const finShape = [
     [-34.5, 3.4], // moved 1.0 forward; lower edge is horizontal/parallel to upper edge
     [-28.6, 3.4],
@@ -1746,42 +3315,42 @@ function createFighter(colorOrPalette, isPlayer = false) {
       node.frustumCulled = false;
     }
   });
-
-  const lockOutline = new THREE.Group();
-  const lockOutlineMat = new THREE.LineBasicMaterial({
-    color: 0xff2c2c,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-    depthTest: false,
-  });
-  g.traverse((node) => {
-    if (!node.isMesh) return;
-    if (!node.geometry) return;
-
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 30), lockOutlineMat);
-    edges.position.copy(node.position);
-    edges.quaternion.copy(node.quaternion);
-    edges.scale.copy(node.scale).multiplyScalar(1.14);
-    edges.renderOrder = 121;
-    edges.frustumCulled = false;
-    edges.userData.baseScale = edges.scale.clone();
-    lockOutline.add(edges);
-  });
-  lockOutline.visible = false;
-  lockOutline.userData = { lineMat: lockOutlineMat };
-  g.add(lockOutline);
-
   world.add(g);
 
   const plane = {
     mesh: g,
+    prevPosition: new THREE.Vector3(),
     velocity: new THREE.Vector3(200, 0, 0),
     hp: 100,
     alive: true,
     cooldown: 0,
     speed: 220,
     target: null,
+    safeAnchor: getBotSafeAnchor(new THREE.Vector3()),
+    wallReturnAnchor: new THREE.Vector3(0, 290, 0),
+    wallReturnSide: Math.random() < 0.5 ? -1 : 1,
+    engagementMode: BOT_MODE_REGROUP,
+    engagementTimer: 0,
+    targetHoldTimer: 0,
+    regroupTimer: 0,
+    wallTargetTimer: 0,
+    obstacleBounceCount: 0,
+    obstacleBounceWindow: 0,
+    obstacleClimbTimer: 0,
+    repositionSide: 0,
+    repositionTimer: 0,
+    wallRecoverTimer: 0,
+    wallEscapeDir: new THREE.Vector3(1, 0, 0),
+    wallContactCooldown: 0,
+    wallReturnTimer: 0,
+    wallPostReturnTimer: 0,
+    wallState: "none",
+    wallFaceId: null,
+    wallUnsafeHoldTimer: 0,
+    wallHitLatch: false,
+    stuckTimer: 0,
+    attackWindowTimer: 0,
+    burstTimer: 0,
     isPlayer,
     isColliding: false,
     yaw: 0,
@@ -1790,7 +3359,11 @@ function createFighter(colorOrPalette, isPlayer = false) {
     nextGunSide: 0,
     gunHardpoints: [GUN_MUZZLE_LOCAL_LEFT.clone(), GUN_MUZZLE_LOCAL_RIGHT.clone()],
     hpLabel: null,
-    lockOutline,
+    lockOutline: null,
+    friendlyMarker: null,
+    teamId: null,
+    teamRole: isPlayer ? "player" : "enemy",
+    callsign: isPlayer ? "YOU" : "EN",
     exhaust: {
       nozzleGlow,
       flameCore,
@@ -1803,9 +3376,149 @@ function createFighter(colorOrPalette, isPlayer = false) {
     missileAmmo: MISSILE_MAX_AMMO,
     missileCooldown: 0,
     missileTarget: null,
+    missileLockHoldTimer: 0,
+    missileLockHoldDuration: rand(BOT_MISSILE_LOCK_HOLD_MIN, BOT_MISSILE_LOCK_HOLD_MAX),
+    boostFuel: BOOST_FUEL_MAX,
+    boostWasActive: false,
   };
 
   return plane;
+}
+
+function ensureFriendlyMarker(plane) {
+  if (!plane?.mesh) return null;
+  if (plane.friendlyMarker) return plane.friendlyMarker;
+
+  const marker = new THREE.Group();
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(4.6, 6.2, 28),
+    new THREE.MeshBasicMaterial({
+      color: 0x78e8ff,
+      transparent: true,
+      opacity: 0.86,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: false,
+      toneMapped: false,
+    })
+  );
+  ring.rotation.x = -Math.PI * 0.5;
+  ring.position.y = 16;
+  ring.renderOrder = 150;
+  ring.userData.baseScale = new THREE.Vector3(1, 1, 1);
+
+  const chevronGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-3.2, 12.5, 0),
+    new THREE.Vector3(0, 16.6, 0),
+    new THREE.Vector3(3.2, 12.5, 0),
+  ]);
+  const chevronMat = new THREE.LineBasicMaterial({
+    color: 0xbdf7ff,
+    transparent: true,
+    opacity: 0.92,
+    depthWrite: false,
+    depthTest: false,
+    toneMapped: false,
+  });
+  const chevron = new THREE.Line(chevronGeo, chevronMat);
+  chevron.renderOrder = 151;
+  chevron.userData.baseScale = new THREE.Vector3(1, 1, 1);
+
+  const chevronBack = chevron.clone();
+  chevronBack.position.y = -1.5;
+  chevronBack.scale.setScalar(0.8);
+  chevronBack.userData.baseScale = new THREE.Vector3(0.8, 0.8, 0.8);
+
+  marker.add(ring, chevron, chevronBack);
+  marker.visible = false;
+  marker.userData = { ring };
+  plane.mesh.add(marker);
+  plane.friendlyMarker = marker;
+  return marker;
+}
+
+function disposeFriendlyMarker(plane) {
+  if (!plane?.friendlyMarker) return;
+  const geometries = new Set();
+  const materials = new Set();
+  plane.friendlyMarker.traverse((node) => {
+    if (node.geometry) geometries.add(node.geometry);
+    if (Array.isArray(node.material)) node.material.forEach((mat) => mat && materials.add(mat));
+    else if (node.material) materials.add(node.material);
+  });
+  plane.mesh?.remove?.(plane.friendlyMarker);
+  geometries.forEach((geometry) => geometry?.dispose?.());
+  materials.forEach((material) => material?.dispose?.());
+  plane.friendlyMarker = null;
+}
+
+function updateFriendlyMarkers() {
+  if (!game.player) return;
+  const pulse = 1 + Math.sin(performance.now() * 0.0055) * 0.08;
+  for (const plane of game.bots) {
+    if (!plane?.alive || !isPlayerFriendly(plane) || game.activeMatchConfig?.mode !== MATCH_MODE_TEAM) {
+      if (plane?.friendlyMarker) plane.friendlyMarker.visible = false;
+      continue;
+    }
+
+    const marker = ensureFriendlyMarker(plane);
+    if (!marker) continue;
+    marker.visible = true;
+    marker.quaternion.copy(camera.quaternion);
+    marker.children.forEach((child) => {
+      const baseScale = child.userData?.baseScale;
+      if (baseScale) child.scale.copy(baseScale).multiplyScalar(pulse);
+    });
+    const ring = marker.userData?.ring;
+    if (ring?.material) ring.material.opacity = 0.74 + Math.sin(performance.now() * 0.008 + plane.mesh.id * 0.1) * 0.1;
+  }
+}
+
+function ensureLockOutline(plane) {
+  if (!plane?.mesh) return null;
+  if (plane.lockOutline) return plane.lockOutline;
+
+  const lockOutline = new THREE.Group();
+  const lockOutlineMat = new THREE.LineBasicMaterial({
+    color: 0xff2c2c,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    depthTest: false,
+  });
+
+  plane.mesh.traverse((node) => {
+    if (!node.isMesh || !node.geometry) return;
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry, 30), lockOutlineMat);
+    edges.position.copy(node.position);
+    edges.quaternion.copy(node.quaternion);
+    edges.scale.copy(node.scale).multiplyScalar(1.14);
+    edges.renderOrder = 121;
+    edges.frustumCulled = false;
+    edges.userData.baseScale = edges.scale.clone();
+    lockOutline.add(edges);
+  });
+
+  lockOutline.visible = false;
+  lockOutline.userData = { lineMat: lockOutlineMat };
+  plane.mesh.add(lockOutline);
+  plane.lockOutline = lockOutline;
+  return lockOutline;
+}
+
+function disposeLockOutline(plane) {
+  if (!plane?.lockOutline) return;
+  const geometries = new Set();
+  const materials = new Set();
+  plane.lockOutline.traverse((node) => {
+    if (node.geometry) geometries.add(node.geometry);
+    if (Array.isArray(node.material)) node.material.forEach((mat) => mat && materials.add(mat));
+    else if (node.material) materials.add(node.material);
+  });
+  plane.mesh?.remove?.(plane.lockOutline);
+  geometries.forEach((geometry) => geometry?.dispose?.());
+  materials.forEach((material) => material?.dispose?.());
+  plane.lockOutline = null;
 }
 
 function updatePlaneExhaust(plane, boostLevel = 0) {
@@ -1934,112 +3647,103 @@ function updatePlaneExhaust(plane, boostLevel = 0) {
 
 }
 
-function spawnBullet(owner, color) {
-  if (!owner?.mesh) return;
+function isCockpitViewActive() {
+  return document.body.classList.contains("cockpit-active");
+}
 
-  const team = owner === game.player ? "player" : "bot";
-  const b = new THREE.Mesh(
-    bulletTracerGeometry,
-    team === "player" ? bulletTracerMaterialPlayer : bulletTracerMaterialBot
-  );
+function getScreenSpaceRect() {
+  const rect = canvas?.getBoundingClientRect?.();
+  if (rect && rect.width > 4 && rect.height > 4) return rect;
 
-  const useRightGun = owner.nextGunSide === 1;
-  if (typeof owner.nextGunSide === "number") {
-    owner.nextGunSide = useRightGun ? 0 : 1;
+  const viewport = window.visualViewport;
+  return {
+    left: 0,
+    top: 0,
+    width: Math.max(1, viewport?.width || window.innerWidth || 1),
+    height: Math.max(1, viewport?.height || window.innerHeight || 1),
+  };
+}
+
+function screenPointToWorldRay(screenX, screenY, outDirection = playerAimDir, outOrigin = playerReticleRayOrigin) {
+  const rect = getScreenSpaceRect();
+  const localX = clamp(screenX - rect.left, 0, rect.width);
+  const localY = clamp(screenY - rect.top, 0, rect.height);
+  const ndcX = (localX / rect.width) * 2 - 1;
+  const ndcY = -(localY / rect.height) * 2 + 1;
+  outOrigin.copy(camera.position);
+  playerAimProbe.set(ndcX, ndcY, 0.25).unproject(camera);
+  return outDirection.copy(playerAimProbe).sub(outOrigin).normalize();
+}
+
+function getPlayerReticleScreenPosition(out = playerReticleScreen) {
+  const screenRect = getScreenSpaceRect();
+  let aimX = screenRect.left + screenRect.width * 0.5;
+  let aimY = screenRect.top + screenRect.height * 0.5;
+  if (isCockpitViewActive()) {
+    const crosshairRect = crosshairEl?.getBoundingClientRect?.();
+    if (crosshairRect && crosshairRect.width > 4 && crosshairRect.height > 4) {
+      aimX = crosshairRect.left + crosshairRect.width * 0.5;
+      aimY = crosshairRect.top + crosshairRect.height * 0.5;
+    } else {
+      const glassRect = gunsightGlassEl?.getBoundingClientRect?.();
+      if (glassRect && glassRect.width > 4 && glassRect.height > 4) {
+        aimX = glassRect.left + glassRect.width * 0.5;
+        aimY = glassRect.top + glassRect.height * 0.5;
+      } else if (cockpitFrameEl) {
+        const frameRect = getCockpitFrameContentRect();
+        if (frameRect) {
+          const center = getCockpitCenterRatios();
+          aimX = frameRect.left + frameRect.width * center.centerX;
+          aimY = frameRect.top + frameRect.height * center.centerY;
+        }
+      }
+    }
   }
 
-  const muzzleLocal = owner.gunHardpoints?.[useRightGun ? 1 : 0]
-    || (useRightGun ? GUN_MUZZLE_LOCAL_RIGHT : GUN_MUZZLE_LOCAL_LEFT);
+  return out.set(aimX, aimY);
+}
 
-  if (owner === game.player) {
-    bulletAimDir.copy(getPlayerAimDirection());
-  } else {
-    getBotAimPoint(owner, bulletConvergencePos);
-    bulletAimDir.copy(bulletConvergencePos).sub(owner.mesh.position);
-    if (bulletAimDir.lengthSq() <= 1e-6) {
-      bulletAimDir.set(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
-    } else {
-      bulletAimDir.normalize();
-    }
+function getPlayerReticleRay(outDirection = playerAimDir, outOrigin = playerReticleRayOrigin) {
+  getPlayerReticleScreenPosition(playerReticleScreen);
+  return screenPointToWorldRay(playerReticleScreen.x, playerReticleScreen.y, outDirection, outOrigin);
+}
+
+function getPlayerShotOrigin(owner, muzzleLocal, reticleDir, out = playerShotOrigin) {
+  if (isCockpitViewActive()) {
+    const sideSign = muzzleLocal && Number.isFinite(muzzleLocal.z)
+      ? (muzzleLocal.z < 0 ? 1 : -1)
+      : -1;
+    playerCockpitShotProbe.set(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+    playerCockpitShotDir.set(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+    return out.copy(camera.position)
+      .addScaledVector(reticleDir, COCKPIT_VIRTUAL_SHOT_FORWARD)
+      .addScaledVector(playerCockpitShotProbe, sideSign * COCKPIT_VIRTUAL_SHOT_SIDE_OFFSET)
+      .addScaledVector(playerCockpitShotDir, -COCKPIT_VIRTUAL_SHOT_DOWN_OFFSET);
   }
 
   let muzzleResolved = false;
-  if (owner.mesh.localToWorld && muzzleLocal) {
-    bulletMuzzlePos.copy(muzzleLocal);
-    owner.mesh.localToWorld(bulletMuzzlePos);
-    if (Number.isFinite(bulletMuzzlePos.x) && Number.isFinite(bulletMuzzlePos.y) && Number.isFinite(bulletMuzzlePos.z)) {
-      b.position.copy(bulletMuzzlePos);
-      muzzleResolved = true;
-    }
+  if (owner?.mesh?.localToWorld && muzzleLocal) {
+    out.copy(muzzleLocal);
+    owner.mesh.localToWorld(out);
+    muzzleResolved = Number.isFinite(out.x) && Number.isFinite(out.y) && Number.isFinite(out.z);
   }
 
   if (!muzzleResolved) {
-    const fallbackDistance = owner === game.player ? 20 : 28;
-    b.position.copy(owner.mesh.position).addScaledVector(bulletAimDir, fallbackDistance);
+    out.copy(owner.mesh.position).addScaledVector(reticleDir, 20);
   }
 
-  if (owner === game.player && document.body.classList.contains("cockpit-active")) {
-    tmpVecA.set(0, -COCKPIT_GUN_DROP, 0).applyQuaternion(owner.mesh.quaternion);
-    b.position.add(tmpVecA);
-    b.position.addScaledVector(bulletAimDir, COCKPIT_GUN_FORWARD_BIAS);
-  }
-
-  if (owner === game.player) {
-    getPlayerAimPoint(bulletConvergencePos, bulletAimDir, b.position);
-  } else {
-    getBotAimPoint(owner, bulletConvergencePos);
-  }
-
-  bulletFlightDir.copy(bulletConvergencePos).sub(b.position);
-  if (bulletFlightDir.lengthSq() <= 1e-6) {
-    bulletFlightDir.copy(bulletAimDir);
-  } else {
-    bulletFlightDir.normalize();
-  }
-
-  b.quaternion.setFromUnitVectors(AXIS_X, bulletFlightDir);
-  b.frustumCulled = false;
-  b.renderOrder = 130;
-
-  bulletMuzzleForwardDir.set(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
-  spawnMuzzleFlash(b.position, bulletMuzzleForwardDir, team, owner, muzzleLocal);
-
-  b.userData = {
-    vel: bulletFlightDir.multiplyScalar(TRACER_SPEED),
-    life: 2.05,
-    team,
-  };
-  world.add(b);
-  game.bullets.push(b);
-}
-function getPlayerAimDirection() {
-  const viewportWidth = Math.max(1, window.visualViewport?.width || window.innerWidth);
-  const viewportHeight = Math.max(1, window.visualViewport?.height || window.innerHeight);
-
-  let aimX = viewportWidth * 0.5;
-  let aimY = viewportHeight * 0.5;
-  if (document.body.classList.contains("cockpit-active") && cockpitFrameEl) {
-    const frameRect = getCockpitFrameContentRect();
-    if (frameRect) {
-      const center = getCockpitCenterRatios();
-      aimX = frameRect.left + frameRect.width * center.centerX;
-      aimY = frameRect.top + frameRect.height * center.centerY;
-    }
-  }
-
-  const ndcX = (aimX / viewportWidth) * 2 - 1;
-  const ndcY = -(aimY / viewportHeight) * 2 + 1;
-  playerAimProbe.set(ndcX, ndcY, 0.25).unproject(camera);
-  return playerAimDir.copy(playerAimProbe).sub(camera.position).normalize();
+  return out;
 }
 
-function getPlayerAimPoint(out = bulletConvergencePos, direction = null, muzzleWorldPos = null) {
-  const dir = direction || getPlayerAimDirection();
+function resolvePlayerShotTarget(out = bulletConvergencePos, rayDirection = null, shotOrigin = null) {
+  const dir = rayDirection || getPlayerReticleRay(playerAimDir, playerReticleRayOrigin);
+  playerReticleRayOrigin.copy(camera.position);
+
   let aimDistance = GUN_ZERO_DISTANCE_FALLBACK;
   let hitObstacle = false;
 
   if (staticObstacleMeshes.length > 0) {
-    bulletRaycaster.set(camera.position, dir);
+    bulletRaycaster.set(playerReticleRayOrigin, dir);
     bulletRaycaster.near = 1;
     bulletRaycaster.far = GUN_ZERO_DISTANCE_MAX;
     const hits = bulletRaycaster.intersectObjects(staticObstacleMeshes, false);
@@ -2055,31 +3759,112 @@ function getPlayerAimPoint(out = bulletConvergencePos, direction = null, muzzleW
     aimDistance = clamp(aimDistance, GUN_ZERO_DISTANCE_MIN, GUN_ZERO_DISTANCE_MAX);
   }
 
-  out.copy(camera.position).addScaledVector(dir, aimDistance);
+  out.copy(playerReticleRayOrigin).addScaledVector(dir, aimDistance);
 
-  if (muzzleWorldPos) {
-    const forwardDistance = tmpVecB.copy(out).sub(muzzleWorldPos).dot(dir);
-    if (forwardDistance < 8) {
-      out.copy(muzzleWorldPos).addScaledVector(dir, 8);
-    }
+  if (!shotOrigin) return out;
 
-    if (staticObstacleMeshes.length > 0) {
-      bulletRaycaster.set(muzzleWorldPos, dir);
-      bulletRaycaster.near = 0.25;
-      bulletRaycaster.far = GUN_ZERO_DISTANCE_MAX;
-      const muzzleHits = bulletRaycaster.intersectObjects(staticObstacleMeshes, false);
-      if (muzzleHits.length > 0) {
-        const muzzleHitDistance = muzzleHits[0].distance;
-        const currentDistance = tmpVecB.copy(out).sub(muzzleWorldPos).dot(dir);
-        if (muzzleHitDistance < currentDistance) {
-          out.copy(muzzleWorldPos).addScaledVector(dir, Math.max(2.2, muzzleHitDistance - 0.75));
-        }
-      }
+  const forwardDistance = tmpVecB.copy(out).sub(shotOrigin).dot(dir);
+  if (forwardDistance < 1) {
+    out.copy(shotOrigin).addScaledVector(dir, 8);
+  }
+
+  if (staticObstacleMeshes.length > 0) {
+    bulletFlightDir.copy(out).sub(shotOrigin);
+    const pathDistance = bulletFlightDir.length();
+    if (pathDistance > 1e-4) {
+      bulletFlightDir.multiplyScalar(1 / pathDistance);
+      bulletRaycaster.set(shotOrigin, bulletFlightDir);
+      bulletRaycaster.near = 0.15;
+      bulletRaycaster.far = pathDistance;
+      const pathHits = bulletRaycaster.intersectObjects(staticObstacleMeshes, false);
+      if (pathHits.length > 0) out.copy(pathHits[0].point);
     }
   }
 
   return out;
 }
+
+function spawnBullet(owner, color) {
+  if (!owner?.mesh) return;
+
+  const visualTeam = owner.isPlayer ? "player" : "bot";
+  const b = new THREE.Mesh(
+    bulletTracerGeometry,
+    visualTeam === "player" ? bulletTracerMaterialPlayer : bulletTracerMaterialBot
+  );
+
+  const useRightGun = owner.nextGunSide === 1;
+  if (typeof owner.nextGunSide === "number") {
+    owner.nextGunSide = useRightGun ? 0 : 1;
+  }
+
+  const muzzleLocal = owner.gunHardpoints?.[useRightGun ? 1 : 0]
+    || (useRightGun ? GUN_MUZZLE_LOCAL_RIGHT : GUN_MUZZLE_LOCAL_LEFT);
+
+  if (owner === game.player) {
+    getPlayerReticleRay(bulletAimDir, playerReticleRayOrigin);
+    getPlayerShotOrigin(owner, muzzleLocal, bulletAimDir, bulletMuzzlePos);
+    b.position.copy(bulletMuzzlePos);
+    resolvePlayerShotTarget(bulletConvergencePos, bulletAimDir, b.position);
+  } else {
+    getBotAimPoint(owner, bulletConvergencePos);
+    bulletAimDir.copy(bulletConvergencePos).sub(owner.mesh.position);
+    if (bulletAimDir.lengthSq() <= 1e-6) {
+      bulletAimDir.set(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+    } else {
+      bulletAimDir.normalize();
+    }
+
+    let muzzleResolved = false;
+    if (owner.mesh.localToWorld && muzzleLocal) {
+      bulletMuzzlePos.copy(muzzleLocal);
+      owner.mesh.localToWorld(bulletMuzzlePos);
+      if (Number.isFinite(bulletMuzzlePos.x) && Number.isFinite(bulletMuzzlePos.y) && Number.isFinite(bulletMuzzlePos.z)) {
+        b.position.copy(bulletMuzzlePos);
+        muzzleResolved = true;
+      }
+    }
+
+    if (!muzzleResolved) {
+      b.position.copy(owner.mesh.position).addScaledVector(bulletAimDir, 28);
+    }
+  }
+
+  bulletFlightDir.copy(bulletConvergencePos).sub(b.position);
+  if (bulletFlightDir.lengthSq() <= 1e-6) {
+    bulletFlightDir.copy(bulletAimDir);
+  } else {
+    bulletFlightDir.normalize();
+  }
+
+  b.quaternion.setFromUnitVectors(AXIS_X, bulletFlightDir);
+  b.frustumCulled = false;
+  b.renderOrder = 130;
+
+  bulletMuzzleForwardDir.set(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+  spawnMuzzleFlash(b.position, bulletMuzzleForwardDir, visualTeam, owner, muzzleLocal);
+
+  // Temporary aiming vectors must not be stored in bullet state.
+  b.userData = {
+    owner,
+    vel: new THREE.Vector3().copy(bulletFlightDir).multiplyScalar(TRACER_SPEED),
+    life: 2.05,
+    teamId: owner.teamId,
+    visualTeam,
+  };
+  world.add(b);
+  game.bullets.push(b);
+}
+
+function getPlayerAimDirection(out = playerAimDir) {
+  return getPlayerReticleRay(out, playerReticleRayOrigin);
+}
+
+function getPlayerAimPoint(out = bulletConvergencePos, direction = null, shotOrigin = null) {
+  const rayDirection = direction || getPlayerReticleRay(playerAimDir, playerReticleRayOrigin);
+  return resolvePlayerShotTarget(out, rayDirection, shotOrigin);
+}
+
 function getBotAimPoint(owner, out = bulletConvergencePos) {
   if (owner?.target?.alive) {
     const targetPos = getLockAimPoint(owner.target, tmpVecA);
@@ -2092,9 +3877,7 @@ function getBotAimPoint(owner, out = bulletConvergencePos) {
   return out.copy(owner.mesh.position).addScaledVector(bulletAimDir, GUN_ZERO_DISTANCE_FALLBACK);
 }
 
-function spawnMuzzleFlash(position, direction, team = "player", owner = null, muzzleLocal = null) {
-  if (team === "player" && document.body.classList.contains("cockpit-active")) return;
-
+function createPooledMuzzleFlash(team = "player") {
   const preset = muzzleFlashMaterials[team] || muzzleFlashMaterials.bot;
   const coreMat = preset.core.clone();
   const ringMat = preset.ring.clone();
@@ -2123,73 +3906,165 @@ function spawnMuzzleFlash(position, direction, team = "player", owner = null, mu
   streakB.position.x = 0.52;
 
   flash.add(core, ring, streakA, streakB);
-  flash.position.copy(position).addScaledVector(direction, MUZZLE_FLASH_FORWARD_OFFSET);
-  flash.quaternion.setFromUnitVectors(AXIS_X, direction);
-  flash.scale.setScalar(team === "player" ? 0.82 : 0.78);
-  world.add(flash);
+  flash.visible = false;
 
-  game.effects.push({
-    mesh: flash,
-    life: MUZZLE_FLASH_LIFE,
-    maxLife: MUZZLE_FLASH_LIFE,
-    scaleRate: MUZZLE_FLASH_SCALE_RATE,
-    baseOpacity: MUZZLE_FLASH_BASE_OPACITY,
+  return {
     kind: "muzzle",
+    mesh: flash,
+    pool: effectPools.muzzle[team] || effectPools.muzzle.bot,
     materials: [coreMat, ringMat, streakMatA, streakMatB],
     materialOpacityScales: [1, 0.6, 0.52, 0.52],
-    followOwner: owner?.mesh ? owner : null,
-    followLocal: muzzleLocal?.clone ? muzzleLocal.clone() : null,
+    spawnScale: team === "player" ? 0.82 : 0.78,
+    baseOpacity: MUZZLE_FLASH_BASE_OPACITY,
+    followOwner: null,
+    followLocal: new THREE.Vector3(),
+    hasFollowLocal: false,
     followForwardOffset: MUZZLE_FLASH_FORWARD_OFFSET,
+  };
+}
+
+function spawnMuzzleFlash(position, direction, team = "player", owner = null, muzzleLocal = null) {
+  if (team === "player" && document.body.classList.contains("cockpit-active")) return;
+
+  const pool = effectPools.muzzle[team] || effectPools.muzzle.bot;
+  const fx = acquirePooledEffect(pool, () => createPooledMuzzleFlash(team));
+  fx.mesh.position.copy(position).addScaledVector(direction, MUZZLE_FLASH_FORWARD_OFFSET);
+  fx.mesh.quaternion.setFromUnitVectors(AXIS_X, direction);
+  fx.life = MUZZLE_FLASH_LIFE;
+  fx.maxLife = MUZZLE_FLASH_LIFE;
+  fx.scaleRate = MUZZLE_FLASH_SCALE_RATE;
+  fx.baseOpacity = MUZZLE_FLASH_BASE_OPACITY;
+  fx.followOwner = owner?.mesh ? owner : null;
+  fx.followForwardOffset = MUZZLE_FLASH_FORWARD_OFFSET;
+  if (muzzleLocal) {
+    fx.followLocal.copy(muzzleLocal);
+    fx.hasFollowLocal = true;
+  } else {
+    fx.hasFollowLocal = false;
+  }
+  fx.materials.forEach((mat, index) => {
+    mat.opacity = MUZZLE_FLASH_BASE_OPACITY * (fx.materialOpacityScales[index] ?? 1);
   });
+  game.effects.push(fx);
+}
+
+function createImpactEffect() {
+  const mesh = new THREE.Mesh(
+    impactFxGeometry,
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 })
+  );
+  mesh.visible = false;
+  return { kind: "impact", mesh, pool: effectPools.impact, spawnScale: 1 };
 }
 
 function spawnImpactFx(position, color) {
-  const fx = new THREE.Mesh(
-    new THREE.SphereGeometry(2.2, 10, 8),
-    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85 })
+  const fx = acquirePooledEffect(effectPools.impact, createImpactEffect);
+  fx.mesh.position.copy(position);
+  fx.mesh.material.color.setHex(color);
+  fx.mesh.material.opacity = 0.85;
+  fx.baseOpacity = 0.85;
+  fx.life = 0.24;
+  fx.maxLife = 0.24;
+  fx.scaleRate = 13;
+  game.effects.push(fx);
+}
+
+function createMissileExplosionFlashEffect() {
+  const mesh = new THREE.Mesh(
+    missileExplosionFlashGeometry,
+    new THREE.MeshBasicMaterial({ color: 0xffd58e, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })
   );
-  fx.position.copy(position);
-  world.add(fx);
-  game.effects.push({ mesh: fx, life: 0.24, scaleRate: 13 });
+  mesh.visible = false;
+  return { kind: "explosionFlash", mesh, pool: effectPools.explosionFlash, spawnScale: 1 };
+}
+
+function createMissileExplosionSmokeEffect() {
+  const mesh = new THREE.Mesh(
+    missileExplosionSmokeGeometry,
+    new THREE.MeshBasicMaterial({ color: 0x6d7988, transparent: true, opacity: 0.52, depthWrite: false })
+  );
+  mesh.visible = false;
+  return { kind: "explosionSmoke", mesh, pool: effectPools.explosionSmoke, spawnScale: 1 };
+}
+
+function createMissileJetEffect() {
+  const mesh = new THREE.Mesh(
+    missileTrailJetGeometry,
+    new THREE.MeshBasicMaterial({ color: 0xffb86d, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  mesh.visible = false;
+  return { kind: "missileJet", mesh, pool: effectPools.missileJet, spawnScale: 1 };
+}
+
+function createMissileSmokeEffect() {
+  const mesh = new THREE.Mesh(
+    missileTrailSmokeGeometry,
+    new THREE.MeshBasicMaterial({ color: 0x768190, transparent: true, opacity: 0.56, depthWrite: false })
+  );
+  mesh.visible = false;
+  return { kind: "missileSmoke", mesh, pool: effectPools.missileSmoke, spawnScale: 1 };
+}
+
+function spawnMissileJetTrail(position, velocity) {
+  const fx = acquirePooledEffect(effectPools.missileJet, createMissileJetEffect);
+  tmpVecA.copy(velocity).normalize();
+  fx.mesh.position.copy(position).addScaledVector(tmpVecA, -2.9);
+  fx.mesh.material.opacity = 0.95;
+  fx.baseOpacity = 0.95;
+  fx.life = 0.2;
+  fx.maxLife = 0.2;
+  fx.scaleRate = 8.8;
+  game.effects.push(fx);
+}
+
+function spawnMissileSmokeTrail(position, velocity) {
+  const fx = acquirePooledEffect(effectPools.missileSmoke, createMissileSmokeEffect);
+  tmpVecA.copy(velocity).normalize();
+  fx.mesh.position.copy(position).addScaledVector(tmpVecA, -2.4);
+  fx.mesh.material.opacity = 0.56;
+  fx.baseOpacity = 0.56;
+  fx.life = 0.52;
+  fx.maxLife = 0.52;
+  fx.scaleRate = 4.4;
+  game.effects.push(fx);
 }
 
 function spawnMissileExplosion(position) {
-  const flash = new THREE.Mesh(
-    new THREE.SphereGeometry(5, 14, 12),
-    new THREE.MeshBasicMaterial({ color: 0xffd58e, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })
-  );
-  flash.position.copy(position);
-  world.add(flash);
-  game.effects.push({ mesh: flash, life: 0.34, scaleRate: 11 });
+  const flash = acquirePooledEffect(effectPools.explosionFlash, createMissileExplosionFlashEffect);
+  flash.mesh.position.copy(position);
+  flash.mesh.material.opacity = 0.9;
+  flash.baseOpacity = 0.9;
+  flash.life = 0.34;
+  flash.maxLife = 0.34;
+  flash.scaleRate = 11;
+  game.effects.push(flash);
 
-  const smoke = new THREE.Mesh(
-    new THREE.SphereGeometry(4.2, 10, 8),
-    new THREE.MeshBasicMaterial({ color: 0x6d7988, transparent: true, opacity: 0.52, depthWrite: false })
-  );
-  smoke.position.copy(position);
-  world.add(smoke);
-  game.effects.push({ mesh: smoke, life: 0.62, scaleRate: 5.4 });
+  const smoke = acquirePooledEffect(effectPools.explosionSmoke, createMissileExplosionSmokeEffect);
+  smoke.mesh.position.copy(position);
+  smoke.mesh.material.opacity = 0.52;
+  smoke.baseOpacity = 0.52;
+  smoke.life = 0.62;
+  smoke.maxLife = 0.62;
+  smoke.scaleRate = 5.4;
+  game.effects.push(smoke);
 }
 
 function getBestLockTarget(shooter, lockRange = MISSILE_LOCK_RANGE, lockDot = MISSILE_LOCK_DOT) {
-  const candidates = shooter.isPlayer
-    ? game.bots
-    : [game.player, ...game.bots];
+  const candidates = getLockCandidates(shooter);
   const lockOrigin = shooter.isPlayer ? camera.position : shooter.mesh.position;
   const aimForward = shooter.isPlayer
-    ? new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize()
-    : new THREE.Vector3(1, 0, 0).applyQuaternion(shooter.mesh.quaternion).normalize();
+    ? lockAimForwardVec.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize()
+    : lockAimForwardVec.set(1, 0, 0).applyQuaternion(shooter.mesh.quaternion).normalize();
   let best = null;
   let bestScore = -Infinity;
 
   for (const target of candidates) {
     if (!target || !target.alive || target === shooter) continue;
     const targetPos = getLockAimPoint(target, tmpVecA);
-    const toTarget = targetPos.sub(lockOrigin);
+    const toTarget = lockToTargetVec.copy(targetPos).sub(lockOrigin);
     const dist = toTarget.length();
-    if (dist > lockRange) continue;
-    const dirToTarget = toTarget.normalize();
-    const dot = aimForward.dot(dirToTarget);
+    if (dist <= 1e-3 || dist > lockRange) continue;
+    const dot = aimForward.dot(toTarget.multiplyScalar(1 / dist));
     if (dot < lockDot) continue;
     if (!hasLineOfSight(lockOrigin, target)) continue;
     const centerBias = (1 - dot) * 0.9;
@@ -2210,20 +4085,22 @@ function spawnMissile(owner, target) {
   attachedMesh.visible = false;
 
   const missile = attachedMesh.clone(true);
-  const launchPos = attachedMesh.getWorldPosition(new THREE.Vector3());
-  const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
-  missile.position.copy(launchPos).addScaledVector(forward, 3.2);
+  attachedMesh.getWorldPosition(missileLaunchPos);
+  missileLaunchForward.set(1, 0, 0).applyQuaternion(owner.mesh.quaternion).normalize();
+  missile.position.copy(missileLaunchPos).addScaledVector(missileLaunchForward, 3.2);
   missile.quaternion.copy(owner.mesh.quaternion);
   const cruiseSpeed = MISSILE_SPEED;
   missile.userData = {
     owner,
-    team: owner.isPlayer ? "player" : "bot",
+    teamId: owner.teamId,
+    visualTeam: owner.isPlayer ? "player" : "bot",
     target,
-    velocity: forward.multiplyScalar(cruiseSpeed),
+    velocity: new THREE.Vector3().copy(missileLaunchForward).multiplyScalar(cruiseSpeed),
     cruiseSpeed,
     life: 10.5,
     smokeTick: 0,
     motorTick: 0,
+    prevPosition: new THREE.Vector3().copy(missile.position),
   };
   world.add(missile);
   game.missiles.push(missile);
@@ -2245,7 +4122,7 @@ function updateEffects(dt) {
     fx.life -= dt;
     fx.mesh.scale.multiplyScalar(1 + (fx.scaleRate ?? 0) * dt);
 
-    if (fx.kind === "muzzle" && fx.followOwner?.mesh && fx.followLocal) {
+    if (fx.kind === "muzzle" && fx.followOwner?.mesh && fx.hasFollowLocal) {
       tmpVecA.copy(fx.followLocal);
       fx.followOwner.mesh.localToWorld(tmpVecA);
       tmpVecB.set(1, 0, 0).applyQuaternion(fx.followOwner.mesh.quaternion).normalize();
@@ -2253,9 +4130,10 @@ function updateEffects(dt) {
       fx.mesh.quaternion.setFromUnitVectors(AXIS_X, tmpVecB);
     }
 
+    const maxLife = Math.max(0.001, fx.maxLife ?? 0.24);
+    const lifeRatio = Math.max(0, Math.min(1, fx.life / maxLife));
+
     if (fx.kind === "muzzle") {
-      const maxLife = Math.max(0.001, fx.maxLife ?? MUZZLE_FLASH_LIFE);
-      const lifeRatio = clamp(fx.life / maxLife, 0, 1);
       const baseOpacity = fx.baseOpacity ?? MUZZLE_FLASH_BASE_OPACITY;
       if (Array.isArray(fx.materials) && fx.materials.length > 0) {
         const scales = fx.materialOpacityScales || [];
@@ -2268,16 +4146,11 @@ function updateEffects(dt) {
         fx.mesh.material.opacity = baseOpacity * lifeRatio;
       }
     } else if (fx.mesh.material) {
-      fx.mesh.material.opacity = Math.max(0, fx.life / 0.24);
+      fx.mesh.material.opacity = (fx.baseOpacity ?? 1) * lifeRatio;
     }
 
     if (fx.life <= 0) {
-      if (fx.kind === "muzzle" && Array.isArray(fx.materials)) {
-        fx.materials.forEach((mat) => mat?.dispose?.());
-      } else if (fx.kind === "muzzle" && fx.mesh.material?.dispose) {
-        fx.mesh.material.dispose();
-      }
-      world.remove(fx.mesh);
+      releaseEffect(fx);
       game.effects.splice(i, 1);
     }
   }
@@ -2286,28 +4159,50 @@ function updateEffects(dt) {
 function keepInArena(plane) {
   const p = plane.mesh.position;
   let hitBoundary = false;
+  let hitX = 0;
+  let hitZ = 0;
 
   if (p.x > ARENA) {
     p.x = ARENA;
     plane.velocity.x = Math.min(plane.velocity.x, 0) * 0.35;
     hitBoundary = true;
+    hitX = -1;
   } else if (p.x < -ARENA) {
     p.x = -ARENA;
     plane.velocity.x = Math.max(plane.velocity.x, 0) * 0.35;
     hitBoundary = true;
+    hitX = 1;
   }
 
   if (p.z > ARENA) {
     p.z = ARENA;
     plane.velocity.z = Math.min(plane.velocity.z, 0) * 0.35;
     hitBoundary = true;
+    hitZ = -1;
   } else if (p.z < -ARENA) {
     p.z = -ARENA;
     plane.velocity.z = Math.max(plane.velocity.z, 0) * 0.35;
     hitBoundary = true;
+    hitZ = 1;
   }
 
-  if (hitBoundary) plane.speed = Math.max(150, plane.speed * 0.9);
+  if (hitBoundary) {
+    if (plane.isPlayer) {
+      plane.speed = Math.max(150, plane.speed * 0.9);
+    } else {
+      tmpVecD.set(hitX, 0, hitZ);
+      if (tmpVecD.lengthSq() < 1e-4) getWallEscapeDirection(p, plane.velocity, tmpVecD);
+      else tmpVecD.normalize();
+      const faceId = hitX !== 0 && hitZ !== 0 ? "corner" : hitX < 0 ? "posX" : hitX > 0 ? "negX" : hitZ < 0 ? "posZ" : "negZ";
+      p.addScaledVector(tmpVecD, 26);
+      if (!plane.wallHitLatch) {
+        plane.wallHitLatch = true;
+        bounceBotOffWall(plane, tmpVecD, faceId);
+      }
+    }
+  } else if (!plane.isPlayer) {
+    plane.wallHitLatch = false;
+  }
   p.y = clamp(p.y, FLOOR_Y + 90, 980);
 }
 
@@ -2317,7 +4212,34 @@ function collidePlaneWithObstacles(plane, previousPosition) {
     return false;
   }
 
-  plane.mesh.position.copy(previousPosition);
+  if (plane.isPlayer) {
+    plane.mesh.position.copy(previousPosition);
+
+    let closestBox = null;
+    let closestDist = Infinity;
+    for (const box of staticObstacles) {
+      const d = box.distanceToPoint(plane.mesh.position);
+      if (d < closestDist) {
+        closestDist = d;
+        closestBox = box;
+      }
+    }
+
+    if (closestBox) {
+      closestBox.getCenter(tmpVecC);
+      const away = tmpVecA.subVectors(plane.mesh.position, tmpVecC);
+      away.y = 0;
+      if (away.lengthSq() < 1e-4) away.set(Math.sign(Math.random() - 0.5), 0, Math.sign(Math.random() - 0.5));
+      away.normalize();
+      plane.mesh.position.addScaledVector(away, 22);
+      plane.velocity.addScaledVector(away, 180);
+    }
+
+    plane.velocity.multiplyScalar(0.35);
+    plane.speed = Math.max(150, plane.speed * 0.9);
+    plane.isColliding = true;
+    return true;
+  }
 
   let closestBox = null;
   let closestDist = Infinity;
@@ -2330,54 +4252,149 @@ function collidePlaneWithObstacles(plane, previousPosition) {
   }
 
   if (closestBox) {
-    closestBox.getCenter(tmpVecC);
-    const away = tmpVecA.subVectors(plane.mesh.position, tmpVecC);
-    away.y = 0;
-    if (away.lengthSq() < 1e-4) away.set(Math.sign(Math.random() - 0.5), 0, Math.sign(Math.random() - 0.5));
-    away.normalize();
-    plane.mesh.position.addScaledVector(away, 22);
-    plane.velocity.addScaledVector(away, 180);
+    resolveObstacleSlide(plane, closestBox, previousPosition, tmpVecA);
+    registerBotObstacleBounce(plane, tmpVecA);
+  } else {
+    plane.mesh.position.copy(previousPosition);
   }
 
-  plane.velocity.multiplyScalar(0.35);
-  plane.speed = Math.max(150, plane.speed * 0.9);
+  plane.speed = Math.max(150, plane.speed * 0.82);
   plane.isColliding = true;
   return true;
 }
 
-function updatePlayer(dt) {
-  const p = game.player;
-  if (!p.alive || game.over) return;
+function applyPlaneFlightControls(plane, controls, dt, outForward = tmpVecA) {
+  const rollInput = clamp(controls.roll || 0, -1, 1);
+  const pitchInput = clamp(controls.pitch || 0, -1, 1);
+  const throttleInput = clamp(controls.throttle || 0, -1, 1);
+  const boostLevel = clamp(controls.boostLevel || 0, 0, 1);
 
-  p.cooldown -= dt;
-  p.missileCooldown -= dt;
-  p.speed = clamp(p.speed + input.throttle * dt * 170, 150, 560);
+  plane.speed = clamp(plane.speed + throttleInput * dt * 170, 150, 560);
 
-  const rollTarget = clamp(input.roll, -1, 1) * MAX_BANK;
-  const pitchTarget = clamp(input.pitch, -1, 1) * MAX_PITCH;
+  const rollTarget = rollInput * MAX_BANK;
+  const pitchTarget = pitchInput * MAX_PITCH;
+  plane.roll = smoothApproach(plane.roll, rollTarget, BANK_RATE, dt);
+  plane.pitch = smoothApproach(plane.pitch, pitchTarget, PITCH_RATE, dt);
 
-  p.roll = smoothApproach(p.roll, rollTarget, BANK_RATE, dt);
-  p.pitch = smoothApproach(p.pitch, pitchTarget, PITCH_RATE, dt);
-
-  if (Math.abs(input.roll) < 0.06) {
-    p.roll = smoothApproach(p.roll, 0, LEVEL_RATE, dt);
+  if (controls.autoLevel && Math.abs(rollInput) < 0.06) {
+    plane.roll = smoothApproach(plane.roll, 0, LEVEL_RATE, dt);
   }
 
-  p.roll = clamp(p.roll, -MAX_BANK, MAX_BANK);
-  p.pitch = clamp(p.pitch, -MAX_PITCH, MAX_PITCH);
+  plane.roll = clamp(plane.roll, -MAX_BANK, MAX_BANK);
+  plane.pitch = clamp(plane.pitch, -MAX_PITCH, MAX_PITCH);
 
-  const yawRate = TURN_RATE * (p.roll / MAX_BANK);
-  p.yaw += yawRate * dt;
+  const yawRate = TURN_RATE * (plane.roll / MAX_BANK);
+  plane.yaw += yawRate * dt;
 
-  qYaw.setFromAxisAngle(AXIS_Y, p.yaw);
-  qPitch.setFromAxisAngle(AXIS_Z, p.pitch);
-  qRoll.setFromAxisAngle(AXIS_X, -p.roll);
+  qYaw.setFromAxisAngle(AXIS_Y, plane.yaw);
+  qPitch.setFromAxisAngle(AXIS_Z, plane.pitch);
+  qRoll.setFromAxisAngle(AXIS_X, -plane.roll);
 
   qMove.copy(qYaw).multiply(qPitch);
   qVisual.copy(qMove).multiply(qRoll);
-  p.mesh.quaternion.copy(qVisual);
+  plane.mesh.quaternion.copy(qVisual);
 
-  const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(qMove).normalize();
+  outForward.set(1, 0, 0).applyQuaternion(qMove).normalize();
+  const targetSpeed = plane.speed + boostLevel * BOOST_SPEED_BONUS_MAX;
+  updatePlaneExhaust(plane, boostLevel);
+  tmpVecD.copy(outForward).multiplyScalar(targetSpeed);
+  plane.velocity.lerp(tmpVecD, 0.08);
+  return outForward;
+}
+
+function getBotControlInputs(bot, mode, desiredDir, distToTarget = 0, out = botControlState) {
+  tmpVecA.set(1, 0, 0).applyQuaternion(bot.mesh.quaternion).normalize();
+  tmpVecB.copy(desiredDir);
+  if (tmpVecB.lengthSq() < 1e-6) tmpVecB.copy(tmpVecA);
+  else tmpVecB.normalize();
+
+  out.roll = clamp(-tmpVecC.copy(tmpVecA).cross(tmpVecB).y, -1, 1);
+  out.pitch = clamp(tmpVecB.y - tmpVecA.y, -1, 1);
+
+  let throttle = 0.35;
+  let boostLevel = 0;
+  if (mode === BOT_MODE_INTERCEPT) {
+    throttle = 1;
+    boostLevel = distToTarget > 1500 ? 1 : distToTarget > 950 ? 0.68 : 0.18;
+  } else if (mode === BOT_MODE_PURSUIT) {
+    throttle = distToTarget > BOT_PREFERRED_RANGE_MAX ? 0.82 : distToTarget < BOT_PREFERRED_RANGE_MIN ? 0.12 : 0.45;
+    boostLevel = distToTarget > 980 ? 0.44 : 0;
+  } else if (mode === BOT_MODE_REPOSITION) {
+    throttle = 0.58;
+    boostLevel = distToTarget > 760 ? 0.3 : 0;
+  } else if (mode === BOT_MODE_REGROUP) {
+    throttle = 0.42;
+    boostLevel = 0;
+  } else if (mode === BOT_MODE_WALL_RETURN) {
+    throttle = 0.72;
+    boostLevel = 0.58;
+  }
+
+  if ((bot.speed || 0) < 185) throttle = Math.max(throttle, 0.72);
+  out.throttle = clamp(throttle, 0, 1);
+  out.boostLevel = clamp(boostLevel, 0, 1);
+  out.autoLevel = false;
+  return out;
+}
+
+function updateBotBoostState(bot, controls, dt) {
+  const requestedBoost = clamp(controls.boostLevel || 0, 0, 1);
+  const currentFuel = bot.boostFuel ?? BOOST_FUEL_MAX;
+  const boostLevel = requestedBoost > 0 && currentFuel > 0.01 ? requestedBoost : 0;
+  const boostJustEnded = !!bot.boostWasActive && boostLevel <= 0;
+  bot.boostWasActive = boostLevel > 0;
+
+  if (boostJustEnded) {
+    const speedAfterBoost = Math.min(560, bot.velocity.length());
+    bot.speed = Math.max(bot.speed, speedAfterBoost);
+  }
+
+  if (boostLevel > 0) {
+    const burnRate = BOOST_FUEL_BURN_BASE_PER_SEC * boostLevel * (1 + BOOST_FUEL_BURN_CURVE * boostLevel * boostLevel);
+    bot.boostFuel = Math.max(0, currentFuel - burnRate * dt);
+  } else {
+    bot.boostFuel = Math.min(BOOST_FUEL_MAX, currentFuel + 12 * dt);
+  }
+
+  controls.boostLevel = boostLevel;
+  return boostLevel;
+}
+
+function clearBotCombatTarget(bot) {
+  bot.target = null;
+  bot.targetHoldTimer = 0;
+  bot.wallTargetTimer = 0;
+  bot.repositionTimer = 0;
+  bot.attackWindowTimer = 0;
+  bot.burstTimer = 0;
+  resetBotAttackState(bot);
+}
+
+function shouldExitWallReturn(bot, wallPlan, dt) {
+  if (!bot || bot.wallState === "none") return false;
+  if (wallPlan.wallUnsafe) {
+    bot.wallUnsafeHoldTimer = Math.max(0, bot.wallUnsafeHoldTimer) + dt;
+    return false;
+  }
+  bot.wallUnsafeHoldTimer = Math.min(0, bot.wallUnsafeHoldTimer) - dt;
+  return (
+    wallPlan.clearance >= BOT_WALL_EXIT_CLEARANCE
+    && wallPlan.timeToWall > wallPlan.timeNeeded * 1.6
+    && bot.wallUnsafeHoldTimer <= -BOT_WALL_SAFE_EXIT_HOLD_TIME
+  );
+}
+
+
+function updatePlayer(dt) {
+  const p = game.player;
+  if (!p) return;
+  if (!p.alive || game.over) {
+    updateCamera(dt);
+    return;
+  }
+
+  p.cooldown -= dt;
+  p.missileCooldown -= dt;
 
   if (
     game.boostAutoDropAt != null
@@ -2415,11 +4432,15 @@ function updatePlayer(dt) {
     game.boostFuel = 0;
   }
 
-  const targetSpeed = p.speed + boostLevel * BOOST_SPEED_BONUS_MAX;
-  updatePlaneExhaust(p, boostLevel);
-  const desiredVel = forward.multiplyScalar(targetSpeed);
-  p.velocity.lerp(desiredVel, 0.08);
-  const prevPos = p.mesh.position.clone();
+  playerControlState.roll = input.roll;
+  playerControlState.pitch = input.pitch;
+  playerControlState.throttle = input.throttle;
+  playerControlState.boostLevel = boostLevel;
+  playerControlState.autoLevel = true;
+  applyPlaneFlightControls(p, playerControlState, dt, playerForwardVec);
+
+  const prevPos = p.prevPosition;
+  prevPos.copy(p.mesh.position);
   p.mesh.position.addScaledVector(p.velocity, dt);
 
   if (p.mesh.position.y < FLOOR_Y + 92) {
@@ -2429,20 +4450,21 @@ function updatePlayer(dt) {
 
   keepInArena(p);
   collidePlaneWithObstacles(p, prevPos);
+  updateCamera(dt);
 
-  if (!input.fire) game.ammo = Math.min(60, game.ammo + 9 * dt);
+  if (!input.fire) game.ammo = Math.min(100, game.ammo + 9 * dt);
 
   if (input.fire && p.cooldown <= 0 && game.ammo >= 1) {
     spawnBullet(p, 0x95efff);
     game.ammo = Math.max(0, game.ammo - 1);
-    p.cooldown = 0.11;
+    p.cooldown = 0.095;
   }
 
   if (game.missileLockTarget?.alive) {
     const lockTargetPos = getLockAimPoint(game.missileLockTarget, tmpVecA);
     const toTarget = lockTargetPos.sub(camera.position);
     const dist = toTarget.length();
-    const aimForward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+    const aimForward = playerLockAimForwardVec.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
     const dot = aimForward.dot(toTarget.normalize());
     const inRange = dist <= MISSILE_LOCK_DROP_RANGE;
     const inSight = dot >= MISSILE_LOCK_DROP_DOT && hasLineOfSight(camera.position, game.missileLockTarget);
@@ -2479,128 +4501,371 @@ function updatePlayer(dt) {
       game.missileLockLostTimer = 0;
     }
   }
-
-  if (input.missileLaunchPressed && game.missileLockTarget && p.missileAmmo > 0 && p.missileCooldown <= 0) {
-    if (spawnMissile(p, game.missileLockTarget)) game.missileLockTarget = null;
-  }
 }
 
+function resetBotAttackState(bot) {
+  bot.attackWindowTimer = 0;
+  bot.burstTimer = 0;
+  bot.missileTarget = null;
+  bot.missileLockHoldTimer = 0;
+  bot.missileLockHoldDuration = rand(BOT_MISSILE_LOCK_HOLD_MIN, BOT_MISSILE_LOCK_HOLD_MAX);
+}
 
-function selectBotCombatTarget(bot) {
-  const candidates = [];
-  if (game.player?.alive) candidates.push(game.player);
-  for (const other of game.bots) {
-    if (other !== bot && other.alive) candidates.push(other);
+function scoreBotCombatTarget(bot, target, targetWallUnsafe = false) {
+  const toTarget = tmpVecA.subVectors(target.mesh.position, bot.mesh.position);
+  const dist = toTarget.length();
+  if (dist <= 1e-3) return -Infinity;
+  if (targetWallUnsafe && target !== bot.target) return -Infinity;
+
+  const dir = toTarget.multiplyScalar(1 / dist);
+  const forward = tmpVecB.set(1, 0, 0).applyQuaternion(bot.mesh.quaternion).normalize();
+  let score = 1.9 - dist / 900;
+  score += forward.dot(dir) * 0.9;
+  score += hasLineOfSight(bot.mesh.position, target) ? 0.65 : -0.35;
+  if (target === bot.target) score += 0.35;
+  return score;
+}
+
+function selectBotCombatTarget(bot, dt) {
+  bot.targetHoldTimer = Math.max(0, (bot.targetHoldTimer || 0) - dt);
+
+  if (bot.wallState !== "none" || bot.wallPostReturnTimer > 0) {
+    clearBotCombatTarget(bot);
+    return null;
   }
-  if (candidates.length === 0) return null;
+
+  let currentTargetUnsafe = false;
+  if (bot.target?.alive) {
+    currentTargetUnsafe = computeWallDanger(bot.target, botTargetWallPlan).wallUnsafe;
+    if (currentTargetUnsafe) {
+      bot.wallTargetTimer = Math.min(BOT_WALL_TARGET_DROP_TIME * 2, (bot.wallTargetTimer || 0) + dt);
+    } else {
+      bot.wallTargetTimer = Math.max(0, (bot.wallTargetTimer || 0) - dt * 3.4);
+    }
+  } else {
+    bot.wallTargetTimer = 0;
+  }
+
+  const currentRejected = !bot.target?.alive || bot.wallTargetTimer >= BOT_WALL_TARGET_DROP_TIME;
+  if (currentRejected) {
+    clearBotCombatTarget(bot);
+  } else if (bot.target?.alive && bot.targetHoldTimer > 0) {
+    return bot.target;
+  }
+
+  const candidates = getHostilePlanes(bot, true);
 
   let best = null;
-  let bestScore = Infinity;
+  let bestScore = -Infinity;
   for (const target of candidates) {
-    const distSq = bot.mesh.position.distanceToSquared(target.mesh.position);
-    const playerBias = target.isPlayer ? 0.94 : 1.0;
-    const score = distSq * playerBias;
-    if (score < bestScore) {
+    const targetWallUnsafe = computeWallDanger(target, botTargetWallPlan).wallUnsafe;
+    const score = scoreBotCombatTarget(bot, target, targetWallUnsafe);
+    if (score > bestScore) {
       bestScore = score;
       best = target;
     }
   }
+  if (!Number.isFinite(bestScore) || bestScore === -Infinity) best = null;
+
+  if (best !== bot.target) {
+    bot.target = best;
+    bot.targetHoldTimer = best ? BOT_TARGET_HOLD_TIME : 0;
+    bot.wallTargetTimer = 0;
+    bot.engagementTimer = 0;
+    bot.repositionTimer = 0;
+    bot.repositionSide = 0;
+    resetBotAttackState(bot);
+    bot.regroupTimer = best ? 0 : Math.max(bot.regroupTimer || 0, rand(BOT_REGROUP_MIN_TIME, BOT_REGROUP_MAX_TIME));
+  } else if (!best && bot.regroupTimer <= 0) {
+    bot.regroupTimer = rand(BOT_REGROUP_MIN_TIME, BOT_REGROUP_MAX_TIME);
+  }
+
   return best;
 }
 
 function updateBots(dt) {
-  const botMinSpeed = 150;
-  const botMaxSpeed = 560;
-
   for (const b of game.bots) {
     if (!b.alive) continue;
 
     b.cooldown -= dt;
     b.missileCooldown -= dt;
-    b.target = selectBotCombatTarget(b);
-    if (!b.target) continue;
+    b.wallRecoverTimer = Math.max(0, (b.wallRecoverTimer || 0) - dt);
+    b.wallContactCooldown = Math.max(0, (b.wallContactCooldown || 0) - dt);
+    b.wallReturnTimer = Math.max(0, (b.wallReturnTimer || 0) - dt);
+    b.wallPostReturnTimer = Math.max(0, (b.wallPostReturnTimer || 0) - dt);
+    b.repositionTimer = Math.max(0, (b.repositionTimer || 0) - dt);
+    b.regroupTimer = Math.max(0, (b.regroupTimer || 0) - dt);
+    b.obstacleBounceWindow = Math.max(0, (b.obstacleBounceWindow || 0) - dt);
+    b.obstacleClimbTimer = Math.max(0, (b.obstacleClimbTimer || 0) - dt);
+    if (b.obstacleBounceWindow <= 0) b.obstacleBounceCount = 0;
 
-    const toTarget = b.target.mesh.position.clone().sub(b.mesh.position);
-    const dist = Math.max(1, toTarget.length());
-    const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
-    const lead = b.target.velocity.clone().multiplyScalar(clamp(dist / 760, 0.08, 0.48));
-    const desired = toTarget.add(lead).normalize();
-    const avoidNear = obstacleAvoidance(b.mesh.position, forward, 140);
-    const avoidFar = obstacleAvoidance(b.mesh.position, forward, 230);
-    const avoid = avoidNear.multiplyScalar(1.8).addScaledVector(avoidFar, 0.9);
-    const threat = obstacleThreat(b.mesh.position, forward);
-    const altitudeErr = clamp((b.target.mesh.position.y - b.mesh.position.y) / 260, -1, 1);
-
-    const steer = desired.clone().addScaledVector(avoid, 1.8 + threat * 1.4);
-    steer.y += altitudeErr * (0.25 + threat * 0.55);
-    if (threat > 0.01) {
-      steer.y = Math.max(steer.y, 0.18 + threat * 0.4);
+    computeWallDanger(b, botWallTurnPlan);
+    if (botWallTurnPlan.wallUnsafe) {
+      b.wallUnsafeHoldTimer = Math.max(0, b.wallUnsafeHoldTimer || 0) + dt;
+      if (b.wallState === "none" && b.wallUnsafeHoldTimer >= BOT_WALL_UNSAFE_HOLD_TIME) {
+        enterBotWallReturn(b, "unsafe", botWallTurnPlan, BOT_WALL_RETURN_MAX_TIME);
+      }
+    } else if (b.wallState === "none") {
+      b.wallUnsafeHoldTimer = 0;
     }
-    steer.normalize();
 
-    const yawErr = clamp(forward.clone().cross(steer).y, -1, 1);
-    const pitchErr = clamp(steer.y - forward.y, -1, 1);
+    if (shouldExitWallReturn(b, botWallTurnPlan, dt)) {
+      b.wallState = "none";
+      b.wallFaceId = null;
+      b.wallReturnTimer = 0;
+      b.wallRecoverTimer = 0;
+      b.wallPostReturnTimer = Math.max(b.wallPostReturnTimer || 0, BOT_POST_WALL_REGROUP_TIME);
+      b.regroupTimer = Math.max(b.regroupTimer || 0, BOT_POST_WALL_REGROUP_TIME);
+      b.wallUnsafeHoldTimer = 0;
+    }
 
-    const rollTarget = clamp(-yawErr, -1, 1) * MAX_BANK;
-    const pitchTarget = clamp(pitchErr, -1, 1) * MAX_PITCH;
+    const wallReturnActive = b.wallState !== "none" || b.wallRecoverTimer > 0 || b.wallReturnTimer > 0;
 
-    b.roll = smoothApproach(b.roll, rollTarget, BANK_RATE, dt);
-    b.pitch = smoothApproach(b.pitch, pitchTarget, PITCH_RATE, dt);
-    b.roll = clamp(b.roll, -MAX_BANK, MAX_BANK);
-    b.pitch = clamp(b.pitch, -MAX_PITCH, MAX_PITCH);
+    botForwardVec.set(1, 0, 0).applyQuaternion(b.mesh.quaternion).normalize();
+    botProbeSideVec.crossVectors(botForwardVec, AXIS_Y);
+    if (botProbeSideVec.lengthSq() < 1e-4) botProbeSideVec.set(0, 0, 1);
+    else botProbeSideVec.normalize();
+    botProbeUpVec.crossVectors(botProbeSideVec, botForwardVec).normalize();
+    if (botProbeUpVec.lengthSq() < 1e-4) botProbeUpVec.copy(AXIS_Y);
 
-    const yawRate = TURN_RATE * (b.roll / MAX_BANK);
-    b.yaw += yawRate * dt;
+    if (wallReturnActive || b.wallPostReturnTimer > 0) clearBotCombatTarget(b);
+    else b.target = selectBotCombatTarget(b, dt);
 
-    qYaw.setFromAxisAngle(AXIS_Y, b.yaw);
-    qPitch.setFromAxisAngle(AXIS_Z, b.pitch);
-    qRoll.setFromAxisAngle(AXIS_X, -b.roll);
+    const hasTarget = !!b.target;
+    const stillRegrouping = b.regroupTimer > 0 || b.wallPostReturnTimer > 0;
+    const shouldRegroup = !hasTarget || stillRegrouping;
+    let canFightTarget = hasTarget && !shouldRegroup && !wallReturnActive;
 
-    qMove.copy(qYaw).multiply(qPitch);
-    qVisual.copy(qMove).multiply(qRoll);
-    b.mesh.quaternion.copy(qVisual);
+    if (canFightTarget) {
+      getLockAimPoint(b.target, botAimPointVec);
+    } else if (wallReturnActive) {
+      botAimPointVec.copy(b.wallReturnAnchor);
+    } else {
+      projectPointIntoCombatRing(b.safeAnchor, BOT_COMBAT_RING_SOFT * 0.94, botAimPointVec);
+    }
 
-    const newForward = new THREE.Vector3(1, 0, 0).applyQuaternion(qMove).normalize();
+    botToTargetVec.copy(botAimPointVec).sub(b.mesh.position);
+    const dist = Math.max(1, botToTargetVec.length());
+    if (botToTargetVec.lengthSq() > 1e-6) botDesiredVec.copy(botToTargetVec).multiplyScalar(1 / dist);
+    else botDesiredVec.copy(botForwardVec);
 
-    const throttleTargetBase = dist > 650 ? 0.9 : dist > 360 ? 0.45 : 0.1;
-    const throttleTarget = throttleTargetBase * (1 - threat * 0.65);
-    const pseudoBoost = clamp((throttleTarget - 0.25) / 0.65, 0, 0.55);
-    const botBoostLevel = pseudoBoost;
-    updatePlaneExhaust(b, botBoostLevel);
-    b.speed = clamp(b.speed + throttleTarget * dt * 170, botMinSpeed, botMaxSpeed);
+    if (canFightTarget) getPlaneTravelForward(b.target, botTargetForwardVec);
+    else if (botDesiredVec.lengthSq() > 1e-4) botTargetForwardVec.copy(botDesiredVec);
+    else botTargetForwardVec.copy(botForwardVec);
 
-    const botTargetSpeed = b.speed + botBoostLevel * (BOOST_SPEED_BONUS_MAX * 0.42);
-    const desiredVel = newForward.multiplyScalar(botTargetSpeed);
-    b.velocity.lerp(desiredVel, 0.08);
+    botTargetRightVec.crossVectors(botTargetForwardVec, AXIS_Y);
+    if (botTargetRightVec.lengthSq() < 1e-4) botTargetRightVec.set(0, 0, 1);
+    else botTargetRightVec.normalize();
+    botTargetUpVec.crossVectors(botTargetRightVec, botTargetForwardVec).normalize();
+    if (botTargetUpVec.lengthSq() < 1e-4) botTargetUpVec.copy(AXIS_Y);
 
-    const prevPos = b.mesh.position.clone();
+    if (canFightTarget && !b.repositionSide) {
+      b.repositionSide = pickBotRepositionSide(b, botTargetForwardVec, botDesiredVec);
+    }
+
+    let losToTarget = false;
+    let rearScore = 0;
+    let leadAimDot = 0;
+    botLeadVec.set(0, 0, 0);
+    if (canFightTarget) {
+      losToTarget = hasLineOfSight(b.mesh.position, b.target);
+      const leadTime = clamp(dist / 780, 0.14, 0.55);
+      botLeadVec.copy(b.target.velocity).multiplyScalar(leadTime);
+      botAimDirVec.copy(botAimPointVec).add(botLeadVec).sub(b.mesh.position);
+      if (botAimDirVec.lengthSq() > 1e-6) botAimDirVec.normalize();
+      else botAimDirVec.copy(botDesiredVec);
+      rearScore = clamp(botTargetForwardVec.dot(botDesiredVec), -1, 1);
+      leadAimDot = clamp(botForwardVec.dot(botAimDirVec), -1, 1);
+      const attackOpportunity = losToTarget && dist < BOT_ATTACK_ALIGN_RANGE && leadAimDot > 0.28 && rearScore > -0.7;
+      if (attackOpportunity) {
+        b.attackWindowTimer = Math.min(1.35, (b.attackWindowTimer || 0) + dt * 1.2);
+      } else {
+        b.attackWindowTimer = Math.max(0, (b.attackWindowTimer || 0) - dt * BOT_ATTACK_WINDOW_DECAY);
+        b.burstTimer = Math.max(0, (b.burstTimer || 0) - dt * BOT_ATTACK_WINDOW_DECAY);
+      }
+    } else {
+      b.attackWindowTimer = 0;
+      b.burstTimer = 0;
+      botAimDirVec.copy(botDesiredVec);
+    }
+
+    botAvoidVec.copy(obstacleAvoidance(b.mesh.position, botForwardVec, 150, botProbeSideVec, botProbeUpVec)).multiplyScalar(1.85);
+    botSteerVec.copy(obstacleAvoidance(b.mesh.position, botForwardVec, 235, botProbeSideVec, botProbeUpVec));
+    botAvoidVec.addScaledVector(botSteerVec, 0.9);
+    const obstacleThreatLevel = obstacleThreat(b.mesh.position, botForwardVec);
+    const obstacleClimbLevel = clamp((b.obstacleClimbTimer || 0) / BOT_OBSTACLE_CLIMB_TIME, 0, 1);
+
+    if (canFightTarget && !wallReturnActive && b.repositionTimer <= 0) {
+      const poorShot = !losToTarget || leadAimDot < 0.5 || rearScore < -0.24;
+      if (dist < 1150 && poorShot) b.engagementTimer += dt;
+      else b.engagementTimer = Math.max(0, b.engagementTimer - dt * 1.9);
+
+      if (!isTargetTooCloseToWall(b.target, b) && (dist < BOT_PREFERRED_RANGE_MIN || (b.engagementTimer > BOT_REPOSITION_STALE_TIME && dist < 1100))) {
+        beginBotReposition(b, pickBotRepositionSide(b, botTargetForwardVec, botDesiredVec));
+      }
+    }
+
+    let mode = BOT_MODE_PURSUIT;
+    if (wallReturnActive) mode = BOT_MODE_WALL_RETURN;
+    else if (shouldRegroup) mode = BOT_MODE_REGROUP;
+    else if (b.repositionTimer > 0) mode = BOT_MODE_REPOSITION;
+    else if (dist > BOT_INTERCEPT_RANGE) mode = BOT_MODE_INTERCEPT;
+    setBotMode(b, mode);
+
+    const altitudeErr = clamp((botAimPointVec.y - b.mesh.position.y) / 260, -1, 1);
+
+    if (mode === BOT_MODE_WALL_RETURN) {
+      botSteerVec.copy(b.wallReturnAnchor).sub(b.mesh.position);
+      if (botWallTurnPlan.avoidDir.lengthSq() > 1e-4) botSteerVec.addScaledVector(botWallTurnPlan.avoidDir, 1.05);
+      if (botAvoidVec.lengthSq() > 1e-4) botSteerVec.addScaledVector(botAvoidVec, 0.35);
+      botSteerVec.y += clamp((b.wallReturnAnchor.y - b.mesh.position.y) / 220, -0.2, 0.2);
+      if (botSteerVec.lengthSq() < 1e-6) botSteerVec.copy(botForwardVec);
+      else botSteerVec.normalize();
+    } else if (mode === BOT_MODE_REGROUP) {
+      projectPointIntoCombatRing(b.safeAnchor, BOT_COMBAT_RING_SOFT * 0.94, botSteerVec);
+      botSteerVec.sub(b.mesh.position);
+      if (botAvoidVec.lengthSq() > 1e-4) botSteerVec.addScaledVector(botAvoidVec, 0.7);
+      botSteerVec.y += clamp((b.safeAnchor.y - b.mesh.position.y) / 220, -0.2, 0.2);
+      if (obstacleClimbLevel > 0) botSteerVec.y = Math.max(botSteerVec.y, 0.34 + obstacleClimbLevel * 0.52);
+      if (botSteerVec.lengthSq() < 1e-6) botSteerVec.copy(botForwardVec);
+      else botSteerVec.normalize();
+    } else {
+      let rearOffset = clamp(dist * 0.24, 140, 240);
+      let sideOffset = b.repositionSide * clamp(45 + (1 - Math.max(0, rearScore)) * 120, 45, 180);
+      let verticalOffset = clamp((botAimPointVec.y - b.mesh.position.y) * 0.22, -60, 60);
+
+      if (mode === BOT_MODE_INTERCEPT) {
+        if (dist > BOT_HARD_INTERCEPT_RANGE) {
+          rearOffset = 0;
+          sideOffset = 0;
+          verticalOffset = clamp((botAimPointVec.y - b.mesh.position.y) * 0.1, -35, 45);
+          botLeadVec.copy(b.target.velocity).multiplyScalar(clamp(dist / 920, 0.1, 0.35));
+        } else {
+          rearOffset = clamp(dist * 0.12, 60, 120);
+          sideOffset = b.repositionSide * clamp(dist * 0.07, 80, 160);
+        }
+      } else if (mode === BOT_MODE_REPOSITION) {
+        rearOffset = clamp(dist * 0.18, 100, 170);
+        sideOffset = b.repositionSide * clamp(dist * 0.18, 180, 320);
+        verticalOffset = clamp(verticalOffset + 55, -40, 110);
+      }
+
+      botSteerVec.copy(botAimPointVec).add(botLeadVec);
+      botSteerVec.addScaledVector(botTargetForwardVec, -rearOffset);
+      botSteerVec.addScaledVector(botTargetRightVec, sideOffset);
+      botSteerVec.addScaledVector(botTargetUpVec, verticalOffset);
+      botSteerVec.sub(b.mesh.position);
+      botSteerVec.addScaledVector(botAvoidVec, (mode === BOT_MODE_REPOSITION ? 1.18 : 0.92) + obstacleThreatLevel * 1.05);
+      botSteerVec.y += altitudeErr * (mode === BOT_MODE_REPOSITION ? 0.3 : 0.22);
+      if (obstacleThreatLevel > 0.01) botSteerVec.y = Math.max(botSteerVec.y, 0.12 + obstacleThreatLevel * 0.34);
+      if (obstacleClimbLevel > 0) botSteerVec.y = Math.max(botSteerVec.y, 0.28 + obstacleClimbLevel * 0.56);
+      if (botSteerVec.lengthSq() < 1e-6) botSteerVec.copy(botForwardVec);
+      else botSteerVec.normalize();
+      if (mode === BOT_MODE_INTERCEPT && dist > BOT_HARD_INTERCEPT_RANGE) {
+        botSteerVec.lerp(botDesiredVec, 0.46).normalize();
+      }
+      if (b.attackWindowTimer > BOT_ATTACK_WINDOW_BUILD && mode !== BOT_MODE_REPOSITION) {
+        const attackBlend = clamp((mode === BOT_MODE_INTERCEPT ? 0.24 : 0.36) + Math.max(0, rearScore) * 0.14 - obstacleThreatLevel * 0.1, 0.16, 0.42);
+        botSteerVec.lerp(botAimDirVec, attackBlend).normalize();
+      }
+    }
+
+    getBotControlInputs(b, mode, botSteerVec, dist, botControlState);
+    updateBotBoostState(b, botControlState, dt);
+    applyPlaneFlightControls(b, botControlState, dt, botNewForwardVec);
+
+    const prevPos = b.prevPosition;
+    prevPos.copy(b.mesh.position);
     b.mesh.position.addScaledVector(b.velocity, dt);
     if (b.mesh.position.y < FLOOR_Y + 110) b.mesh.position.y += 120 * dt;
 
     keepInArena(b);
     collidePlaneWithObstacles(b, prevPos);
 
-    const aimDot = newForward.dot(toTarget.normalize());
-    if (dist < 820 && aimDot > 0.94 && b.cooldown <= 0) {
+    botProgressVec.copy(b.mesh.position).sub(prevPos);
+    const movedDist = botProgressVec.length();
+    const expectedDist = Math.max(1, b.speed * dt);
+    if (botWallTurnPlan.wallUnsafe && movedDist < expectedDist * BOT_STUCK_PROGRESS_RATIO) {
+      b.stuckTimer += dt;
+    } else {
+      b.stuckTimer = Math.max(0, b.stuckTimer - dt * 1.8);
+    }
+    if (b.stuckTimer > 0.55) {
+      getWallSlideDirection(b.mesh.position, b.velocity, botRecoveryVec);
+      beginBotRecovery(b, botRecoveryVec, rand(BOT_RECOVER_MIN_TIME, BOT_RECOVER_MAX_TIME));
+    }
+
+    if (!canFightTarget || mode === BOT_MODE_WALL_RETURN || mode === BOT_MODE_REGROUP) {
+      b.burstTimer = 0;
+      if (b.missileTarget) {
+        b.missileTarget = null;
+        b.missileLockHoldTimer = 0;
+      }
+      continue;
+    }
+
+    const firingPoint = getBotAimPoint(b, botAimPointVec);
+    botAimDirVec.copy(firingPoint).sub(b.mesh.position);
+    if (botAimDirVec.lengthSq() <= 1e-6) {
+      botAimDirVec.copy(botNewForwardVec);
+    } else {
+      botAimDirVec.normalize();
+    }
+    const aimDot = clamp(botNewForwardVec.dot(botAimDirVec), -1, 1);
+    botToTargetVec.copy(b.target.mesh.position).sub(b.mesh.position);
+    const fireDist = Math.max(1, botToTargetVec.length());
+    botDesiredVec.copy(botToTargetVec).normalize();
+    getPlaneTravelForward(b.target, botTargetForwardVec);
+    const fireRearScore = clamp(botTargetForwardVec.dot(botDesiredVec), -1, 1);
+    const fireLos = hasLineOfSight(b.mesh.position, b.target);
+    const rearFireWindow = fireRearScore > -0.04 && aimDot > 0.66;
+    const sideFireWindow = fireRearScore > -0.45 && aimDot > 0.76 && fireDist < 620;
+    const incidentalFrontWindow = fireRearScore < -0.75 && aimDot > 0.97 && fireDist < 240;
+    const interceptSnapWindow = mode === BOT_MODE_INTERCEPT && fireDist < 420 && aimDot > 0.86;
+    const canOpenBurst = fireDist >= BOT_GUN_MIN_RANGE
+      && fireDist <= BOT_GUN_MAX_RANGE
+      && fireLos
+      && (rearFireWindow || sideFireWindow || incidentalFrontWindow || interceptSnapWindow);
+    if (canOpenBurst && (b.attackWindowTimer > BOT_ATTACK_WINDOW_BUILD || b.burstTimer > 0)) {
+      if (b.burstTimer <= 0) b.burstTimer = rand(BOT_BURST_MIN_TIME, BOT_BURST_MAX_TIME);
+    }
+    if (b.burstTimer > 0) b.burstTimer = Math.max(0, b.burstTimer - dt);
+    if (b.cooldown <= 0 && b.burstTimer > 0 && canOpenBurst) {
       spawnBullet(b, 0xffb67e);
-      b.cooldown = 0.11;
+      b.cooldown = mode === BOT_MODE_PURSUIT ? 0.07 : 0.085;
     }
 
     if (b.missileAmmo > 0 && b.missileCooldown <= 0) {
-      if (!b.missileTarget || !b.missileTarget.alive) b.missileTarget = getBestLockTarget(b);
-
       const noLaunchPhase = game.matchElapsed < 5;
-      const missilesFired = MISSILE_MAX_AMMO - b.missileAmmo;
-      const launchChanceByShot = missilesFired <= 0 ? dt * 0.2 : dt * 0.1;
-      const launchRangeFactor = missilesFired <= 0 ? 0.93 : 0.9;
+      const targetWallSafe = !isTargetTooCloseToWall(b.target, b);
+      const missileWindow = !noLaunchPhase
+        && (mode === BOT_MODE_INTERCEPT || mode === BOT_MODE_PURSUIT)
+        && targetWallSafe
+        && fireLos
+        && fireDist >= BOT_MISSILE_MIN_RANGE
+        && fireDist <= BOT_MISSILE_MAX_RANGE
+        && b.attackWindowTimer > BOT_ATTACK_WINDOW_BUILD
+        && aimDot > 0.76
+        && fireRearScore > -0.32;
 
-      if (!noLaunchPhase
-        && b.missileTarget
-        && dist < MISSILE_LOCK_RANGE * launchRangeFactor
-        && aimDot > 0.9
-        && Math.random() < launchChanceByShot) {
-        spawnMissile(b, b.missileTarget);
+      if (missileWindow) {
+        if (b.missileTarget !== b.target) {
+          b.missileTarget = b.target;
+          b.missileLockHoldTimer = 0;
+          b.missileLockHoldDuration = rand(BOT_MISSILE_LOCK_HOLD_MIN, BOT_MISSILE_LOCK_HOLD_MAX);
+        } else {
+          b.missileLockHoldTimer += dt;
+        }
+
+        if (b.missileLockHoldTimer >= b.missileLockHoldDuration) {
+          spawnMissile(b, b.missileTarget);
+          b.missileLockHoldTimer = 0;
+          b.missileTarget = null;
+          b.missileLockHoldDuration = rand(BOT_MISSILE_LOCK_HOLD_MIN, BOT_MISSILE_LOCK_HOLD_MAX);
+        }
+      } else if (b.missileTarget) {
         b.missileTarget = null;
+        b.missileLockHoldTimer = 0;
       }
     }
   }
@@ -2615,19 +4880,20 @@ function vibrateOnHit() {
   navigator.vibrate(18);
 }
 
-function hitPlane(plane, dmg, attackerTeam = null) {
+function hitPlane(plane, dmg, attackerTeam = null, attacker = null) {
   if (!plane.alive) return;
   plane.hp -= dmg;
-  spawnImpactFx(plane.mesh.position, plane.isPlayer ? 0xff7a6e : 0x9dffb3);
-  if (plane.isPlayer && attackerTeam === "bot") game.playerHitTimer = 0.18;
-  if (!plane.isPlayer && attackerTeam === "player") {
+  const impactColor = plane.isPlayer ? 0xff7a6e : (isPlayerFriendly(plane) ? 0x7beaff : 0xffc17d);
+  spawnImpactFx(plane.mesh.position, impactColor);
+  if (plane.isPlayer && attacker) game.playerHitTimer = 0.18;
+  if (!plane.isPlayer && attacker?.isPlayer && !isSameTeam(plane, attacker)) {
     game.hitConfirmTimer = 0.16;
     vibrateOnHit();
   }
   if (plane.hp <= 0) {
     plane.alive = false;
     plane.mesh.visible = false;
-    if (!plane.isPlayer) game.score += 100;
+    if (!plane.isPlayer && attacker?.isPlayer && !isSameTeam(plane, attacker)) game.score += 100;
   }
 }
 
@@ -2662,11 +4928,11 @@ function updateBullets(dt) {
       b.userData.life = -1;
     }
 
-    const targets = b.userData.team === "player" ? game.bots : [game.player];
+    const targets = getDamageablePlanes(b.userData.owner);
     for (const t of targets) {
-      if (!t || !t.alive) continue;
+      if (!t || !t.alive || t === b.userData.owner) continue;
       if (b.position.distanceToSquared(t.mesh.position) < 23 * 23) {
-        hitPlane(t, 1, b.userData.team);
+        hitPlane(t, 3, b.userData.teamId, b.userData.owner);
         b.userData.life = -1;
         break;
       }
@@ -2685,20 +4951,24 @@ function updateMissiles(dt) {
     const m = game.missiles[i];
     const data = m.userData;
     data.life -= dt;
-    const prevPos = m.position.clone();
+    const prevPos = data.prevPosition;
+    prevPos.copy(m.position);
 
     const target = data.target;
     if (target?.alive) {
-      const targetCenter = target.mesh.getWorldPosition(new THREE.Vector3());
-      const toTarget = targetCenter.clone().sub(m.position);
-      const dist = Math.max(1, toTarget.length());
+      getLockAimPoint(target, missileTargetCenterVec);
+      missileToTargetVec.copy(missileTargetCenterVec).sub(m.position);
+      const dist = Math.max(1, missileToTargetVec.length());
       const leadTime = clamp(dist / Math.max(data.cruiseSpeed, 1), 0.08, 0.8);
-      const aimPoint = targetCenter.clone().addScaledVector(target.velocity, leadTime * 0.88);
-      const desiredDir = aimPoint.sub(m.position).normalize();
-      const currentDir = data.velocity.clone().normalize();
-      currentDir.lerp(desiredDir, clamp(MISSILE_TURN_RATE * dt, 0, 0.27)).normalize();
-      data.velocity.copy(currentDir.multiplyScalar(data.cruiseSpeed));
-      m.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), currentDir);
+      missileAimPointVec.copy(missileTargetCenterVec).addScaledVector(target.velocity, leadTime * 0.88);
+      missileDesiredDirVec.copy(missileAimPointVec).sub(m.position);
+      if (missileDesiredDirVec.lengthSq() > 1e-6) {
+        missileDesiredDirVec.normalize();
+        missileCurrentDirVec.copy(data.velocity).normalize();
+        missileCurrentDirVec.lerp(missileDesiredDirVec, clamp(MISSILE_TURN_RATE * dt, 0, 0.27)).normalize();
+        data.velocity.copy(missileCurrentDirVec).multiplyScalar(data.cruiseSpeed);
+        m.quaternion.setFromUnitVectors(AXIS_X, missileCurrentDirVec);
+      }
     }
 
     m.position.addScaledVector(data.velocity, dt);
@@ -2706,57 +4976,50 @@ function updateMissiles(dt) {
     data.motorTick += dt;
     if (data.motorTick > 0.03) {
       data.motorTick = 0;
-      const jet = new THREE.Mesh(
-        new THREE.SphereGeometry(0.62, 10, 8),
-        new THREE.MeshBasicMaterial({ color: 0xffb86d, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })
-      );
-      jet.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.9);
-      world.add(jet);
-      game.effects.push({ mesh: jet, life: 0.2, scaleRate: 8.8 });
+      spawnMissileJetTrail(m.position, data.velocity);
     }
+
     data.smokeTick += dt;
     if (data.smokeTick > 0.06) {
       data.smokeTick = 0;
-      const smoke = new THREE.Mesh(
-        new THREE.SphereGeometry(0.9, 10, 8),
-        new THREE.MeshBasicMaterial({ color: 0x768190, transparent: true, opacity: 0.56, depthWrite: false })
-      );
-      smoke.position.copy(m.position).addScaledVector(data.velocity.clone().normalize(), -2.4);
-      world.add(smoke);
-      game.effects.push({ mesh: smoke, life: 0.52, scaleRate: 4.4 });
+      spawnMissileSmokeTrail(m.position, data.velocity);
     }
 
     let exploded = false;
-
-    const targets = data.team === "player" ? game.bots : [game.player];
+    const targets = getDamageablePlanes(data.owner);
     for (const t of targets) {
-      if (!t?.alive) continue;
+      if (!t?.alive || t === data.owner) continue;
       const seg = tmpVecA.subVectors(m.position, prevPos);
       const segLenSq = Math.max(1e-6, seg.lengthSq());
-      const targetCenter = t.mesh.getWorldPosition(new THREE.Vector3());
-      const toCenter = tmpVecB.subVectors(targetCenter, prevPos);
+      const targetCenter = getLockAimPoint(t, tmpVecB);
+      const toCenter = tmpVecC.subVectors(targetCenter, prevPos);
       const proj = clamp(toCenter.dot(seg) / segLenSq, 0, 1);
-      const closest = tmpVecC.copy(prevPos).addScaledVector(seg, proj);
+      const closest = tmpVecD.copy(prevPos).addScaledVector(seg, proj);
       if (closest.distanceToSquared(targetCenter) < 30 * 30) {
-        hitPlane(t, 30, data.team);
+        hitPlane(t, 30, data.teamId, data.owner);
         exploded = true;
         break;
       }
     }
 
     if (!exploded && intersectsObstacle(m.position, MISSILE_BODY_COLLISION_RADIUS)) {
-      if (target?.alive && m.position.distanceToSquared(target.mesh.getWorldPosition(new THREE.Vector3())) < 95 * 95) {
-        hitPlane(target, 30, data.team);
+      if (target?.alive && target !== data.owner && m.position.distanceToSquared(getLockAimPoint(target, tmpVecA)) < 95 * 95) {
+        hitPlane(target, 30, data.teamId, data.owner);
       }
       exploded = true;
     }
-    if (!exploded && (Math.abs(m.position.x) > ARENA * 1.02 || Math.abs(m.position.z) > ARENA * 1.02 || m.position.y < FLOOR_Y + 4 || m.position.y > 980)) exploded = true;
 
-    if (!exploded && playerPos && data.team === "bot") {
-      const toPlayer = playerPos.clone().sub(m.position).normalize();
-      const facingPlayer = data.velocity.clone().normalize().dot(toPlayer);
-      const distPlayer = m.position.distanceTo(playerPos);
-      if (facingPlayer > 0.66 && distPlayer < 760) game.missileIncomingTimer = 0.24;
+    if (!exploded && (Math.abs(m.position.x) > ARENA * 1.02 || Math.abs(m.position.z) > ARENA * 1.02 || m.position.y < FLOOR_Y + 4 || m.position.y > 980)) {
+      exploded = true;
+    }
+
+    if (!exploded && playerPos && data.owner && isHostilePlane(data.owner, game.player)) {
+      const distPlayer = missileToPlayerVec.copy(playerPos).sub(m.position).length();
+      if (distPlayer > 1e-4) {
+        missileToPlayerVec.multiplyScalar(1 / distPlayer);
+        const facingPlayer = missileCurrentDirVec.copy(data.velocity).normalize().dot(missileToPlayerVec);
+        if (facingPlayer > 0.66 && distPlayer < 760) game.missileIncomingTimer = 0.24;
+      }
     }
 
     if (exploded || data.life <= 0) {
@@ -2769,6 +5032,23 @@ function updateMissiles(dt) {
 
 function updateCamera(dt) {
   cameraZoom.value = smoothApproach(cameraZoom.value, cameraZoom.target, 7.5, dt);
+
+  const p = game.player;
+  if (!p) {
+    if (cockpitOverlayEl) cockpitOverlayEl.classList.remove("is-active");
+    document.body.classList.remove("cockpit-active");
+    camera.position.lerp(MENU_CAMERA_POSITION, 1 - Math.exp(-dt * 2.2));
+    updateBackdropFollowers(camera.position);
+    camera.up.copy(WORLD_UP);
+    camera.lookAt(MENU_CAMERA_LOOK_AT);
+    if (Math.abs(camera.fov - CAMERA_DEFAULT_FOV) > 0.01 || Math.abs(camera.near - CAMERA_DEFAULT_NEAR) > 0.001) {
+      camera.fov = CAMERA_DEFAULT_FOV;
+      camera.near = CAMERA_DEFAULT_NEAR;
+      camera.updateProjectionMatrix();
+    }
+    return;
+  }
+
   if (cockpitOverlayEl) {
     const cockpitReady = cockpitOverlayEl.dataset.maskReady === "true";
     const cockpitBlend = cameraZoom.target;
@@ -2777,9 +5057,6 @@ function updateCamera(dt) {
     document.body.classList.toggle("cockpit-active", cockpitActive);
     if (cockpitActive) updateCockpitOverlayLayout();
   }
-
-  const p = game.player;
-  if (!p) return;
 
   camForwardVec.set(1, 0, 0).applyQuaternion(p.mesh.quaternion).normalize();
   camUpVec.set(0, 1, 0).applyQuaternion(p.mesh.quaternion).normalize();
@@ -2799,6 +5076,7 @@ function updateCamera(dt) {
     .addScaledVector(camUpVec, lookUp);
 
   camera.position.lerp(camPosTarget, 1 - Math.exp(-dt * 9.5));
+  updateBackdropFollowers(camera.position);
   const cockpitImmersion = clamp((cameraZoom.value - 0.9) / 0.1, 0, 1);
   camBlendedUp.copy(WORLD_UP).lerp(camUpVec, cockpitImmersion).normalize();
   camera.up.copy(camBlendedUp);
@@ -2812,19 +5090,25 @@ function updateCamera(dt) {
     camera.updateProjectionMatrix();
   }
 
-  p.mesh.visible = cameraZoom.value < 0.985;
+  p.mesh.visible = p.alive && cameraZoom.value < 0.985;
 }
 
 function updateState() {
-  const alive = game.bots.filter((b) => b.alive).length;
+  const player = game.player;
+  if (!player) return;
+
+  const aliveHostiles = getAliveHostileCountForPlayer();
   const lockTarget = game.missileLockTarget;
+
   game.bots.forEach((bot) => {
+    const visible = bot === lockTarget && bot.alive && isPlayerHostile(bot);
+    if (visible && !bot.lockOutline) ensureLockOutline(bot);
     if (!bot.lockOutline) return;
-    const visible = bot === lockTarget && bot.alive;
+
     bot.lockOutline.visible = visible;
     if (!visible) return;
 
-    const dist = game.player?.mesh?.position?.distanceTo(bot.mesh.position) ?? 600;
+    const dist = player.mesh.position.distanceTo(bot.mesh.position);
     const emphasis = clamp((dist - 220) / 1500, 0, 1);
     const lineOpacity = clamp((0.58 + emphasis * 0.26) * 1.8, 0, 0.70);
     const scaleMul = 1.08 + emphasis * 0.16;
@@ -2837,49 +5121,45 @@ function updateState() {
     });
   });
 
+  updateFriendlyMarkers();
   updateHudHealthPanel();
-  ammoEl.textContent = `MSL ${game.player?.missileAmmo ?? 0} | AMMO ${Math.round(game.ammo)}`;
-  boostStatEl.textContent = `BOOST ${Math.round((game.boostFuel / BOOST_FUEL_MAX) * 100)}%`;
-  if (missileBtn) missileBtn.textContent = lockTarget ? "LOCK OFF" : "LOCK ON";
-  if (lockOnCueEl) {
-    if (lockTarget?.alive) {
-      lockOnCueEl.hidden = false;
-      lockOnCueEl.textContent = `LOCK ON EN${Math.max(1, game.bots.indexOf(lockTarget) + 1)}`;
-    } else {
-      lockOnCueEl.hidden = true;
-    }
-  }
-  if (lockCancelBtn) {
-    lockCancelBtn.textContent = "LAUNCH";
-    lockCancelBtn.hidden = !lockTarget;
+  setHudTextIfChanged(ammoEl, "ammoText", `MSL ${player.missileAmmo} | AMMO ${Math.round(game.ammo)}`);
+  setHudTextIfChanged(boostStatEl, "boostText", `BOOST ${Math.round((game.boostFuel / BOOST_FUEL_MAX) * 100)}%`);
+  setHudTextIfChanged(missileBtn, "missileButtonText", lockTarget && isPlayerHostile(lockTarget) ? "LOCK OFF" : "LOCK ON");
+
+  if (lockTarget?.alive && isPlayerHostile(lockTarget)) {
+    setHudTextIfChanged(lockOnCueEl, "lockCueText", `LOCK ON ${lockTarget.callsign || "EN"}`);
+    setHudHiddenIfChanged(lockOnCueEl, "lockCueHidden", false);
+  } else {
+    setHudHiddenIfChanged(lockOnCueEl, "lockCueHidden", true);
   }
 
-  if (!game.player.alive && !game.over) {
+  setHudTextIfChanged(lockCancelBtn, "lockCancelText", "LAUNCH");
+  setHudHiddenIfChanged(lockCancelBtn, "lockCancelHidden", !(lockTarget && isPlayerHostile(lockTarget)));
+
+  if (!player.alive && !game.over) {
     game.over = true;
     messageEl.hidden = false;
     messageEl.textContent = "YOU LOSE";
   }
 
-  if (game.initialBots > 0 && alive === 0 && game.player.alive && !game.over) {
+  if (game.initialEnemyCount > 0 && aliveHostiles === 0 && player.alive && !game.over) {
     game.over = true;
     messageEl.hidden = false;
     messageEl.textContent = "YOU WIN";
   }
 }
 
-
 function clearPlaneHpLabel(plane) {
   if (plane?.hpLabel) {
     world.remove(plane.hpLabel);
     plane.hpLabel = null;
   }
-  if (plane?.lockOutline) {
-    plane.mesh?.remove?.(plane.lockOutline);
-    plane.lockOutline = null;
-  }
+  disposeLockOutline(plane);
+  disposeFriendlyMarker(plane);
 }
 
-function resetMatch() {
+function clearMatchEntities() {
   for (const b of game.bullets) world.remove(b);
   game.bullets = [];
   for (const m of game.missiles) world.remove(m);
@@ -2887,16 +5167,20 @@ function resetMatch() {
   if (game.player) {
     clearPlaneHpLabel(game.player);
     world.remove(game.player.mesh);
+    game.player = null;
   }
   for (const b of game.bots) {
     clearPlaneHpLabel(b);
     world.remove(b.mesh);
   }
-  for (const fx of game.effects) world.remove(fx.mesh);
-  game.effects = [];
+  game.bots = [];
+  clearActiveEffects();
+  invalidateHudCache();
+}
 
+function resetMatchState() {
   game.score = 0;
-  game.ammo = 60;
+  game.ammo = 100;
   game.boostFuel = BOOST_FUEL_MAX;
   game.playerHitTimer = 0;
   game.hitConfirmTimer = 0;
@@ -2910,21 +5194,146 @@ function resetMatch() {
   game.missileLaunchTapQueuedCount = 0;
   game.matchElapsed = 0;
   game.playerBoostWasActive = false;
-  healthEl.classList.remove("flash");
-  crosshairEl.classList.remove("hit");
   game.over = false;
   game.initialBots = 0;
+  game.initialEnemyCount = 0;
+  game.activeMatchConfig = null;
+  healthEl.classList.remove("flash");
+  crosshairEl.classList.remove("hit");
   messageEl.hidden = true;
   messageEl.textContent = "";
-
+  invalidateHudCache();
   boostLeverState.applyLevel?.(0);
+  keys.clear();
+  stickInput.pitch = 0;
+  stickInput.yaw = 0;
+  stickInput.active = false;
+  input.roll = 0;
+  input.pitch = 0;
+  input.yaw = 0;
+  input.throttle = 0;
+  input.boost = false;
+  input.boostLevel = 0;
+  input.fire = false;
+  input.lockToggle = false;
+  input.lockTogglePressed = false;
+  input.missileLaunchPressed = false;
+}
 
-  game.player = createFighter(0x48d7ff, true);
-  game.player.mesh.position.set(0, 320, 0);
-  game.player.yaw = -Math.PI * 0.2;
-  game.player.pitch = 0;
-  game.player.roll = 0;
+function setMenuCameraPose() {
+  camera.position.copy(MENU_CAMERA_POSITION);
+  camera.up.copy(WORLD_UP);
+  camera.lookAt(MENU_CAMERA_LOOK_AT);
+  updateBackdropFollowers(camera.position);
+}
 
+function setPlaneFacingDirection(plane, direction) {
+  if (!plane?.mesh || !direction?.lengthSq?.() || direction.lengthSq() <= 1e-6) return;
+  tmpVecA.copy(direction).normalize();
+  const flat = Math.hypot(tmpVecA.x, tmpVecA.z);
+  if (flat > 1e-4) plane.yaw = Math.atan2(-tmpVecA.z, tmpVecA.x);
+  plane.pitch = clamp(Math.atan2(tmpVecA.y, Math.max(1e-4, flat)), -MAX_PITCH * 0.82, MAX_PITCH * 0.82);
+  plane.roll = 0;
+  qYaw.setFromAxisAngle(AXIS_Y, plane.yaw);
+  qPitch.setFromAxisAngle(AXIS_Z, plane.pitch);
+  qRoll.setFromAxisAngle(AXIS_X, 0);
+  qMove.copy(qYaw).multiply(qPitch);
+  qVisual.copy(qMove).multiply(qRoll);
+  plane.mesh.quaternion.copy(qVisual);
+  plane.velocity.copy(tmpVecA).multiplyScalar(Math.max(plane.speed || 220, 200));
+}
+
+function findSpawnPosition(basePosition, spreadXZ = 140, spreadY = 70, minDistanceFromPlayer = 0) {
+  const out = new THREE.Vector3().copy(basePosition);
+  for (let tries = 0; tries < 40; tries++) {
+    out.set(
+      clamp(basePosition.x + rand(-spreadXZ, spreadXZ), -ARENA * 0.78, ARENA * 0.78),
+      clamp(basePosition.y + rand(-spreadY, spreadY), 220, 620),
+      clamp(basePosition.z + rand(-spreadXZ, spreadXZ), -ARENA * 0.78, ARENA * 0.78)
+    );
+    if (intersectsObstacle(out, 26)) continue;
+    if (game.player && minDistanceFromPlayer > 0 && out.distanceToSquared(game.player.mesh.position) < minDistanceFromPlayer * minDistanceFromPlayer) continue;
+    return out.clone();
+  }
+  return out.clone();
+}
+
+function assignPlaneIdentity(plane, teamId, teamRole, callsign) {
+  plane.teamId = teamId;
+  plane.teamRole = teamRole;
+  plane.callsign = callsign;
+}
+
+function syncSelectionButtons() {
+  const activeSoloBtn = botCountButtons.find((btn) => Number(btn.dataset.botCount) === selectedBotCount);
+  if (activeSoloBtn) setActiveTapButton(botCountButtons, activeSoloBtn);
+
+  const activeHudMapBtn = mapTypeButtons.find((btn) => btn.dataset.mapType === selectedMapType);
+  if (activeHudMapBtn) setActiveTapButton(mapTypeButtons, activeHudMapBtn);
+
+  const activeModeBtn = startModeButtons.find((btn) => btn.dataset.matchMode === selectedMatchMode);
+  if (activeModeBtn) setActiveTapButton(startModeButtons, activeModeBtn);
+
+  const activeStartSoloBtn = startSoloBotButtons.find((btn) => Number(btn.dataset.soloBotCount) === selectedBotCount);
+  if (activeStartSoloBtn) setActiveTapButton(startSoloBotButtons, activeStartSoloBtn);
+
+  const activeAllyBtn = startTeamAllyButtons.find((btn) => Number(btn.dataset.teamAllies) === selectedTeamAllyCount);
+  if (activeAllyBtn) setActiveTapButton(startTeamAllyButtons, activeAllyBtn);
+
+  const activeStartMapBtn = startMapButtons.find((btn) => btn.dataset.startMapType === selectedMapType);
+  if (activeStartMapBtn) setActiveTapButton(startMapButtons, activeStartMapBtn);
+}
+
+function updateTeamEnemyButtons() {
+  const maxEnemyCount = Math.max(1, MAX_MATCH_BOTS - selectedTeamAllyCount);
+  selectedTeamEnemyCount = clamp(selectedTeamEnemyCount, 1, maxEnemyCount);
+
+  startTeamEnemyButtons.forEach((btn) => {
+    const count = Number(btn.dataset.teamEnemies);
+    btn.disabled = !Number.isFinite(count) || count > maxEnemyCount;
+  });
+
+  const activeEnemyBtn = startTeamEnemyButtons.find((btn) => Number(btn.dataset.teamEnemies) === selectedTeamEnemyCount);
+  if (activeEnemyBtn) setActiveTapButton(startTeamEnemyButtons, activeEnemyBtn);
+}
+
+function syncStartMenuUi() {
+  syncSelectionButtons();
+  updateTeamEnemyButtons();
+  if (startSoloWrapEl) startSoloWrapEl.hidden = selectedMatchMode !== MATCH_MODE_FFA;
+  if (startTeamWrapEl) startTeamWrapEl.hidden = selectedMatchMode !== MATCH_MODE_TEAM;
+  const hudBotWrapEl = botCountEl?.closest?.(".menu-control");
+  if (hudBotWrapEl) hudBotWrapEl.hidden = selectedMatchMode !== MATCH_MODE_FFA;
+  if (startMenuNoteEl) {
+    startMenuNoteEl.textContent = selectedMatchMode === MATCH_MODE_TEAM
+      ? `チーム戦: 味方 bot ${selectedTeamAllyCount} 機 / 敵 bot ${selectedTeamEnemyCount} 機。味方は狙わないが、通常弾もミサイルも当たります。`
+      : `個人戦: プレイヤーも bot 同士も全員が敵です。bot 数は ${selectedBotCount} 機。`;
+  }
+  syncPendingMatchConfig();
+}
+
+function hideStartMenu() {
+  if (startMenuOverlayEl) startMenuOverlayEl.hidden = true;
+  document.body.classList.remove("start-menu-active");
+}
+
+function closeMenuPanel() {
+  menuPanel.hidden = true;
+  menuBtn.setAttribute("aria-expanded", "false");
+}
+
+function showStartMenu() {
+  clearMatchEntities();
+  resetMatchState();
+  game.phase = "menu";
+  syncStartMenuUi();
+  if (startMenuOverlayEl) startMenuOverlayEl.hidden = false;
+  document.body.classList.add("start-menu-active");
+  closeMenuPanel();
+  setMenuCameraPose();
+}
+
+function spawnFreeForAllBots(botCount) {
   const botPalettes = [
     { body: 0xff8a3d, wing: 0x2ff7ff, accent: 0xff2fb3, cockpit: 0x12314c },
     { body: 0x7cff4c, wing: 0xff5de4, accent: 0x3d8bff, cockpit: 0x1a2340 },
@@ -2933,18 +5342,91 @@ function resetMatch() {
     { body: 0xff62a8, wing: 0x6aff55, accent: 0x32a0ff, cockpit: 0x2b2648 },
     { body: 0x3effd5, wing: 0xff6a3d, accent: 0xd85dff, cockpit: 0x1e3243 },
   ];
-  const botCount = selectedBotCount;
+
   game.bots = Array.from({ length: botCount }, (_, i) => {
     const bot = createFighter(botPalettes[i % botPalettes.length]);
-    for (let tries = 0; tries < 40; tries++) {
-      bot.mesh.position.set(rand(-1100, 1100), rand(240, 560), rand(-1100, 1100));
-      if (intersectsObstacle(bot.mesh.position, 26)) continue;
-      if (bot.mesh.position.distanceToSquared(game.player.mesh.position) < 420 * 420) continue;
-      break;
-    }
-    bot.mesh.lookAt(game.player.mesh.position);
+    const spawnPos = findSpawnPosition(new THREE.Vector3(rand(-900, 900), rand(260, 520), rand(-900, 900)), 280, 110, 420);
+    bot.mesh.position.copy(spawnPos);
+    bot.safeAnchor.copy(getBotSafeAnchor(bot.safeAnchor));
+    assignPlaneIdentity(bot, `ffa-bot-${i + 1}`, "enemy", `EN${i + 1}`);
+    setPlaneFacingDirection(bot, game.player.mesh.position.clone().sub(bot.mesh.position));
+    bot.prevPosition.copy(bot.mesh.position);
     return bot;
   });
+
+  game.initialEnemyCount = game.bots.length;
+}
+
+function spawnTeamBots(config) {
+  const allyPalettes = [
+    { body: 0x2a7fff, wing: 0x8df2ff, accent: 0x7df6d4, cockpit: 0x10253d },
+    { body: 0x1fb7ff, wing: 0x9ff7ff, accent: 0x58ffd8, cockpit: 0x122a42 },
+    { body: 0x2f6cff, wing: 0xb0f0ff, accent: 0x7df0ff, cockpit: 0x141d3b },
+  ];
+  const enemyPalettes = [
+    { body: 0xff8a3d, wing: 0xffd34d, accent: 0xff4e7a, cockpit: 0x34192a },
+    { body: 0xff6b4d, wing: 0xffb957, accent: 0xff4f4f, cockpit: 0x301a28 },
+    { body: 0xffa33d, wing: 0xff6d58, accent: 0xffea6a, cockpit: 0x35201a },
+  ];
+
+  const allyBase = new THREE.Vector3(-220, 320, 0);
+  const enemyBase = new THREE.Vector3(980, 340, 0);
+  const allyFacingPoint = new THREE.Vector3(880, 330, 0);
+  const enemyFacingPoint = new THREE.Vector3(-120, 320, 0);
+
+  const allies = [];
+  for (let i = 0; i < config.allyBotCount; i++) {
+    const bot = createFighter(allyPalettes[i % allyPalettes.length]);
+    const laneOffset = (i - (config.allyBotCount - 1) * 0.5) * 180;
+    const spawnPos = findSpawnPosition(new THREE.Vector3(allyBase.x - 40 * i, allyBase.y + i * 12, allyBase.z + laneOffset), 90, 40, 180);
+    bot.mesh.position.copy(spawnPos);
+    bot.safeAnchor.copy(allyFacingPoint).add(new THREE.Vector3(-120, rand(-12, 18), laneOffset * 0.3));
+    assignPlaneIdentity(bot, "allies", "ally", `AL${i + 1}`);
+    setPlaneFacingDirection(bot, allyFacingPoint.clone().sub(bot.mesh.position));
+    bot.prevPosition.copy(bot.mesh.position);
+    allies.push(bot);
+  }
+
+  const enemies = [];
+  for (let i = 0; i < config.enemyBotCount; i++) {
+    const bot = createFighter(enemyPalettes[i % enemyPalettes.length]);
+    const laneOffset = (i - (config.enemyBotCount - 1) * 0.5) * 220;
+    const spawnPos = findSpawnPosition(new THREE.Vector3(enemyBase.x + 36 * i, enemyBase.y + rand(-22, 30), enemyBase.z + laneOffset), 140, 50, 620);
+    bot.mesh.position.copy(spawnPos);
+    bot.safeAnchor.copy(enemyFacingPoint).add(new THREE.Vector3(220, rand(-16, 22), laneOffset * 0.26));
+    assignPlaneIdentity(bot, "enemies", "enemy", `EN${i + 1}`);
+    setPlaneFacingDirection(bot, enemyFacingPoint.clone().sub(bot.mesh.position));
+    bot.prevPosition.copy(bot.mesh.position);
+    enemies.push(bot);
+  }
+
+  game.bots = [...allies, ...enemies];
+  game.initialEnemyCount = enemies.length;
+}
+
+function resetMatch(config = syncPendingMatchConfig()) {
+  clearMatchEntities();
+  resetMatchState();
+  game.phase = "playing";
+  game.activeMatchConfig = { ...config };
+  hideStartMenu();
+
+  game.player = createFighter(0x48d7ff, true);
+  assignPlaneIdentity(game.player, config.mode === MATCH_MODE_TEAM ? "allies" : "player", "player", "YOU");
+  game.player.mesh.position.set(0, 320, 0);
+  game.player.yaw = config.mode === MATCH_MODE_TEAM ? 0 : -Math.PI * 0.2;
+  game.player.pitch = 0;
+  game.player.roll = 0;
+  setPlaneFacingDirection(game.player, new THREE.Vector3(Math.cos(game.player.yaw), 0, -Math.sin(game.player.yaw)));
+  game.player.prevPosition.copy(game.player.mesh.position);
+
+  if (config.mode === MATCH_MODE_TEAM) {
+    setPlaneFacingDirection(game.player, new THREE.Vector3(1, 0.02, 0));
+    spawnTeamBots(config);
+  } else {
+    spawnFreeForAllBots(config.botCount);
+  }
+
   game.initialBots = game.bots.length;
   updateHudHealthPanel();
 }
@@ -3175,6 +5657,32 @@ function updateOrientationHint() {
   rotateHint.hidden = window.innerWidth >= window.innerHeight;
 }
 
+function updateMenuPanelPosition() {
+  if (!menuBtn || !menuPanel) return;
+  const rect = menuBtn.getBoundingClientRect();
+  const menuBottom = Math.max(rect.bottom, 0);
+  document.documentElement.style.setProperty("--menu-bottom", `${menuBottom}px`);
+}
+
+function fitViewport() {
+  const viewport = window.visualViewport;
+  const width = Math.max(1, viewport?.width || window.innerWidth || 1);
+  const height = Math.max(1, viewport?.height || window.innerHeight || 1);
+
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  if (!rendererReady) {
+    drawRendererFallback();
+    return;
+  }
+
+  renderer.setPixelRatio(getRenderPixelRatio());
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+
 function setActiveTapButton(buttons, activeButton) {
   buttons.forEach((btn) => {
     const isActive = btn === activeButton;
@@ -3184,11 +5692,21 @@ function setActiveTapButton(buttons, activeButton) {
 }
 
 function setupTapMenuButtons() {
-  const initialBotBtn = botCountButtons.find((btn) => Number(btn.dataset.botCount) === selectedBotCount);
-  if (initialBotBtn) setActiveTapButton(botCountButtons, initialBotBtn);
+  syncStartMenuUi();
 
-  const initialMapBtn = mapTypeButtons.find((btn) => btn.dataset.mapType === selectedMapType);
-  if (initialMapBtn) setActiveTapButton(mapTypeButtons, initialMapBtn);
+  const applyMapSelection = (next) => {
+    if (!next || next === selectedMapType) return;
+    selectedMapType = next;
+    syncStartMenuUi();
+    clearMatchEntities();
+    buildWorld(selectedMapType);
+    if (game.phase === "playing") {
+      closeMenuPanel();
+      resetMatch(syncPendingMatchConfig());
+      return;
+    }
+    showStartMenu();
+  };
 
   botCountButtons.forEach((btn) => {
     btn.addEventListener("pointerdown", (e) => {
@@ -3196,21 +5714,72 @@ function setupTapMenuButtons() {
       const next = Number(btn.dataset.botCount);
       if (!Number.isFinite(next) || next === selectedBotCount) return;
       selectedBotCount = next;
-      setActiveTapButton(botCountButtons, btn);
-      resetMatch();
+      syncStartMenuUi();
+      if (game.phase === "playing" && selectedMatchMode === MATCH_MODE_FFA) {
+        closeMenuPanel();
+        resetMatch(syncPendingMatchConfig());
+      }
     });
   });
 
   mapTypeButtons.forEach((btn) => {
     btn.addEventListener("pointerdown", (e) => {
       e.preventDefault();
-      const next = btn.dataset.mapType;
-      if (!next || next === selectedMapType) return;
-      selectedMapType = next;
-      setActiveTapButton(mapTypeButtons, btn);
-      buildWorld(selectedMapType);
-      resetMatch();
+      applyMapSelection(btn.dataset.mapType);
     });
+  });
+
+  startModeButtons.forEach((btn) => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const next = btn.dataset.matchMode;
+      if (!next || next === selectedMatchMode) return;
+      selectedMatchMode = next;
+      syncStartMenuUi();
+    });
+  });
+
+  startSoloBotButtons.forEach((btn) => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const next = Number(btn.dataset.soloBotCount);
+      if (!Number.isFinite(next) || next === selectedBotCount) return;
+      selectedBotCount = next;
+      syncStartMenuUi();
+    });
+  });
+
+  startTeamAllyButtons.forEach((btn) => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const next = Number(btn.dataset.teamAllies);
+      if (!Number.isFinite(next) || next === selectedTeamAllyCount) return;
+      selectedTeamAllyCount = next;
+      syncStartMenuUi();
+    });
+  });
+
+  startTeamEnemyButtons.forEach((btn) => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      if (btn.disabled) return;
+      const next = Number(btn.dataset.teamEnemies);
+      if (!Number.isFinite(next) || next === selectedTeamEnemyCount) return;
+      selectedTeamEnemyCount = next;
+      syncStartMenuUi();
+    });
+  });
+
+  startMapButtons.forEach((btn) => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      applyMapSelection(btn.dataset.startMapType);
+    });
+  });
+
+  startMatchBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    resetMatch(syncPendingMatchConfig());
   });
 }
 
@@ -3248,7 +5817,7 @@ function showFatalInitError(err, scope = "init") {
   console.error(`[skyace:${scope}:${phase}]`, err);
   messageEl.hidden = false;
   const text = String(err?.message || err || "unknown error");
-  messageEl.textContent = `初期化エラー(${scope}:${phase}): ${text}`;
+  messageEl.textContent = `Initialization error (${scope}:${phase}): ${text}`;
 }
 
 function runStartupStep(phase, fn) {
@@ -3289,7 +5858,7 @@ window.addEventListener("keyup", (e) => {
 
 const restartFromHud = (e) => {
   e?.preventDefault?.();
-  resetMatch();
+  showStartMenu();
 };
 
 restartBtn.addEventListener("click", restartFromHud);
@@ -3359,7 +5928,6 @@ function tick(now) {
     updateBullets(dt);
     updateMissiles(dt);
     updateEffects(dt);
-    updateCamera(dt);
     updateState();
 
     renderer.render(scene, camera);
@@ -3373,12 +5941,49 @@ try {
   runStartupStep("fitViewport", () => fitViewport());
   runStartupStep("orientationHint", () => updateOrientationHint());
   runStartupStep("buildWorld", () => buildWorld(selectedMapType));
-  runStartupStep("resetMatch", () => resetMatch());
+  runStartupStep("showStartMenu", () => showStartMenu());
   runStartupStep("startLoop", () => requestAnimationFrame(tick));
 } catch (err) {
   showFatalInitError(err, "startup");
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
